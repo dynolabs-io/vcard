@@ -53,10 +53,7 @@
     "extra": {
       "apiBase": "https://api.dynolabs.io",
       "cdnBase": "https://cdn.dynolabs.io",
-      "webBase": "https://dynolabs.io",
-      "eas": {
-        "projectId": "TBD-after-eas-init"
-      }
+      "webBase": "https://dynolabs.io"
     },
     "experiments": {
       "typedRoutes": true,
