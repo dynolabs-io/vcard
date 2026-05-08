@@ -1,6 +1,5 @@
-// New-card form. Minimal v1 — name, title, company, one email, one phone.
-// LinkedIn-connect auto-fill button kicks the OAuth flow; on return the
-// form prefills with the LinkedIn profile.
+// New-card form with: LinkedIn auto-fill, template picker, custom color
+// picker, manual fields. KeyboardAvoidingView keeps the CTA always visible.
 
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -13,7 +12,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '@/lib/api';
 import { createCardSynced } from '@/lib/sync';
-import { emptyCard } from '@/lib/types';
+import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
+import { emptyCard, type CardTemplate } from '@/lib/types';
 
 export default function NewCard() {
   const router = useRouter();
@@ -24,9 +24,7 @@ export default function NewCard() {
   const [saving, setSaving] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
-  // Listen for the deep-link return from the LinkedIn callback. The
-  // backend redirects to dynolabs-vcard://oauth/linkedin?profile=<base64>
-  // which expo-linking captures and routes here.
+  // Listen for the deep-link return from the LinkedIn callback.
   useEffect(() => {
     const sub = Linking.addEventListener('url', ({ url }) => {
       const parsed = Linking.parse(url);
@@ -42,9 +40,7 @@ export default function NewCard() {
             photoUrl: p.picture || d.photoUrl,
           }));
           if (p.email) setEmail(p.email);
-        } catch {
-          // ignore malformed payload
-        }
+        } catch {/* ignore */}
       }
     });
     return () => sub.remove();
@@ -58,8 +54,6 @@ export default function NewCard() {
       await createCardSynced(next);
       router.back();
     } finally {
-      // ALWAYS reset — sync-layer is bounded by api timeout, but we still
-      // want the user to retry if something unexpected throws.
       setSaving(false);
     }
   };
@@ -106,64 +100,91 @@ export default function NewCard() {
 
           <Field label="Label">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={draft.label}
-              onChangeText={t => setDraft({ ...draft, label: t })}
-              placeholder="Work, Personal, …"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              returnKeyType="next"
-            />
+              value={draft.label} onChangeText={t => setDraft({ ...draft, label: t })}
+              placeholder="Work, Personal, …" placeholderTextColor={isDark ? '#666' : '#999'}
+              returnKeyType="next" />
           </Field>
           <Field label="Name">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={draft.name}
-              onChangeText={t => setDraft({ ...draft, name: t })}
-              placeholder="Ali Eren Baysal"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              autoFocus
-              returnKeyType="next"
-            />
+              value={draft.name} onChangeText={t => setDraft({ ...draft, name: t })}
+              placeholder="Ali Eren Baysal" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoFocus returnKeyType="next" />
           </Field>
           <Field label="Title">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={draft.title ?? ''}
-              onChangeText={t => setDraft({ ...draft, title: t })}
-              placeholder="Founder"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              returnKeyType="next"
-            />
+              value={draft.title ?? ''} onChangeText={t => setDraft({ ...draft, title: t })}
+              placeholder="Founder" placeholderTextColor={isDark ? '#666' : '#999'}
+              returnKeyType="next" />
           </Field>
           <Field label="Company">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={draft.company ?? ''}
-              onChangeText={t => setDraft({ ...draft, company: t })}
-              placeholder="Dynolabs"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              returnKeyType="next"
-            />
+              value={draft.company ?? ''} onChangeText={t => setDraft({ ...draft, company: t })}
+              placeholder="Dynolabs" placeholderTextColor={isDark ? '#666' : '#999'}
+              returnKeyType="next" />
           </Field>
           <Field label="Email">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={email}
-              onChangeText={setEmail}
-              placeholder="ali@dynolabs.io"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="email-address"
-              returnKeyType="next"
-            />
+              value={email} onChangeText={setEmail}
+              placeholder="ali@dynolabs.io" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoCapitalize="none" autoCorrect={false} keyboardType="email-address"
+              returnKeyType="next" />
           </Field>
           <Field label="Phone">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="+1 555 0100"
-              placeholderTextColor={isDark ? '#666' : '#999'}
-              keyboardType="phone-pad"
-              returnKeyType="done"
-              onSubmitEditing={onSave}
-            />
+              value={phone} onChangeText={setPhone}
+              placeholder="+1 555 0100" placeholderTextColor={isDark ? '#666' : '#999'}
+              keyboardType="phone-pad" returnKeyType="done" onSubmitEditing={onSave} />
           </Field>
+
+          <Field label="Template">
+            <View style={styles.templateRow}>
+              {TEMPLATES.map(t => {
+                const selected = draft.template === t.id;
+                const preview = t.preview;
+                return (
+                  <Pressable
+                    key={t.id}
+                    onPress={() => setDraft({ ...draft, template: t.id as CardTemplate })}
+                    style={[
+                      styles.templateChip,
+                      { backgroundColor: preview.card.backgroundColor || preview.card.backgroundGradient?.[0] || '#0B0B0F' },
+                      selected && styles.templateChipSelected,
+                    ]}
+                  >
+                    <Text style={[styles.templateName, { color: preview.name.color }]}>{t.name}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Field>
+          {draft.template === 'custom' && (
+            <Field label="Accent color">
+              <View style={styles.colorRow}>
+                {CUSTOM_COLORS.map(c => {
+                  const selected = (draft.customColor || CUSTOM_COLORS[0]) === c;
+                  return (
+                    <Pressable
+                      key={c}
+                      onPress={() => setDraft({ ...draft, customColor: c })}
+                      style={[styles.swatch, { backgroundColor: c }, selected && styles.swatchSelected]}
+                    />
+                  );
+                })}
+              </View>
+            </Field>
+          )}
+
+          {/* Live preview */}
+          <View style={[styles.preview, {
+            backgroundColor: templateStyle(draft.template, draft.customColor).card.backgroundColor
+              || templateStyle(draft.template, draft.customColor).card.backgroundGradient?.[0]
+              || '#0B0B0F'
+          }]}>
+            <Text style={[styles.pLabel, templateStyle(draft.template, draft.customColor).label]}>{draft.label || 'WORK'}</Text>
+            <Text style={[styles.pName,  templateStyle(draft.template, draft.customColor).name]}>{draft.name || 'Your name'}</Text>
+            {!!draft.title   && <Text style={[styles.pTitle, templateStyle(draft.template, draft.customColor).title]}>{draft.title}</Text>}
+            {!!draft.company && <Text style={[styles.pCompany, templateStyle(draft.template, draft.customColor).company]}>{draft.company}</Text>}
+          </View>
 
           <Pressable
             style={[styles.cta, (!draft.name.trim() || saving) && styles.disabled]}
@@ -172,9 +193,6 @@ export default function NewCard() {
           >
             <Text style={styles.ctaText}>{saving ? 'Saving…' : 'Save card'}</Text>
           </Pressable>
-
-          {/* Bottom spacer so the CTA stays clear of the home indicator and
-              the screen scrolls naturally above any focused input. */}
           <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -204,4 +222,16 @@ const styles = StyleSheet.create({
   linkedinBtn: { padding: 14, borderRadius: 12, backgroundColor: '#0A66C2', alignItems: 'center' },
   linkedinText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   hint: { textAlign: 'center', fontSize: 12, opacity: 0.5, marginTop: 4 },
+  templateRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  templateChip: { padding: 12, borderRadius: 12, minWidth: 72, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },
+  templateChipSelected: { borderColor: '#0A66C2' },
+  templateName: { fontSize: 13, fontWeight: '600' },
+  colorRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: 'transparent' },
+  swatchSelected: { borderColor: '#000' },
+  preview: { padding: 18, borderRadius: 18, marginTop: 4 },
+  pLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
+  pName: { fontSize: 22, fontWeight: '700', marginTop: 4 },
+  pTitle: { fontSize: 14, marginTop: 2 },
+  pCompany: { fontSize: 13, marginTop: 1 },
 });
