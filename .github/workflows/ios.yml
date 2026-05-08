@@ -54,6 +54,10 @@ jobs:
           echo "Discovered scheme: $SCHEME"
 
       - name: Build and archive
+        # DEVELOPMENT_TEAM has to propagate to every Pod target (otherwise
+        # the *-privacy resource bundles fail with "requires a development
+        # team"). Setting it as a build override on the xcodebuild line
+        # forces it onto all targets in the workspace.
         run: |
           cd ios
           xcodebuild archive \
@@ -65,6 +69,8 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            CODE_SIGN_STYLE=Automatic \
             CODE_SIGNING_ALLOWED=YES
 
       - name: Export IPA
