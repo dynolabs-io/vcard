@@ -80,24 +80,26 @@ jobs:
           echo "Discovered scheme: $SCHEME"
 
       - name: Build and archive
-        # DEVELOPMENT_TEAM has to propagate to every Pod target (otherwise
-        # the *-privacy resource bundles fail with "requires a development
-        # team"). Setting it as a build override on the xcodebuild line
-        # forces it onto all targets in the workspace.
+        # -destination generic/platform=iOS prevents xcodebuild from trying
+        # to provision the local mac runner as a development device (which
+        # would fail "Device isn't registered" on App-Store-signed builds).
+        # CODE_SIGNING_ALLOWED is intentionally NOT overridden on the CLI —
+        # the Podfile post_install hook sets it to NO for Pod static libs;
+        # the app target keeps the default YES.
         run: |
           cd ios
           xcodebuild archive \
             -workspace *.xcworkspace \
             -scheme "${{ steps.scheme.outputs.scheme }}" \
             -configuration Release \
+            -destination "generic/platform=iOS" \
             -archivePath $RUNNER_TEMP/app.xcarchive \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGNING_ALLOWED=YES
+            CODE_SIGN_STYLE=Automatic
 
       - name: Export IPA
         run: |
