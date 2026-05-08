@@ -64,6 +64,10 @@ export const api = {
    *  in the system browser; LinkedIn → backend callback → deep link back to us. */
   linkedinAuthorize: (state: string, redirect: string) =>
     request<{ url: string }>(`/oauth/linkedin/authorize?state=${encodeURIComponent(state)}&redirect=${encodeURIComponent(redirect)}`),
+  /** Fetch the profile for a given state. Returns 404 until the OAuth callback
+   *  has stashed it — caller should poll or call once after auth-session close. */
+  linkedinResult: (state: string) =>
+    request<{ sub: string; email?: string; name?: string; picture?: string; given_name?: string; family_name?: string }>(`/oauth/linkedin/result?state=${encodeURIComponent(state)}`),
 };
 
 /** Shareable web-profile URL for a card. */

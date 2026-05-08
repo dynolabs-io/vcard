@@ -24,27 +24,8 @@ export default function NewCard() {
   const [saving, setSaving] = useState(false);
   const [connecting, setConnecting] = useState(false);
 
-  // Listen for the deep-link return from the LinkedIn callback.
-  useEffect(() => {
-    const sub = Linking.addEventListener('url', ({ url }) => {
-      const parsed = Linking.parse(url);
-      if (parsed.path === 'oauth/linkedin' && parsed.queryParams?.profile) {
-        try {
-          const json = atob(String(parsed.queryParams.profile));
-          const p = JSON.parse(json);
-          setDraft(d => ({
-            ...d,
-            name: p.name || d.name,
-            title: p.headline || p.title || d.title,
-            company: p.company || d.company,
-            photoUrl: p.picture || d.photoUrl,
-          }));
-          if (p.email) setEmail(p.email);
-        } catch {/* ignore */}
-      }
-    });
-    return () => sub.remove();
-  }, []);
+  // No deep-link listener needed — we poll /oauth/linkedin/result after
+  // openAuthSessionAsync returns.
 
   const onSave = async () => {
     if (!draft.name.trim() || saving) return;
@@ -65,7 +46,21 @@ export default function NewCard() {
       const state = Math.random().toString(36).slice(2);
       const redirect = Linking.createURL('oauth/linkedin');
       const { url } = await api.linkedinAuthorize(state, redirect);
-      await WebBrowser.openAuthSessionAsync(url, redirect);
+      const result = await WebBrowser.openAuthSessionAsync(url, redirect);
+      if (result.type !== 'success') {
+        // user cancelled, browser dismissed, or unsupported — not an error.
+        return;
+      }
+      // Browser closed via deep-link. Pull the profile from the backend.
+      const p = await api.linkedinResult(state);
+      setDraft(d => ({
+        ...d,
+        name: p.name || d.name,
+        title: d.title,
+        company: d.company,
+        photoUrl: p.picture || d.photoUrl,
+      }));
+      if (p.email) setEmail(p.email);
     } catch (e: unknown) {
       const msg = (e as { message?: string })?.message || 'connect failed';
       alert(`LinkedIn: ${msg}`);
