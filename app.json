@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Dynolabs vCard",
+    "slug": "dynolabs-vcard",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "dynolabs-vcard",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "io.dynolabs.vcard",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Used to scan vCard QR codes from other people.",
+        "NSPhotoLibraryUsageDescription": "Used to pick a profile photo for your card.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "io.dynolabs.vcard",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0B0F",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-camera",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#0B0B0F",
+          "dark": {
+            "backgroundColor": "#0B0B0F"
+          }
+        }
+      ]
+    ],
+    "extra": {
+      "apiBase": "https://api.dynolabs.io",
+      "cdnBase": "https://cdn.dynolabs.io",
+      "webBase": "https://dynolabs.io",
+      "eas": {
+        "projectId": "TBD-after-eas-init"
+      }
+    },
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
