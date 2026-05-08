@@ -7,10 +7,12 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { getCard } from '@/lib/storage';
+import { profileUrl } from '@/lib/api';
 import { buildVCard } from '@/lib/vcard';
 import type { Card } from '@/lib/types';
 
@@ -36,7 +38,13 @@ export default function CardDetail() {
     );
   }
 
-  const qrPayload = buildVCard(card);
+  // If the card has a server slug, the QR encodes the short
+  // dynolabs.io/c/<slug> URL — recipient lands on the styled web profile,
+  // taps "Save to Contacts", and gets the full vCard with photo. If the
+  // card hasn't synced yet (offline create), fall back to embedding the
+  // raw vCard text so the recipient still gets a save prompt.
+  const qrPayload = card.slug ? profileUrl(card.slug) : buildVCard(card);
+  const shareUrl = card.slug ? profileUrl(card.slug) : null;
 
   return (
     <SafeAreaView style={styles.root}>
@@ -52,6 +60,19 @@ export default function CardDetail() {
           <QRCode value={qrPayload} size={240} backgroundColor="#fff" />
         </View>
         <Text style={styles.hint}>Anyone can scan this with their default camera.</Text>
+
+        {shareUrl && (
+          <Pressable
+            style={styles.shareRow}
+            onPress={async () => {
+              await Clipboard.setStringAsync(shareUrl);
+              alert('Link copied');
+            }}
+          >
+            <Text style={styles.shareLabel}>Share link</Text>
+            <Text numberOfLines={1} style={styles.shareUrl}>{shareUrl}</Text>
+          </Pressable>
+        )}
 
         <View style={styles.actions}>
           <Pressable
@@ -88,4 +109,7 @@ const styles = StyleSheet.create({
   actionText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   cta: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, backgroundColor: '#111' },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  shareRow: { width: '100%', padding: 14, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.08)' },
+  shareLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, opacity: 0.6, textTransform: 'uppercase' },
+  shareUrl: { fontSize: 14, marginTop: 4 },
 });

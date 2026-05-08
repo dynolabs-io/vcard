@@ -5,17 +5,25 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { listCards } from '@/lib/storage';
+import { listCardsRemoteOrLocal } from '@/lib/sync';
 import type { Card } from '@/lib/types';
 
 export default function CardsScreen() {
   const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
+  const [source, setSource] = useState<'remote' | 'local'>('local');
 
-  // Refresh on focus so newly-created/edited cards appear without a remount.
+  // Refresh on focus. Local + remote in parallel — local renders immediately,
+  // remote replaces it once it arrives so the screen never feels blocked.
   useFocusEffect(
     useCallback(() => {
-      setCards(listCards());
+      let cancelled = false;
+      listCardsRemoteOrLocal().then(r => {
+        if (cancelled) return;
+        setCards(r.cards);
+        setSource(r.source);
+      });
+      return () => { cancelled = true; };
     }, []),
   );
 

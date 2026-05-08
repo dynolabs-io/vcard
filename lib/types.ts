@@ -9,8 +9,11 @@ export type Social = {
   url: string;
 };
 
+// Card shape mirrors the server (see services/vcard-api/cards/types.go).
+// Fields use server-side names so we can JSON.stringify directly to the
+// wire and JSON.parse responses straight back without a mapper.
 export type Card = {
-  id: string;            // local UUID
+  id: string;            // server UUID once persisted; local UUID before first sync
   slug?: string;         // server-issued public slug for dynolabs.io/c/<slug>
   label: string;         // e.g. "Work", "Personal"
   name: string;
@@ -19,11 +22,12 @@ export type Card = {
   emails: string[];
   phones: string[];
   socials: Social[];
-  photoUri?: string;     // local file:// or https://cdn.dynolabs.io/p/...
+  photoUrl?: string;     // hi-res URL on cdn.dynolabs.io (set after upload)
   template: CardTemplate;
   customColor?: string;  // hex, only when template === 'custom'
-  createdAt: number;     // ms epoch
-  updatedAt: number;
+  deviceId?: string;     // bound at create time
+  createdAt: string | number;  // server returns ISO string; local stores epoch ms
+  updatedAt: string | number;
 };
 
 export const emptyCard = (): Card => ({

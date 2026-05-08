@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { saveCard } from '@/lib/storage';
+import { createCardSynced } from '@/lib/sync';
 import { emptyCard } from '@/lib/types';
 
 export default function NewCard() {
@@ -14,11 +14,14 @@ export default function NewCard() {
   const [draft, setDraft] = useState(emptyCard());
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [saving, setSaving] = useState(false);
 
-  const onSave = () => {
-    if (!draft.name.trim()) return;
+  const onSave = async () => {
+    if (!draft.name.trim() || saving) return;
+    setSaving(true);
     const next = { ...draft, emails: email ? [email] : [], phones: phone ? [phone] : [] };
-    saveCard(next);
+    await createCardSynced(next);
+    setSaving(false);
     router.back();
   };
 
@@ -78,8 +81,12 @@ export default function NewCard() {
           />
         </Field>
 
-        <Pressable style={[styles.cta, !draft.name.trim() && styles.ctaDisabled]} onPress={onSave} disabled={!draft.name.trim()}>
-          <Text style={styles.ctaText}>Save card</Text>
+        <Pressable
+          style={[styles.cta, (!draft.name.trim() || saving) && styles.ctaDisabled]}
+          onPress={onSave}
+          disabled={!draft.name.trim() || saving}
+        >
+          <Text style={styles.ctaText}>{saving ? 'Saving…' : 'Save card'}</Text>
         </Pressable>
       </ScrollView>
     </SafeAreaView>
