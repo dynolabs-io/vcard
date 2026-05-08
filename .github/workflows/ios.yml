@@ -42,6 +42,18 @@ jobs:
       - name: Generate native iOS project
         run: npx expo prebuild --platform ios --no-install --clean
 
+      - name: Bump CFBundleVersion to GitHub run number
+        # Each TestFlight upload needs a unique CFBundleVersion. Without
+        # this, altool silently dedupes against the prior build with the
+        # same version. github.run_number monotonically increases per
+        # workflow run on this repo — perfect fit. Glob the Info.plist
+        # since the directory name varies with app slug.
+        run: |
+          for plist in ios/*/Info.plist; do
+            /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ github.run_number }}" "$plist"
+            echo "  $plist → CFBundleVersion=${{ github.run_number }}"
+          done
+
       - name: Patch Podfile — disable signing for Pod static libs
         # Pod targets are static libraries / resource bundles. They MUST NOT
         # be signed — only the app binary is. Without this patch, every Pod
