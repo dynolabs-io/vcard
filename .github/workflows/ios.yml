@@ -108,18 +108,24 @@ jobs:
 
       - name: Discover scheme
         id: scheme
-        # The workspace schemes list includes Pod schemes (AsyncStorage,
-        # ExpoModulesCore, ...). The app scheme matches the .xcworkspace
-        # basename. Pick that explicitly — alphabetically-first picks
-        # AsyncStorage and builds a static lib instead of the app.
+        # Workspace schemes include Pod schemes. The app scheme matches
+        # the .xcworkspace basename. Picking schemes[0] alphabetically
+        # would pick 'AsyncStorage' (a Pod) and build a static lib
+        # instead of the app — empty Products/Applications.
         run: |
           cd ios
           WORKSPACE=$(ls -d *.xcworkspace | head -1)
           APP_SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-          # Verify it actually exists in the schemes list
+          export APP_SCHEME
           xcodebuild -workspace "$WORKSPACE" -list -json \
-            | python3 -c "import json,sys,os; d=json.load(sys.stdin); s=os.environ['APP_SCHEME']; assert s in d['workspace']['schemes'], f'{s} not in {d[\"workspace\"][\"schemes\"]}'" \
-            APP_SCHEME="$APP_SCHEME"
+            | APP_SCHEME="$APP_SCHEME" python3 -c '
+          import json, sys, os
+          d = json.load(sys.stdin)
+          schemes = d["workspace"]["schemes"]
+          want = os.environ["APP_SCHEME"]
+          assert want in schemes, f"{want} not in {schemes}"
+          print(f"app scheme: {want}  (out of {len(schemes)} total)")
+          '
           echo "scheme=$APP_SCHEME" >> $GITHUB_OUTPUT
           echo "Discovered scheme: $APP_SCHEME"
 
