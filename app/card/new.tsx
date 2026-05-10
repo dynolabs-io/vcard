@@ -1,16 +1,20 @@
-// New-card form. Manual entry; Apple Wallet add happens on the card detail
-// screen after save. Keyboard-avoiding so the Save button stays visible.
+// New-card form. Manual entry with phone-pad-toolbar fix and explicit
+// "Save card" CTA at the bottom — never triggered by the keyboard's
+// return key (that path silently dropped state on the phone field).
 
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
-  KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet,
-  Text, TextInput, View, useColorScheme,
+  Alert, InputAccessoryView, KeyboardAvoidingView, Keyboard, Platform,
+  Pressable, ScrollView, StyleSheet, Text, TextInput, View, useColorScheme,
 } from 'react-native';
+import type { TextInput as TextInputType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { createCardSynced } from '@/lib/sync';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { emptyCard, type CardTemplate } from '@/lib/types';
+
+const PHONE_ACCESSORY = 'phone-keyboard-accessory';
 
 export default function NewCard() {
   const router = useRouter();
@@ -20,13 +24,35 @@ export default function NewCard() {
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Refs for sequential next-field focus.
+  const titleRef   = useRef<TextInputType>(null);
+  const companyRef = useRef<TextInputType>(null);
+  const emailRef   = useRef<TextInputType>(null);
+  const phoneRef   = useRef<TextInputType>(null);
+
   const onSave = async () => {
-    if (!draft.name.trim() || saving) return;
+    Keyboard.dismiss();             // commit any pending edits before reading state
+    if (!draft.name.trim()) {
+      Alert.alert('Name required', 'Enter a name to save the card.');
+      return;
+    }
+    if (saving) return;
     setSaving(true);
     try {
-      const next = { ...draft, emails: email ? [email] : [], phones: phone ? [phone] : [] };
-      await createCardSynced(next);
+      const next = {
+        ...draft,
+        emails:  email.trim() ? [email.trim()] : [],
+        phones:  phone.trim() ? [phone.trim()] : [],
+      };
+      const saved = await createCardSynced(next);
+      // Belt-and-braces: confirm something landed locally.
+      if (!saved || !saved.id) {
+        throw new Error('save returned empty');
+      }
       router.back();
+    } catch (e: unknown) {
+      const msg = (e as { message?: string })?.message || 'unknown error';
+      Alert.alert('Could not save card', msg);
     } finally {
       setSaving(false);
     }
@@ -56,33 +82,42 @@ export default function NewCard() {
           <Field label="Name">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
               value={draft.name} onChangeText={t => setDraft({ ...draft, name: t })}
-              placeholder="Ali Eren Baysal" placeholderTextColor={isDark ? '#666' : '#999'}
-              autoFocus returnKeyType="next" />
+              placeholder="Your name" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoFocus returnKeyType="next"
+              onSubmitEditing={() => titleRef.current?.focus()} />
           </Field>
           <Field label="Title">
-            <TextInput style={[styles.input, isDark && styles.inputDark]}
+            <TextInput ref={titleRef}
+              style={[styles.input, isDark && styles.inputDark]}
               value={draft.title ?? ''} onChangeText={t => setDraft({ ...draft, title: t })}
               placeholder="Founder" placeholderTextColor={isDark ? '#666' : '#999'}
-              returnKeyType="next" />
+              returnKeyType="next"
+              onSubmitEditing={() => companyRef.current?.focus()} />
           </Field>
           <Field label="Company">
-            <TextInput style={[styles.input, isDark && styles.inputDark]}
+            <TextInput ref={companyRef}
+              style={[styles.input, isDark && styles.inputDark]}
               value={draft.company ?? ''} onChangeText={t => setDraft({ ...draft, company: t })}
               placeholder="Dynolabs" placeholderTextColor={isDark ? '#666' : '#999'}
-              returnKeyType="next" />
+              returnKeyType="next"
+              onSubmitEditing={() => emailRef.current?.focus()} />
           </Field>
           <Field label="Email">
-            <TextInput style={[styles.input, isDark && styles.inputDark]}
+            <TextInput ref={emailRef}
+              style={[styles.input, isDark && styles.inputDark]}
               value={email} onChangeText={setEmail}
-              placeholder="ali@dynolabs.io" placeholderTextColor={isDark ? '#666' : '#999'}
+              placeholder="you@example.com" placeholderTextColor={isDark ? '#666' : '#999'}
               autoCapitalize="none" autoCorrect={false} keyboardType="email-address"
-              returnKeyType="next" />
+              returnKeyType="next"
+              onSubmitEditing={() => phoneRef.current?.focus()} />
           </Field>
           <Field label="Phone">
-            <TextInput style={[styles.input, isDark && styles.inputDark]}
+            <TextInput ref={phoneRef}
+              style={[styles.input, isDark && styles.inputDark]}
               value={phone} onChangeText={setPhone}
               placeholder="+1 555 0100" placeholderTextColor={isDark ? '#666' : '#999'}
-              keyboardType="phone-pad" returnKeyType="done" onSubmitEditing={onSave} />
+              keyboardType="phone-pad"
+              inputAccessoryViewID={Platform.OS === 'ios' ? PHONE_ACCESSORY : undefined} />
           </Field>
 
           <Field label="Template">
@@ -127,7 +162,7 @@ export default function NewCard() {
           <View style={[styles.preview, {
             backgroundColor: tmpl.card.backgroundColor || tmpl.card.backgroundGradient?.[0] || '#0B0B0F'
           }]}>
-            <Text style={[styles.pLabel, tmpl.label]}>{draft.label || 'WORK'}</Text>
+            <Text style={[styles.pLabel, tmpl.label]}>{(draft.label || 'WORK').toUpperCase()}</Text>
             <Text style={[styles.pName,  tmpl.name]}>{draft.name || 'Your name'}</Text>
             {!!draft.title   && <Text style={[styles.pTitle, tmpl.title]}>{draft.title}</Text>}
             {!!draft.company && <Text style={[styles.pCompany, tmpl.company]}>{draft.company}</Text>}
@@ -143,6 +178,22 @@ export default function NewCard() {
           <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* iOS-only Done toolbar above the phone-pad keyboard. The phone-pad
+          keyboard has no return key, so without this users had no way to
+          dismiss the keyboard short of tapping outside. */}
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={PHONE_ACCESSORY}>
+          <View style={styles.accessory}>
+            <Pressable
+              onPress={() => Keyboard.dismiss()}
+              style={styles.accessoryBtn}
+            >
+              <Text style={styles.accessoryText}>Done</Text>
+            </Pressable>
+          </View>
+        </InputAccessoryView>
+      )}
     </SafeAreaView>
   );
 }
@@ -179,4 +230,13 @@ const styles = StyleSheet.create({
   pName: { fontSize: 22, fontWeight: '700', marginTop: 4 },
   pTitle: { fontSize: 14, marginTop: 2 },
   pCompany: { fontSize: 13, marginTop: 1 },
+  accessory: {
+    backgroundColor: '#f1f1f3',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: '#bbb',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  accessoryBtn: { padding: 12, paddingHorizontal: 16 },
+  accessoryText: { color: '#0A66C2', fontSize: 16, fontWeight: '600' },
 });
