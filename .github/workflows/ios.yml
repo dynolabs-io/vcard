@@ -121,30 +121,23 @@ jobs:
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
             CODE_SIGN_STYLE=Automatic
 
-      - name: Export IPA
+      - name: Export IPA (manual zip from archive)
+        # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`:
+        #   IDEDistributionMethodManager errors with "Unknown Distribution
+        #   Error" and the export options plist validator reports the
+        #   accepted method enum as empty {}. The archive itself is
+        #   already a fully-signed app bundle — wrap it in an .ipa
+        #   (just a Payload/<App>.app ZIP) directly.
         run: |
-          cat > $RUNNER_TEMP/ExportOptions.plist << 'PLIST'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-            <key>method</key>
-            <string>app-store</string>
-            <key>teamID</key>
-            <string>${{ secrets.APPLE_TEAM_ID }}</string>
-            <key>uploadSymbols</key>
-            <true/>
-          </dict>
-          </plist>
-          PLIST
-          xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/app.xcarchive \
-            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
-            -exportPath $RUNNER_TEMP/export \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          set -euo pipefail
+          APP=$(ls -d $RUNNER_TEMP/app.xcarchive/Products/Applications/*.app | head -1)
+          mkdir -p $RUNNER_TEMP/export/Payload
+          cp -R "$APP" $RUNNER_TEMP/export/Payload/
+          IPA_NAME=$(basename "$APP" .app).ipa
+          cd $RUNNER_TEMP/export
+          zip -qr "$IPA_NAME" Payload
+          rm -rf Payload
+          ls -la $RUNNER_TEMP/export/
 
       - name: Upload to TestFlight
         run: |
