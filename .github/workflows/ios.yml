@@ -122,15 +122,26 @@ jobs:
             CODE_SIGN_STYLE=Automatic
 
       - name: Export IPA (manual zip from archive)
-        # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`:
-        #   IDEDistributionMethodManager errors with "Unknown Distribution
-        #   Error" and the export options plist validator reports the
-        #   accepted method enum as empty {}. The archive itself is
-        #   already a fully-signed app bundle — wrap it in an .ipa
-        #   (just a Payload/<App>.app ZIP) directly.
+        # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
+        # The .xcarchive already contains a fully-signed app bundle — wrap
+        # it in an .ipa (just a Payload/<App>.app ZIP) directly.
         run: |
           set -euo pipefail
-          APP=$(ls -d $RUNNER_TEMP/app.xcarchive/Products/Applications/*.app | head -1)
+          echo "=== Locate the archive ==="
+          find $RUNNER_TEMP -maxdepth 4 -name "*.xcarchive" -o -name "*.app" 2>/dev/null | head -20 || true
+          echo "=== Archive contents ==="
+          if [ -d "$RUNNER_TEMP/app.xcarchive" ]; then
+            ls -la "$RUNNER_TEMP/app.xcarchive/" || true
+            ls -la "$RUNNER_TEMP/app.xcarchive/Products/" 2>/dev/null || true
+            ls -la "$RUNNER_TEMP/app.xcarchive/Products/Applications/" 2>/dev/null || true
+          fi
+          # Find any .app under the archive
+          APP=$(find "$RUNNER_TEMP/app.xcarchive" -name "*.app" -type d | head -1 || true)
+          if [ -z "$APP" ]; then
+            echo "::error::No .app found inside $RUNNER_TEMP/app.xcarchive"
+            exit 1
+          fi
+          echo "=== Found app: $APP ==="
           mkdir -p $RUNNER_TEMP/export/Payload
           cp -R "$APP" $RUNNER_TEMP/export/Payload/
           IPA_NAME=$(basename "$APP" .app).ipa
