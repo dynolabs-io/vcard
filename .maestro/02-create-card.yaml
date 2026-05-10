@@ -1,9 +1,10 @@
 appId: io.dynolabs.vcard
 ---
-# Empty state → tap +, fill name, save, verify card appears.
+# Tap "Create card" CTA, fill name, save, verify card appears.
 - clearState
 - launchApp
-- tapOn: "+"
+- assertVisible: "Your cards"
+- tapOn: "Create card"
 - assertVisible: "Save card"
 - tapOn:
     text: "Your name"

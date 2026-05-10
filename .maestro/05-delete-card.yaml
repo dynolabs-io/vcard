@@ -10,6 +10,6 @@ appId: io.dynolabs.vcard
     text: "Delete"
 - tapOn:
     text: "Delete"
-    index: 1   # second "Delete" — the destructive action button (first is the dialog title)
-- assertVisible: "Cards"
+    index: 1
+- assertVisible: "Your cards"
 - assertNotVisible: "Maestro Edited"

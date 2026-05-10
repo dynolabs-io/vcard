@@ -6,5 +6,4 @@ appId: io.dynolabs.vcard
 - assertVisible: "Share card"
 - tapOn: "Share card"
 - assertVisible: "Share as vCard"
-# Cancel out — actually opening the system share sheet would block.
 - tapOn: "Cancel"

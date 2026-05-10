@@ -2,6 +2,7 @@ appId: io.dynolabs.vcard
 ---
 # Open card → Edit → change name → save → verify update.
 - launchApp
+- assertVisible: "Your cards"
 - tapOn: "Maestro Tester"
 - assertVisible: "Edit"
 - tapOn: "Edit"
