@@ -1,0 +1,6 @@
+appId: io.dynolabs.vcard
+---
+# App launches without crash. Cards tab is the default landing.
+- clearState
+- launchApp
+- assertVisible: "Cards"

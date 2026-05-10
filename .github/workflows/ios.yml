@@ -160,6 +160,103 @@ jobs:
           echo "scheme=$APP_SCHEME" >> $GITHUB_OUTPUT
           echo "Discovered scheme: $APP_SCHEME"
 
+      # ───────────────────────────────────────────────────────────
+      # SIMULATOR E2E GATE — runs BEFORE archive/upload.
+      # If any Maestro flow fails, this job exits non-zero, the
+      # archive + TestFlight upload steps are skipped, and the
+      # broken build never reaches Apple.
+      # ───────────────────────────────────────────────────────────
+      - name: Build app for iOS Simulator (no signing)
+        run: |
+          cd ios
+          xcodebuild build \
+            -workspace *.xcworkspace \
+            -scheme "${{ steps.scheme.outputs.scheme }}" \
+            -configuration Debug \
+            -destination "generic/platform=iOS Simulator" \
+            -derivedDataPath $RUNNER_TEMP/sim-build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            ONLY_ACTIVE_ARCH=NO
+
+      - name: Boot iOS Simulator
+        run: |
+          set -euo pipefail
+          DEVICE_TYPE=$(xcrun simctl list devicetypes -j | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          for t in d['devicetypes']:
+              if 'iPhone-16' in t['identifier'] or 'iPhone-15' in t['identifier']:
+                  print(t['identifier'])
+                  break
+          ")
+          RUNTIME=$(xcrun simctl list runtimes -j | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          ios = [r for r in d['runtimes'] if r.get('isAvailable') and 'iOS' in r.get('name', '')]
+          ios.sort(key=lambda r: r['version'], reverse=True)
+          print(ios[0]['identifier'] if ios else '')
+          ")
+          echo "device-type=$DEVICE_TYPE"
+          echo "runtime=$RUNTIME"
+          UDID=$(xcrun simctl create "maestro-test-$RANDOM" "$DEVICE_TYPE" "$RUNTIME")
+          echo "udid=$UDID"
+          echo "SIM_UDID=$UDID" >> $GITHUB_ENV
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+
+      - name: Install app + grant permissions on simulator
+        run: |
+          set -euo pipefail
+          APP=$(find $RUNNER_TEMP/sim-build/Build/Products/Debug-iphonesimulator -name "*.app" -type d | head -1)
+          echo "Installing $APP onto $SIM_UDID"
+          xcrun simctl install "$SIM_UDID" "$APP"
+          # Pre-grant permissions so iOS doesn't show the system prompt mid-test
+          xcrun simctl privacy "$SIM_UDID" grant photos    io.dynolabs.vcard || true
+          xcrun simctl privacy "$SIM_UDID" grant camera    io.dynolabs.vcard || true
+          xcrun simctl privacy "$SIM_UDID" grant contacts  io.dynolabs.vcard || true
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Run Maestro flows
+        run: |
+          export PATH="$HOME/.maestro/bin:$PATH"
+          maestro --version
+          # Stream simulator log to a file in parallel so we capture
+          # any crash trace alongside the maestro report.
+          xcrun simctl spawn "$SIM_UDID" log stream --predicate 'process == "DynolabsvCard"' \
+            > $RUNNER_TEMP/sim.log 2>&1 &
+          LOG_PID=$!
+          set +e
+          maestro --device "$SIM_UDID" test --format=junit --output=$RUNNER_TEMP/maestro-junit.xml .maestro/
+          MAESTRO_EXIT=$?
+          set -e
+          kill $LOG_PID 2>/dev/null || true
+          # Save Maestro's own debug output dir
+          if [ -d ~/.maestro/tests ]; then
+            mkdir -p $RUNNER_TEMP/maestro-debug
+            cp -R ~/.maestro/tests $RUNNER_TEMP/maestro-debug/
+          fi
+          exit $MAESTRO_EXIT
+
+      - name: Upload Maestro artifacts (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-results
+          path: |
+            ${{ runner.temp }}/maestro-junit.xml
+            ${{ runner.temp }}/maestro-debug/**
+            ${{ runner.temp }}/sim.log
+          if-no-files-found: warn
+      # ───────────────────────────────────────────────────────────
+      # END E2E GATE — anything below only runs on Maestro success.
+      # ───────────────────────────────────────────────────────────
+
       - name: Force SKIP_INSTALL=NO on the app target only (not Pods)
         # Xcode 26 archive completes 'SUCCEEDED' but writes empty
         # Products/Applications because Expo's app target ships with

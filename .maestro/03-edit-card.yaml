@@ -1,0 +1,17 @@
+appId: io.dynolabs.vcard
+---
+# Open card → Edit → change name → save → verify update.
+- launchApp
+- tapOn: "Maestro Tester"
+- assertVisible: "Edit"
+- tapOn: "Edit"
+- assertVisible: "Save changes"
+- tapOn:
+    text: "Maestro Tester"
+- eraseText: 14
+- inputText: "Maestro Edited"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Save changes"
+- tapOn: "Save changes"
+- assertVisible: "Maestro Edited"

@@ -1,0 +1,16 @@
+appId: io.dynolabs.vcard
+---
+# Empty state → tap +, fill name, save, verify card appears.
+- clearState
+- launchApp
+- tapOn: "+"
+- assertVisible: "Save card"
+- tapOn:
+    text: "Your name"
+    optional: true
+- inputText: "Maestro Tester"
+- hideKeyboard
+- scrollUntilVisible:
+    element: "Save card"
+- tapOn: "Save card"
+- assertVisible: "Maestro Tester"

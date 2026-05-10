@@ -1,0 +1,10 @@
+appId: io.dynolabs.vcard
+---
+# Open card → Share card → verify menu options appear without crash.
+- launchApp
+- tapOn: "Maestro Edited"
+- assertVisible: "Share card"
+- tapOn: "Share card"
+- assertVisible: "Share as vCard"
+# Cancel out — actually opening the system share sheet would block.
+- tapOn: "Cancel"
