@@ -160,6 +160,27 @@ jobs:
           echo "scheme=$APP_SCHEME" >> $GITHUB_OUTPUT
           echo "Discovered scheme: $APP_SCHEME"
 
+      - name: Force SKIP_INSTALL=NO on the app target (early)
+        # Same patch as the archive step — needed BEFORE the simulator
+        # build too, otherwise Release-iphonesimulator/ ends up empty.
+        run: |
+          python3 << 'PY'
+          import re, glob
+          for pbx in glob.glob('ios/*.xcodeproj/project.pbxproj'):
+              if 'Pods' in pbx:
+                  continue
+              data = open(pbx).read()
+              before = data
+              data = re.sub(
+                  r'(/\* Release \*/ = \{\s*isa = XCBuildConfiguration;\s*buildSettings = \{)',
+                  r'\1\n\t\t\t\tSKIP_INSTALL = NO;\n\t\t\t\tINSTALL_PATH = "$(LOCAL_APPS_DIR)";',
+                  data,
+              )
+              if data != before:
+                  open(pbx, 'w').write(data)
+                  print(f'  patched {pbx}')
+          PY
+
       # ───────────────────────────────────────────────────────────
       # SIMULATOR E2E GATE — runs BEFORE archive/upload.
       # If any Maestro flow fails, this job exits non-zero, the
@@ -276,35 +297,6 @@ jobs:
       # ───────────────────────────────────────────────────────────
       # END E2E GATE — anything below only runs on Maestro success.
       # ───────────────────────────────────────────────────────────
-
-      - name: Force SKIP_INSTALL=NO on the app target only (not Pods)
-        # Xcode 26 archive completes 'SUCCEEDED' but writes empty
-        # Products/Applications because Expo's app target ships with
-        # SKIP_INSTALL=YES. Modify the app's xcodeproj directly so Pods
-        # keep their default SKIP_INSTALL=YES (otherwise their static
-        # libs get treated as installable apps).
-        run: |
-          python3 << 'PY'
-          import os, re, glob
-          # Find the app's project.pbxproj
-          for pbx in glob.glob('ios/*.xcodeproj/project.pbxproj'):
-              if 'Pods' in pbx:
-                  continue
-              data = open(pbx).read()
-              # XCBuildConfiguration blocks for Release have buildSettings = {...}
-              # We surgically inject SKIP_INSTALL = NO; into Release-config blocks.
-              before = data
-              data = re.sub(
-                  r'(/\* Release \*/ = \{\s*isa = XCBuildConfiguration;\s*buildSettings = \{)',
-                  r'\1\n\t\t\t\tSKIP_INSTALL = NO;\n\t\t\t\tINSTALL_PATH = "$(LOCAL_APPS_DIR)";',
-                  data,
-              )
-              if data != before:
-                  open(pbx, 'w').write(data)
-                  print(f'  patched {pbx}')
-              else:
-                  print(f'  no Release config blocks matched in {pbx} (already set?)')
-          PY
 
       - name: Build and archive
         # Manual signing with the imported Apple Distribution cert + the
