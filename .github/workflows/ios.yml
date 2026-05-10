@@ -115,12 +115,37 @@ jobs:
           echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
           echo "Discovered scheme: $SCHEME"
 
+      - name: Force SKIP_INSTALL=NO on the app target only (not Pods)
+        # Xcode 26 archive completes 'SUCCEEDED' but writes empty
+        # Products/Applications because Expo's app target ships with
+        # SKIP_INSTALL=YES. Modify the app's xcodeproj directly so Pods
+        # keep their default SKIP_INSTALL=YES (otherwise their static
+        # libs get treated as installable apps).
+        run: |
+          python3 << 'PY'
+          import os, re, glob
+          # Find the app's project.pbxproj
+          for pbx in glob.glob('ios/*.xcodeproj/project.pbxproj'):
+              if 'Pods' in pbx:
+                  continue
+              data = open(pbx).read()
+              # XCBuildConfiguration blocks for Release have buildSettings = {...}
+              # We surgically inject SKIP_INSTALL = NO; into Release-config blocks.
+              before = data
+              data = re.sub(
+                  r'(/\* Release \*/ = \{\s*isa = XCBuildConfiguration;\s*buildSettings = \{)',
+                  r'\1\n\t\t\t\tSKIP_INSTALL = NO;\n\t\t\t\tINSTALL_PATH = "$(LOCAL_APPS_DIR)";',
+                  data,
+              )
+              if data != before:
+                  open(pbx, 'w').write(data)
+                  print(f'  patched {pbx}')
+              else:
+                  print(f'  no Release config blocks matched in {pbx} (already set?)')
+          PY
+
       - name: Build and archive
         # -destination generic/platform=iOS prevents local-mac provisioning.
-        # SKIP_INSTALL=NO + INSTALL_PATH=/Applications on the CLI forces
-        # Xcode 26 to actually copy the .app into the archive's
-        # Products/Applications dir (Xcode 26 default leaves it empty
-        # for Expo-generated app targets — see prior 4 failed builds).
         run: |
           cd ios
           xcodebuild archive \
@@ -134,10 +159,7 @@ jobs:
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic \
-            SKIP_INSTALL=NO \
-            INSTALL_PATH=/Applications \
-            DEPLOYMENT_LOCATION=YES
+            CODE_SIGN_STYLE=Automatic
 
       - name: Export IPA (manual zip from archive)
         # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
