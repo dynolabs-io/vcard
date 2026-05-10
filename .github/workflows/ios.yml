@@ -275,23 +275,19 @@ jobs:
       - name: Install app + grant permissions on simulator
         run: |
           set -euo pipefail
-          echo "=== sim-build tree (depth 4) ==="
-          find $RUNNER_TEMP/sim-build/Build -maxdepth 4 -name "*.app" -o -name "*.app.dSYM" 2>/dev/null || true
-          echo "=== Looking for io.dynolabs.vcard .app anywhere under sim-build ==="
-          APP=$(find $RUNNER_TEMP/sim-build -name "*.app" -type d 2>/dev/null \
-            | while read -r d; do
-                if [[ "$d" == *.app.dSYM ]]; then continue; fi
-                bid=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$d/Info.plist" 2>/dev/null || true)
-                if [ "$bid" = "io.dynolabs.vcard" ]; then echo "$d"; fi
-              done | head -1)
-          if [ -z "$APP" ]; then
-            echo "::error::No .app with bundleId io.dynolabs.vcard found anywhere under sim-build"
-            echo "=== Full tree, depth 6, dirs ending in .app or with Info.plist ==="
-            find $RUNNER_TEMP/sim-build -maxdepth 6 \( -name "*.app" -o -name "Info.plist" \) 2>/dev/null | head -50
+          # Direct path — Xcode 26 puts the app here for sim builds.
+          APP="$RUNNER_TEMP/sim-build/Build/Products/Release-iphonesimulator/DynolabsvCard.app"
+          if [ ! -d "$APP" ]; then
+            echo "::error::Expected app not at $APP"
+            find $RUNNER_TEMP/sim-build/Build/Products -maxdepth 3 -type d -name "*.app" 2>/dev/null
             exit 1
           fi
           echo "Installing $APP onto $SIM_UDID"
           xcrun simctl install "$SIM_UDID" "$APP"
+          # Pre-grant permissions so iOS doesn't show the system prompt mid-test
+          xcrun simctl privacy "$SIM_UDID" grant photos    io.dynolabs.vcard || true
+          xcrun simctl privacy "$SIM_UDID" grant camera    io.dynolabs.vcard || true
+          xcrun simctl privacy "$SIM_UDID" grant contacts  io.dynolabs.vcard || true
           # Pre-grant permissions so iOS doesn't show the system prompt mid-test
           xcrun simctl privacy "$SIM_UDID" grant photos    io.dynolabs.vcard || true
           xcrun simctl privacy "$SIM_UDID" grant camera    io.dynolabs.vcard || true
