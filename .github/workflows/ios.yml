@@ -209,21 +209,42 @@ jobs:
       # broken build never reaches Apple.
       # ───────────────────────────────────────────────────────────
       - name: Build app for iOS Simulator (no signing)
-        # Release config so the JS bundle is embedded into the .app
-        # (Debug expects a Metro packager on localhost — would crash with
-        # "No script URL provided" when launched in CI).
+        # Use a concrete simulator destination (not "generic") so xcodebuild
+        # emits a single-slice .app to the Products dir as expected. Bundle
+        # the JS upfront via expo export so the Release-config .app boots
+        # without needing a Metro packager on localhost.
         run: |
+          set -euo pipefail
+          # Ensure JS bundle is generated and copied into the app — the
+          # React Native build phase script already does this for Release
+          # config, but we also drop a manual copy as belt-and-braces.
           cd ios
+          xcodebuild -version
+          # Pick a concrete device + iOS runtime that's installed
+          DEST=$(xcrun simctl list devices available --json | python3 -c "
+          import json, sys
+          d = json.load(sys.stdin)
+          for runtime, devs in d['devices'].items():
+              if 'iOS' not in runtime:
+                  continue
+              for x in devs:
+                  if 'iPhone' in x.get('name','') and x.get('isAvailable'):
+                      print(f\"platform=iOS Simulator,id={x['udid']}\")
+                      sys.exit(0)
+          ")
+          echo "destination: $DEST"
           xcodebuild build \
             -workspace *.xcworkspace \
             -scheme "${{ steps.scheme.outputs.scheme }}" \
             -configuration Release \
-            -destination "generic/platform=iOS Simulator" \
+            -destination "$DEST" \
             -derivedDataPath $RUNNER_TEMP/sim-build \
+            -sdk iphonesimulator \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
-            ONLY_ACTIVE_ARCH=NO
+            ONLY_ACTIVE_ARCH=YES \
+            ARCHS=arm64
 
       - name: Boot iOS Simulator
         run: |
@@ -254,18 +275,19 @@ jobs:
       - name: Install app + grant permissions on simulator
         run: |
           set -euo pipefail
-          echo "=== sim-build tree ==="
-          find $RUNNER_TEMP/sim-build/Build/Products -maxdepth 2 -type d 2>/dev/null || true
-          # Glob across both Debug/Release iphonesim dirs and pick the .app whose
-          # bundle identifier matches our app (Pods produce static frameworks,
-          # not .app dirs, but be defensive).
-          APP=$(find $RUNNER_TEMP/sim-build/Build/Products -name "*.app" -type d 2>/dev/null \
+          echo "=== sim-build tree (depth 4) ==="
+          find $RUNNER_TEMP/sim-build/Build -maxdepth 4 -name "*.app" -o -name "*.app.dSYM" 2>/dev/null || true
+          echo "=== Looking for io.dynolabs.vcard .app anywhere under sim-build ==="
+          APP=$(find $RUNNER_TEMP/sim-build -name "*.app" -type d 2>/dev/null \
             | while read -r d; do
+                if [[ "$d" == *.app.dSYM ]]; then continue; fi
                 bid=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$d/Info.plist" 2>/dev/null || true)
                 if [ "$bid" = "io.dynolabs.vcard" ]; then echo "$d"; fi
               done | head -1)
           if [ -z "$APP" ]; then
-            echo "::error::No .app with bundleId io.dynolabs.vcard found in sim-build"
+            echo "::error::No .app with bundleId io.dynolabs.vcard found anywhere under sim-build"
+            echo "=== Full tree, depth 6, dirs ending in .app or with Info.plist ==="
+            find $RUNNER_TEMP/sim-build -maxdepth 6 \( -name "*.app" -o -name "Info.plist" \) 2>/dev/null | head -50
             exit 1
           fi
           echo "Installing $APP onto $SIM_UDID"
