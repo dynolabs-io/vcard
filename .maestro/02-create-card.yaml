@@ -6,7 +6,9 @@ appId: io.dynolabs.vcard
 - assertVisible: "Your cards"
 - tapOn: "Create card"
 - assertVisible: "New Card"
-- assertVisible: "Add photo"
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: "Label"
 - tapOn:
     text: "Your name"
     optional: true
