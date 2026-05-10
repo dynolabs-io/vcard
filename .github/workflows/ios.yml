@@ -108,12 +108,20 @@ jobs:
 
       - name: Discover scheme
         id: scheme
+        # The workspace schemes list includes Pod schemes (AsyncStorage,
+        # ExpoModulesCore, ...). The app scheme matches the .xcworkspace
+        # basename. Pick that explicitly — alphabetically-first picks
+        # AsyncStorage and builds a static lib instead of the app.
         run: |
           cd ios
-          SCHEME=$(xcodebuild -workspace *.xcworkspace -list -json \
-            | python3 -c "import json,sys; d=json.load(sys.stdin); print(d['workspace']['schemes'][0])")
-          echo "scheme=$SCHEME" >> $GITHUB_OUTPUT
-          echo "Discovered scheme: $SCHEME"
+          WORKSPACE=$(ls -d *.xcworkspace | head -1)
+          APP_SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          # Verify it actually exists in the schemes list
+          xcodebuild -workspace "$WORKSPACE" -list -json \
+            | python3 -c "import json,sys,os; d=json.load(sys.stdin); s=os.environ['APP_SCHEME']; assert s in d['workspace']['schemes'], f'{s} not in {d[\"workspace\"][\"schemes\"]}'" \
+            APP_SCHEME="$APP_SCHEME"
+          echo "scheme=$APP_SCHEME" >> $GITHUB_OUTPUT
+          echo "Discovered scheme: $APP_SCHEME"
 
       - name: Force SKIP_INSTALL=NO on the app target only (not Pods)
         # Xcode 26 archive completes 'SUCCEEDED' but writes empty
