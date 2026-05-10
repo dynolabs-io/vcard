@@ -1,0 +1,7 @@
+appId: io.dynolabs.vcard
+---
+- runFlow: 01-launch.yaml
+- runFlow: 02-create-card.yaml
+- runFlow: 03-edit-card.yaml
+- runFlow: 04-share-menu.yaml
+- runFlow: 05-delete-card.yaml

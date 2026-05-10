@@ -313,7 +313,11 @@ jobs:
             > $RUNNER_TEMP/sim.log 2>&1 &
           LOG_PID=$!
           set +e
-          maestro --device "$SIM_UDID" test --format=junit --output=$RUNNER_TEMP/maestro-junit.xml .maestro/
+          # Run via the master flow (00-all.yaml) so flows execute in the
+          # documented order. `maestro test .maestro/` parallelizes flows
+          # which breaks chained scenarios (edit/share/delete depend on
+          # the card created by 02-create-card).
+          maestro --device "$SIM_UDID" test --format=junit --output=$RUNNER_TEMP/maestro-junit.xml .maestro/00-all.yaml
           MAESTRO_EXIT=$?
           set -e
           kill $LOG_PID 2>/dev/null || true
