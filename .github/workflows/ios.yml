@@ -116,12 +116,11 @@ jobs:
           echo "Discovered scheme: $SCHEME"
 
       - name: Build and archive
-        # -destination generic/platform=iOS prevents xcodebuild from trying
-        # to provision the local mac runner as a development device (which
-        # would fail "Device isn't registered" on App-Store-signed builds).
-        # CODE_SIGNING_ALLOWED is intentionally NOT overridden on the CLI —
-        # the Podfile post_install hook sets it to NO for Pod static libs;
-        # the app target keeps the default YES.
+        # -destination generic/platform=iOS prevents local-mac provisioning.
+        # SKIP_INSTALL=NO + INSTALL_PATH=/Applications on the CLI forces
+        # Xcode 26 to actually copy the .app into the archive's
+        # Products/Applications dir (Xcode 26 default leaves it empty
+        # for Expo-generated app targets — see prior 4 failed builds).
         run: |
           cd ios
           xcodebuild archive \
@@ -135,7 +134,10 @@ jobs:
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Automatic \
+            SKIP_INSTALL=NO \
+            INSTALL_PATH=/Applications \
+            DEPLOYMENT_LOCATION=YES
 
       - name: Export IPA (manual zip from archive)
         # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
