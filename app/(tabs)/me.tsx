@@ -21,13 +21,6 @@ export default function MeScreen() {
         <Text style={styles.title}>Me</Text>
       </View>
 
-      <Section title="Connect accounts">
-        <Pressable style={styles.row} onPress={() => alert('LinkedIn connect — wires up in Phase 7')}>
-          <Text style={styles.rowLabel}>LinkedIn</Text>
-          <Text style={styles.rowValue}>Not connected</Text>
-        </Pressable>
-      </Section>
-
       <Section title="Backend">
         <Row label="API" value={config.apiBase} />
         <Row label="Status" value={error ?? (version ? `OK · ${version}` : '…')} />

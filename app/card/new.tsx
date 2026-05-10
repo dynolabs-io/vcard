@@ -1,16 +1,13 @@
-// New-card form with: LinkedIn auto-fill, template picker, custom color
-// picker, manual fields. KeyboardAvoidingView keeps the CTA always visible.
+// New-card form. Manual entry; Apple Wallet add happens on the card detail
+// screen after save. Keyboard-avoiding so the Save button stays visible.
 
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import * as Linking from 'expo-linking';
-import * as WebBrowser from 'expo-web-browser';
+import { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet,
   Text, TextInput, View, useColorScheme,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { api } from '@/lib/api';
 import { createCardSynced } from '@/lib/sync';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { emptyCard, type CardTemplate } from '@/lib/types';
@@ -22,10 +19,6 @@ export default function NewCard() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [saving, setSaving] = useState(false);
-  const [connecting, setConnecting] = useState(false);
-
-  // No deep-link listener needed — we poll /oauth/linkedin/result after
-  // openAuthSessionAsync returns.
 
   const onSave = async () => {
     if (!draft.name.trim() || saving) return;
@@ -39,35 +32,7 @@ export default function NewCard() {
     }
   };
 
-  const onConnectLinkedIn = async () => {
-    if (connecting) return;
-    setConnecting(true);
-    try {
-      const state = Math.random().toString(36).slice(2);
-      const redirect = Linking.createURL('oauth/linkedin');
-      const { url } = await api.linkedinAuthorize(state, redirect);
-      const result = await WebBrowser.openAuthSessionAsync(url, redirect);
-      if (result.type !== 'success') {
-        // user cancelled, browser dismissed, or unsupported — not an error.
-        return;
-      }
-      // Browser closed via deep-link. Pull the profile from the backend.
-      const p = await api.linkedinResult(state);
-      setDraft(d => ({
-        ...d,
-        name: p.name || d.name,
-        title: d.title,
-        company: d.company,
-        photoUrl: p.picture || d.photoUrl,
-      }));
-      if (p.email) setEmail(p.email);
-    } catch (e: unknown) {
-      const msg = (e as { message?: string })?.message || 'connect failed';
-      alert(`LinkedIn: ${msg}`);
-    } finally {
-      setConnecting(false);
-    }
-  };
+  const tmpl = templateStyle(draft.template, draft.customColor);
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
@@ -82,17 +47,6 @@ export default function NewCard() {
           keyboardDismissMode="on-drag"
           contentInsetAdjustmentBehavior="automatic"
         >
-          <Pressable
-            onPress={onConnectLinkedIn}
-            disabled={connecting}
-            style={[styles.linkedinBtn, connecting && styles.disabled]}
-          >
-            <Text style={styles.linkedinText}>
-              {connecting ? 'Opening LinkedIn…' : 'Connect LinkedIn (auto-fill)'}
-            </Text>
-          </Pressable>
-          <Text style={styles.hint}>or fill in manually</Text>
-
           <Field label="Label">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
               value={draft.label} onChangeText={t => setDraft({ ...draft, label: t })}
@@ -171,14 +125,12 @@ export default function NewCard() {
 
           {/* Live preview */}
           <View style={[styles.preview, {
-            backgroundColor: templateStyle(draft.template, draft.customColor).card.backgroundColor
-              || templateStyle(draft.template, draft.customColor).card.backgroundGradient?.[0]
-              || '#0B0B0F'
+            backgroundColor: tmpl.card.backgroundColor || tmpl.card.backgroundGradient?.[0] || '#0B0B0F'
           }]}>
-            <Text style={[styles.pLabel, templateStyle(draft.template, draft.customColor).label]}>{draft.label || 'WORK'}</Text>
-            <Text style={[styles.pName,  templateStyle(draft.template, draft.customColor).name]}>{draft.name || 'Your name'}</Text>
-            {!!draft.title   && <Text style={[styles.pTitle, templateStyle(draft.template, draft.customColor).title]}>{draft.title}</Text>}
-            {!!draft.company && <Text style={[styles.pCompany, templateStyle(draft.template, draft.customColor).company]}>{draft.company}</Text>}
+            <Text style={[styles.pLabel, tmpl.label]}>{draft.label || 'WORK'}</Text>
+            <Text style={[styles.pName,  tmpl.name]}>{draft.name || 'Your name'}</Text>
+            {!!draft.title   && <Text style={[styles.pTitle, tmpl.title]}>{draft.title}</Text>}
+            {!!draft.company && <Text style={[styles.pCompany, tmpl.company]}>{draft.company}</Text>}
           </View>
 
           <Pressable
@@ -214,8 +166,6 @@ const styles = StyleSheet.create({
   cta: { padding: 16, borderRadius: 999, backgroundColor: '#111', alignItems: 'center', marginTop: 12 },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   disabled: { opacity: 0.4 },
-  linkedinBtn: { padding: 14, borderRadius: 12, backgroundColor: '#0A66C2', alignItems: 'center' },
-  linkedinText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   hint: { textAlign: 'center', fontSize: 12, opacity: 0.5, marginTop: 4 },
   templateRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   templateChip: { padding: 12, borderRadius: 12, minWidth: 72, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },

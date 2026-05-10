@@ -58,16 +58,10 @@ export const api = {
     request<Card>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   deleteCard: (id: string) =>
     request<void>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-  applePass: (cardId: string) => request<{ url: string }>(`/pass/apple`, { method: 'POST', body: JSON.stringify({ cardId }) }),
-  googlePass: (cardId: string) => request<{ url: string }>(`/pass/google`, { method: 'POST', body: JSON.stringify({ cardId }) }),
-  /** Begin LinkedIn connect flow. Backend returns a one-time URL the app opens
-   *  in the system browser; LinkedIn → backend callback → deep link back to us. */
-  linkedinAuthorize: (state: string, redirect: string) =>
-    request<{ url: string }>(`/oauth/linkedin/authorize?state=${encodeURIComponent(state)}&redirect=${encodeURIComponent(redirect)}`),
-  /** Fetch the profile for a given state. Returns 404 until the OAuth callback
-   *  has stashed it — caller should poll or call once after auth-session close. */
-  linkedinResult: (state: string) =>
-    request<{ sub: string; email?: string; name?: string; picture?: string; given_name?: string; family_name?: string }>(`/oauth/linkedin/result?state=${encodeURIComponent(state)}`),
+  /** URL the app opens to download a signed .pkpass for a slug.
+   *  iOS sees the application/vnd.apple.pkpass content-type and shows
+   *  the native "Add to Apple Wallet" sheet. */
+  applePassUrl: (slug: string) => `${config.apiBase}/pass/apple?slug=${encodeURIComponent(slug)}`,
 };
 
 /** Shareable web-profile URL for a card. */

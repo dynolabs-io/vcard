@@ -2,6 +2,7 @@
 // encodes a profile URL (after sync) or raw vCard 3.0 (offline).
 
 import * as Clipboard from 'expo-clipboard';
+import * as Linking from 'expo-linking';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
@@ -9,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
-import { profileUrl } from '@/lib/api';
+import { api, profileUrl } from '@/lib/api';
 import { deleteCard, getCard } from '@/lib/storage';
 import { templateStyle } from '@/lib/templates';
 import type { Card } from '@/lib/types';
@@ -102,18 +103,24 @@ export default function CardDetail() {
         )}
 
         <View style={styles.actions}>
-          <Pressable
-            style={[styles.action, { opacity: 0.5 }]}
-            onPress={() => Alert.alert('Apple Wallet', 'Pass-signer is in stub mode until the operator drops the Pass Type ID .p12 into the dynolabs-pass-signer secret. Tracked on issue #1.')}
-          >
-            <Text style={styles.actionText}>Add to Apple Wallet</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.action, { opacity: 0.5 }]}
-            onPress={() => Alert.alert('Google Wallet', 'Awaiting Google Wallet API issuer approval. Tracked on issue #1.')}
-          >
-            <Text style={styles.actionText}>Add to Google Wallet</Text>
-          </Pressable>
+          {card.slug ? (
+            <Pressable
+              style={styles.action}
+              onPress={async () => {
+                try {
+                  await Linking.openURL(api.applePassUrl(card.slug!));
+                } catch (e: unknown) {
+                  Alert.alert('Could not open Wallet', (e as { message?: string })?.message || 'unknown error');
+                }
+              }}
+            >
+              <Text style={styles.actionText}>Add to Apple Wallet</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={[styles.action, { opacity: 0.5 }]} disabled>
+              <Text style={styles.actionText}>Saving card to cloud…</Text>
+            </Pressable>
+          )}
           <Pressable style={styles.deleteBtn} onPress={onDelete}>
             <Text style={styles.deleteText}>Delete card</Text>
           </Pressable>
