@@ -160,6 +160,11 @@ jobs:
 
       - name: Build and archive
         # -destination generic/platform=iOS prevents local-mac provisioning.
+        # PROVISIONING_PROFILE_SPECIFIER blank + automatic signing ensures
+        # Xcode picks the correct distribution profile for archives.
+        # Pass `-archive` (no -destination platform=iOS Simulator) so the
+        # build-for-archive uses the App Store Distribution code-signing
+        # path, not Development.
         run: |
           cd ios
           xcodebuild archive \
@@ -173,7 +178,8 @@ jobs:
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution"
 
       - name: Export IPA (manual zip from archive)
         # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
@@ -205,9 +211,18 @@ jobs:
           ls -la $RUNNER_TEMP/export/
 
       - name: Upload to TestFlight
+        # set -e + grep on the altool log: altool exits 0 even on validation
+        # failure ("UPLOAD FAILED" is just a log line). Capture output and
+        # fail the step explicitly if the upload didn't actually succeed.
         run: |
+          set -o pipefail
           xcrun altool --upload-app \
             -f $RUNNER_TEMP/export/*.ipa \
             --type ios \
             --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} 2>&1 | tee /tmp/altool.log
+          if grep -qiE "UPLOAD FAILED|Validation failed|ERROR:" /tmp/altool.log; then
+            echo "::error::altool reported failure — see log above"
+            exit 1
+          fi
+          echo "::notice::Upload succeeded"
