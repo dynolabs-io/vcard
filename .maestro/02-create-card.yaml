@@ -5,7 +5,8 @@ appId: io.dynolabs.vcard
 - launchApp
 - assertVisible: "Your cards"
 - tapOn: "Create card"
-- assertVisible: "Save card"
+- assertVisible: "New Card"
+- assertVisible: "Add photo"
 - tapOn:
     text: "Your name"
     optional: true
@@ -13,5 +14,6 @@ appId: io.dynolabs.vcard
 - hideKeyboard
 - scrollUntilVisible:
     element: "Save card"
+    direction: DOWN
 - tapOn: "Save card"
 - assertVisible: "Maestro Tester"

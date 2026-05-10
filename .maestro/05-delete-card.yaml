@@ -5,6 +5,7 @@ appId: io.dynolabs.vcard
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
     element: "Delete card"
+    direction: DOWN
 - tapOn: "Delete card"
 - assertVisible:
     text: "Delete"

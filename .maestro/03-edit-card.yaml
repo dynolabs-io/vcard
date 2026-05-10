@@ -4,9 +4,11 @@ appId: io.dynolabs.vcard
 - launchApp
 - assertVisible: "Your cards"
 - tapOn: "Maestro Tester"
-- assertVisible: "Edit"
+- scrollUntilVisible:
+    element: "Edit"
+    direction: DOWN
 - tapOn: "Edit"
-- assertVisible: "Save changes"
+- assertVisible: "Edit Card"
 - tapOn:
     text: "Maestro Tester"
 - eraseText: 14
@@ -14,5 +16,6 @@ appId: io.dynolabs.vcard
 - hideKeyboard
 - scrollUntilVisible:
     element: "Save changes"
+    direction: DOWN
 - tapOn: "Save changes"
 - assertVisible: "Maestro Edited"
