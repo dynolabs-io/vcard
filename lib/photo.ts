@@ -1,22 +1,12 @@
-// Photo picker + upload helpers.
-//
-// Flow:
-//   pickAndUpload(slug) → user picks (camera OR library) → crop to square,
-//   resize to 512x512 JPEG → POST to https://cdn.dynolabs.io/p/<slug> →
-//   returns the public URL.
-//
-// The PHOTO is bound to the card's slug (server-issued). If the card
-// hasn't synced yet (offline create), pickAndUpload returns the local
-// file URI so the UI can render it; upload happens later when online.
+// Photo picker + upload — lazy-loaded so the new-card form opens even
+// if expo-image-picker fails to bind native module on iOS 26 / new arch.
 
-import * as ImagePicker from 'expo-image-picker';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { config } from './config';
 
 export type Source = 'camera' | 'library';
 
 export async function pickPhoto(source: Source): Promise<string | null> {
-  // Permissions
+  const ImagePicker = require('expo-image-picker');
   if (source === 'camera') {
     const p = await ImagePicker.requestCameraPermissionsAsync();
     if (!p.granted) throw new Error('Camera permission denied');
@@ -41,8 +31,8 @@ export async function pickPhoto(source: Source): Promise<string | null> {
   return result.assets[0].uri;
 }
 
-/** Crop+resize to 512×512 JPEG and return a fresh local file URI. */
 export async function normalize(uri: string): Promise<string> {
+  const ImageManipulator = require('expo-image-manipulator');
   const out = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: 512, height: 512 } }],
@@ -51,7 +41,6 @@ export async function normalize(uri: string): Promise<string> {
   return out.uri;
 }
 
-/** Upload a local image URI to cdn.dynolabs.io/p/<slug>. Returns the public URL. */
 export async function uploadPhoto(slug: string, localUri: string): Promise<string> {
   const res = await fetch(localUri);
   const blob = await res.blob();
@@ -64,9 +53,7 @@ export async function uploadPhoto(slug: string, localUri: string): Promise<strin
       body: blob,
       signal: ctrl.signal,
     });
-    if (!upload.ok) {
-      throw new Error(`upload failed: HTTP ${upload.status}`);
-    }
+    if (!upload.ok) throw new Error(`upload failed: HTTP ${upload.status}`);
     const json = (await upload.json()) as { url?: string };
     if (!json.url) throw new Error('upload returned no url');
     return json.url;

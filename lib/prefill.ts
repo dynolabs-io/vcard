@@ -1,60 +1,34 @@
-// Pull whatever we can from the device to seed a new card.
-//
-// What iOS lets us see (sandboxed third-party apps):
-//   - Locale → country code → phone-number prefix (+1, +90, …)
-//   - Device owner name (UIDevice.current.name) — usually
-//     "<Owner>'s iPhone". Strip the "'s iPhone" suffix to get
-//     a usable name suggestion.
-//   - System language + region (informational, not used in cards)
-//
-// What iOS does NOT let us see (no public API):
-//   - The user's phone number itself
-//   - Their email address
-//   - Anything from native Contacts unless we ask for permission
-//     and they grant it (might be worth a v1.1 path)
-
-import * as Device from 'expo-device';
-import * as Localization from 'expo-localization';
+// Device prefill — defensive lazy-load. expo-device + expo-localization
+// have shown JSI bridge issues on iOS 26 / new arch — never let them
+// crash the form on mount. Returns empty Prefill on any failure.
 
 export type Prefill = {
-  /** Suggested name from device owner. May be empty. */
   name: string;
-  /** "+90", "+1", … from locale region. May be empty. */
   phonePrefix: string;
-  /** ISO region code, e.g. "TR", "US". May be empty. */
   region: string;
 };
 
 export function devicePrefill(): Prefill {
-  return {
-    name: deviceOwnerName(),
-    phonePrefix: phonePrefix(),
-    region: Localization.getLocales()[0]?.regionCode ?? '',
-  };
+  try {
+    // Lazy-require so a broken native init doesn't crash module-eval.
+    const Device = require('expo-device');
+    const Localization = require('expo-localization');
+    const region = (Localization.getLocales?.()?.[0]?.regionCode ?? '').toUpperCase();
+    const raw = Device.deviceName ?? '';
+    const name = String(raw)
+      .replace(/’s iPhone$/i, '')
+      .replace(/'s iPhone$/i, '')
+      .replace(/’s iPad$/i, '')
+      .replace(/'s iPad$/i, '')
+      .trim();
+    return { name, phonePrefix: REGION_TO_DIAL[region] ?? '', region };
+  } catch {
+    return { name: '', phonePrefix: '', region: '' };
+  }
 }
 
-function deviceOwnerName(): string {
-  const raw = Device.deviceName ?? '';
-  // Strip common suffixes Apple adds.
-  return raw
-    .replace(/’s iPhone$/i, '')   // ’s iPhone
-    .replace(/'s iPhone$/i, '')
-    .replace(/’s iPad$/i, '')
-    .replace(/'s iPad$/i, '')
-    .trim();
-}
-
-function phonePrefix(): string {
-  const region = Localization.getLocales()[0]?.regionCode ?? '';
-  return REGION_TO_DIAL[region.toUpperCase()] ?? '';
-}
-
-// Common country dial codes — not exhaustive, covers the realistic prefill
-// audience for v1. Add more as needed.
 const REGION_TO_DIAL: Record<string, string> = {
-  US: '+1', CA: '+1',
-  GB: '+44',
-  TR: '+90',
+  US: '+1', CA: '+1', GB: '+44', TR: '+90',
   DE: '+49', FR: '+33', IT: '+39', ES: '+34', NL: '+31', BE: '+32',
   CH: '+41', AT: '+43', SE: '+46', NO: '+47', DK: '+45', FI: '+358',
   PL: '+48', CZ: '+420', PT: '+351', GR: '+30', IE: '+353',

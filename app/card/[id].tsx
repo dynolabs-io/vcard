@@ -8,7 +8,6 @@ import {
   Alert, Image, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { captureRef } from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import { api, profileUrl } from '@/lib/api';
 import { sharePNGFromBase64, shareVCard, shareLink } from '@/lib/share';
@@ -57,6 +56,7 @@ export default function CardDetail() {
       { text: 'Share as vCard', onPress: () => shareVCard(card, slugUrl ?? undefined).catch(e => Alert.alert('Share failed', String(e))) },
       { text: 'Share as QR image', onPress: async () => {
           try {
+            const { captureRef } = require('react-native-view-shot');
             const b64 = await captureRef(qrRef, { format: 'png', quality: 1, result: 'base64' });
             const safe = (card.name || 'qr').replace(/[^a-zA-Z0-9_-]+/g, '_');
             await sharePNGFromBase64(b64, `${safe}.png`, 'Share QR image');
