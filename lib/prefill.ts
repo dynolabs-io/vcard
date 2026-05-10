@@ -9,22 +9,26 @@ export type Prefill = {
 };
 
 export function devicePrefill(): Prefill {
+  // Defensively wrap EVERY native call. ExpoDevice + ExpoLocalization
+  // can throw "Cannot find native module" if autolinking fails — caught
+  // independently so locale prefill still works even if device-name doesn't.
+  let name = '';
+  let region = '';
   try {
-    // Lazy-require so a broken native init doesn't crash module-eval.
-    const Device = require('expo-device');
     const Localization = require('expo-localization');
-    const region = (Localization.getLocales?.()?.[0]?.regionCode ?? '').toUpperCase();
+    region = (Localization.getLocales?.()?.[0]?.regionCode ?? '').toUpperCase();
+  } catch { /* no localization */ }
+  try {
+    const Device = require('expo-device');
     const raw = Device.deviceName ?? '';
-    const name = String(raw)
+    name = String(raw)
       .replace(/’s iPhone$/i, '')
       .replace(/'s iPhone$/i, '')
       .replace(/’s iPad$/i, '')
       .replace(/'s iPad$/i, '')
       .trim();
-    return { name, phonePrefix: REGION_TO_DIAL[region] ?? '', region };
-  } catch {
-    return { name: '', phonePrefix: '', region: '' };
-  }
+  } catch { /* no device-name */ }
+  return { name, phonePrefix: REGION_TO_DIAL[region] ?? '', region };
 }
 
 const REGION_TO_DIAL: Record<string, string> = {
