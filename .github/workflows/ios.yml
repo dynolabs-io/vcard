@@ -212,7 +212,20 @@ jobs:
       - name: Install app + grant permissions on simulator
         run: |
           set -euo pipefail
-          APP=$(find $RUNNER_TEMP/sim-build/Build/Products/Release-iphonesimulator -name "*.app" -type d | head -1)
+          echo "=== sim-build tree ==="
+          find $RUNNER_TEMP/sim-build/Build/Products -maxdepth 2 -type d 2>/dev/null || true
+          # Glob across both Debug/Release iphonesim dirs and pick the .app whose
+          # bundle identifier matches our app (Pods produce static frameworks,
+          # not .app dirs, but be defensive).
+          APP=$(find $RUNNER_TEMP/sim-build/Build/Products -name "*.app" -type d 2>/dev/null \
+            | while read -r d; do
+                bid=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$d/Info.plist" 2>/dev/null || true)
+                if [ "$bid" = "io.dynolabs.vcard" ]; then echo "$d"; fi
+              done | head -1)
+          if [ -z "$APP" ]; then
+            echo "::error::No .app with bundleId io.dynolabs.vcard found in sim-build"
+            exit 1
+          fi
           echo "Installing $APP onto $SIM_UDID"
           xcrun simctl install "$SIM_UDID" "$APP"
           # Pre-grant permissions so iOS doesn't show the system prompt mid-test
