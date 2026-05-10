@@ -3,15 +3,13 @@
 // phone field, photo picker, multi-email/phone, template + custom color,
 // live preview, save with visible errors.
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   Alert, Image, InputAccessoryView, KeyboardAvoidingView, Keyboard, Platform,
   Pressable, ScrollView, StyleSheet, Text, TextInput, View, useColorScheme,
 } from 'react-native';
 import type { TextInput as TextInputType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { devicePrefill } from '@/lib/prefill';
-import { normalize, pickPhoto, uploadPhoto, type Source } from '@/lib/photo';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate } from '@/lib/types';
 
@@ -28,7 +26,7 @@ type Props = {
   enablePrefill?: boolean;
 };
 
-export function CardForm({ initial, onSubmit, submitLabel, enablePrefill }: Props) {
+export function CardForm({ initial, onSubmit, submitLabel }: Props) {
   const isDark = useColorScheme() === 'dark';
   const [draft, setDraft] = useState<Card>(initial);
   const [emailsInput, setEmailsInput] = useState((initial.emails || []).join(', '));
@@ -41,16 +39,6 @@ export function CardForm({ initial, onSubmit, submitLabel, enablePrefill }: Prop
   const companyRef = useRef<TextInputType>(null);
   const emailRef   = useRef<TextInputType>(null);
   const phoneRef   = useRef<TextInputType>(null);
-
-  // Apply device prefill once on first render of a brand-new (empty) card.
-  useEffect(() => {
-    if (!enablePrefill) return;
-    if (draft.name) return; // already filled
-    const p = devicePrefill();
-    setDraft(d => ({ ...d, name: d.name || p.name }));
-    if (p.phonePrefix && !phonesInput) setPhonesInput(p.phonePrefix + ' ');
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const onSave = async () => {
     Keyboard.dismiss();
@@ -74,23 +62,22 @@ export function CardForm({ initial, onSubmit, submitLabel, enablePrefill }: Prop
     }
   };
 
-  const onPickPhoto = (source: Source) => async () => {
+  // Photo picker — lazy-loads expo-image-picker to keep CardForm static
+  // imports clean of native modules. If the picker module fails to load,
+  // an Alert tells the user; the form itself never crashes.
+  const onPickPhoto = (source: 'camera' | 'library') => async () => {
     if (photoBusy) return;
     setPhotoBusy(true);
     try {
+      const { pickPhoto, normalize, uploadPhoto } = require('@/lib/photo');
       const uri = await pickPhoto(source);
       if (!uri) return;
       const normalized = await normalize(uri);
-      // Show local immediately so the UI updates regardless of upload outcome.
       setDraft(d => ({ ...d, photoUrl: normalized }));
-      // If the card is server-synced (has a slug), upload to CDN and
-      // swap the local URI for the public URL.
       if (draft.slug) {
         const url = await uploadPhoto(draft.slug, normalized);
         setDraft(d => ({ ...d, photoUrl: url }));
       }
-      // If no slug yet (offline create), the photoUrl stays the local URI;
-      // it'll be re-uploaded after the card syncs in onSubmit's path.
     } catch (e: unknown) {
       Alert.alert('Photo', (e as { message?: string })?.message || 'failed');
     } finally {
