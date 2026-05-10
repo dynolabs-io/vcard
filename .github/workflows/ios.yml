@@ -223,6 +223,10 @@ jobs:
           echo "$HOME/.maestro/bin" >> $GITHUB_PATH
 
       - name: Run Maestro flows
+        env:
+          # Maestro's iOS driver (XCUITest installer) takes ~2-5 min to
+          # spin up on cold-boot CI runners. Default timeout is too short.
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: '600000'   # 10 min in ms
         run: |
           export PATH="$HOME/.maestro/bin:$PATH"
           maestro --version
