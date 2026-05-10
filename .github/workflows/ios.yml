@@ -167,12 +167,15 @@ jobs:
       # broken build never reaches Apple.
       # ───────────────────────────────────────────────────────────
       - name: Build app for iOS Simulator (no signing)
+        # Release config so the JS bundle is embedded into the .app
+        # (Debug expects a Metro packager on localhost — would crash with
+        # "No script URL provided" when launched in CI).
         run: |
           cd ios
           xcodebuild build \
             -workspace *.xcworkspace \
             -scheme "${{ steps.scheme.outputs.scheme }}" \
-            -configuration Debug \
+            -configuration Release \
             -destination "generic/platform=iOS Simulator" \
             -derivedDataPath $RUNNER_TEMP/sim-build \
             CODE_SIGNING_ALLOWED=NO \
@@ -209,7 +212,7 @@ jobs:
       - name: Install app + grant permissions on simulator
         run: |
           set -euo pipefail
-          APP=$(find $RUNNER_TEMP/sim-build/Build/Products/Debug-iphonesimulator -name "*.app" -type d | head -1)
+          APP=$(find $RUNNER_TEMP/sim-build/Build/Products/Release-iphonesimulator -name "*.app" -type d | head -1)
           echo "Installing $APP onto $SIM_UDID"
           xcrun simctl install "$SIM_UDID" "$APP"
           # Pre-grant permissions so iOS doesn't show the system prompt mid-test
