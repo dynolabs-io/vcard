@@ -24,7 +24,9 @@ export default function CardDetail() {
   useFocusEffect(
     useCallback(() => {
       if (!id) return;
-      setCard(getCard(id) ?? null);
+      let cancelled = false;
+      getCard(id).then(c => { if (!cancelled) setCard(c ?? null); });
+      return () => { cancelled = true; };
     }, [id]),
   );
 
@@ -57,7 +59,7 @@ export default function CardDetail() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive',
-        onPress: () => { deleteCard(card.id); router.back(); },
+        onPress: async () => { await deleteCard(card.id); router.back(); },
       },
     ]);
 

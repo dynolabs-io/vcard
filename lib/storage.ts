@@ -1,58 +1,49 @@
-// MMKV-backed local card storage. Offline-first per v1 design — no
-// account, no cloud sync. The user's cards live only on their device
-// until cloud sync ships in v1.1.
-//
-// MMKV v4 ships an interface type plus a `createMMKV` factory.
+// AsyncStorage-backed local card storage. Switched from MMKV-v4-Nitro
+// after build 16 silently crashed on the JSI bridge in RN 0.81 new arch.
+// AsyncStorage is async (everything returns a Promise) but battle-tested
+// and never crashes the native layer.
 
-import { createMMKV, type MMKV } from 'react-native-mmkv';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { Card } from './types';
 
 const KEY_CARDS = 'cards.v1';
 const KEY_DEFAULT = 'cards.defaultId';
 
-// Instantiate lazily so this module is import-safe on web/SSR builds where
-// the native binding isn't available until first use.
-let mmkv: MMKV | null = null;
-function store(): MMKV {
-  if (!mmkv) mmkv = createMMKV({ id: 'dynolabs-vcard' });
-  return mmkv;
-}
-
-export function listCards(): Card[] {
-  const raw = store().getString(KEY_CARDS);
-  if (!raw) return [];
+export async function listCards(): Promise<Card[]> {
   try {
+    const raw = await AsyncStorage.getItem(KEY_CARDS);
+    if (!raw) return [];
     return JSON.parse(raw) as Card[];
   } catch {
     return [];
   }
 }
 
-export function saveCard(card: Card): void {
-  const cards = listCards();
+export async function saveCard(card: Card): Promise<void> {
+  const cards = await listCards();
   const idx = cards.findIndex(c => c.id === card.id);
   card.updatedAt = Date.now();
   if (idx >= 0) cards[idx] = card;
   else cards.push(card);
-  store().set(KEY_CARDS, JSON.stringify(cards));
-  if (cards.length === 1) setDefaultId(card.id);
+  await AsyncStorage.setItem(KEY_CARDS, JSON.stringify(cards));
+  if (cards.length === 1) await setDefaultId(card.id);
 }
 
-export function deleteCard(id: string): void {
-  const cards = listCards().filter(c => c.id !== id);
-  store().set(KEY_CARDS, JSON.stringify(cards));
-  if (getDefaultId() === id) setDefaultId(cards[0]?.id);
+export async function deleteCard(id: string): Promise<void> {
+  const cards = (await listCards()).filter(c => c.id !== id);
+  await AsyncStorage.setItem(KEY_CARDS, JSON.stringify(cards));
+  if ((await getDefaultId()) === id) await setDefaultId(cards[0]?.id);
 }
 
-export function getCard(id: string): Card | undefined {
-  return listCards().find(c => c.id === id);
+export async function getCard(id: string): Promise<Card | undefined> {
+  return (await listCards()).find(c => c.id === id);
 }
 
-export function getDefaultId(): string | undefined {
-  return store().getString(KEY_DEFAULT) || undefined;
+export async function getDefaultId(): Promise<string | undefined> {
+  return (await AsyncStorage.getItem(KEY_DEFAULT)) || undefined;
 }
 
-export function setDefaultId(id: string | undefined): void {
-  if (id) store().set(KEY_DEFAULT, id);
-  else store().remove(KEY_DEFAULT);
+export async function setDefaultId(id: string | undefined): Promise<void> {
+  if (id) await AsyncStorage.setItem(KEY_DEFAULT, id);
+  else await AsyncStorage.removeItem(KEY_DEFAULT);
 }
