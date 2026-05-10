@@ -42,7 +42,15 @@ export default function CardDetail() {
   }
 
   const tmpl = templateStyle(card.template, card.customColor);
-  const qrPayload = card.slug ? profileUrl(card.slug) : buildVCard(card);
+  // QR encodes the FULL vCard 3.0 (BEGIN:VCARD … END:VCARD). Recipient's
+  // default camera reads it offline and offers Save to Contacts directly —
+  // no internet needed on either side. The profile URL is included as
+  // a separate URL field so they can ALSO tap it later for the web
+  // version with photo and the Save-to-Contacts download button.
+  const qrPayload = buildVCard(card, {
+    profileUrl: card.slug ? profileUrl(card.slug) : undefined,
+    photoUrl:   card.photoUrl,
+  });
   const shareUrl = card.slug ? profileUrl(card.slug) : null;
 
   const onCopy = async () => {
@@ -59,7 +67,17 @@ export default function CardDetail() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive',
-        onPress: async () => { await deleteCard(card.id); router.back(); },
+        onPress: async () => {
+          try {
+            // Delete server copy first so the next remote-list sync doesn't
+            // resurrect the card from Postgres into local storage. Best-
+            // effort — if offline the local delete still wins for now.
+            try { await api.deleteCard(card.id); } catch { /* offline — ok */ }
+            await deleteCard(card.id);
+          } finally {
+            router.back();
+          }
+        },
       },
     ]);
 

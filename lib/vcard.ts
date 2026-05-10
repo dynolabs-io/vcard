@@ -16,6 +16,8 @@ export type VCardOptions = {
   photoUrl?: string;
   /** Optional 32×32 base64 jpeg for offline thumbnail. */
   thumbnailBase64?: string;
+  /** Public profile URL added as a URL field, e.g. https://dynolabs.io/c/<slug> */
+  profileUrl?: string;
 };
 
 export function buildVCard(card: Card, opts: VCardOptions = {}): string {
@@ -23,16 +25,15 @@ export function buildVCard(card: Card, opts: VCardOptions = {}): string {
   lines.push('BEGIN:VCARD');
   lines.push('VERSION:3.0');
   lines.push(`FN:${escape(card.name)}`);
-  if (card.title || card.company) {
-    if (card.title) lines.push(`TITLE:${escape(card.title)}`);
-    if (card.company) lines.push(`ORG:${escape(card.company)}`);
-  }
+  if (card.title) lines.push(`TITLE:${escape(card.title)}`);
+  if (card.company) lines.push(`ORG:${escape(card.company)}`);
   for (const email of card.emails) lines.push(`EMAIL;TYPE=INTERNET:${escape(email)}`);
   for (const phone of card.phones) lines.push(`TEL;TYPE=CELL:${escape(phone)}`);
   for (const s of card.socials) lines.push(`URL;TYPE=${socialType(s)}:${escape(s.url)}`);
+  if (opts.profileUrl) lines.push(`URL:${escape(opts.profileUrl)}`);
   if (opts.thumbnailBase64) {
-    // Base64 images are line-folded per RFC 6350 §3.2 (75-octet folding)
-    // but iOS Contacts is lenient — single line works in practice.
+    // Base64 images line-fold per RFC 6350 §3.2 — iOS Contacts tolerates
+    // single-line. Adds ~1.2KB to the QR but keeps offline-photo guarantee.
     lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${opts.thumbnailBase64}`);
   }
   if (opts.photoUrl) {

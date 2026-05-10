@@ -57,7 +57,7 @@ export const api = {
   updateCard: (id: string, patch: Partial<Card>) =>
     request<Card>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   deleteCard: (id: string) =>
-    request<void>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+    request<null>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   /** URL the app opens to download a signed .pkpass for a slug.
    *  iOS sees the application/vnd.apple.pkpass content-type and shows
    *  the native "Add to Apple Wallet" sheet. */
