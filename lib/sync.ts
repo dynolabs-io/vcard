@@ -8,13 +8,24 @@ import { listCards as listLocal, saveCard as saveLocal, deleteCard as deleteLoca
 import type { Card } from './types';
 
 export async function listCardsRemoteOrLocal(): Promise<{ cards: Card[]; source: 'remote' | 'local' }> {
+  // Local-first: NEVER let stale remote clobber an unsynced local edit.
+  // We merge remote-only cards in (e.g. ones created on another device)
+  // but keep local versions of any card the device already knows about.
+  const local = await listLocal();
+  const localIds = new Set(local.map(c => c.id));
   try {
     const did = await getDeviceId();
     const remote = await api.listCards(did);
-    for (const c of remote) await saveLocal(c);
-    return { cards: remote, source: 'remote' };
+    const merged = [...local];
+    for (const c of remote) {
+      if (!localIds.has(c.id)) {
+        await saveLocal(c);
+        merged.push(c);
+      }
+    }
+    return { cards: merged, source: 'remote' };
   } catch {
-    return { cards: await listLocal(), source: 'local' };
+    return { cards: local, source: 'local' };
   }
 }
 
