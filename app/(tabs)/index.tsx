@@ -49,7 +49,13 @@ export default function CardsScreen() {
           data={cards}
           keyExtractor={c => c.id}
           renderItem={({ item }) => (
-            <Pressable style={styles.row} onPress={() => router.push(`/card/${item.id}`)}>
+            <Pressable
+              style={styles.row}
+              onPress={() => router.push(`/card/${item.id}`)}
+              accessible
+              accessibilityLabel={item.name || '(no name)'}
+              testID={`card-row-${item.name}`}
+            >
               <Text style={styles.rowLabel}>{item.label}</Text>
               <Text style={styles.rowName}>{item.name || '(no name)'}</Text>
               {item.title && <Text style={styles.rowSub}>{item.title}{item.company ? ` · ${item.company}` : ''}</Text>}
