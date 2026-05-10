@@ -13,6 +13,7 @@ on:
       - 'hooks/**'
       - 'constants/**'
       - 'assets/**'
+      - '.maestro/**'
       - '.github/workflows/ios.yml'
   workflow_dispatch:
 
