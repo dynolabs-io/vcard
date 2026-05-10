@@ -1,16 +1,17 @@
-// Card detail / QR view. Tapping a card from the list opens here. The QR
-// encodes a profile URL (after sync) or raw vCard 3.0 (offline).
+// Card detail. QR (full vCard, offline-scannable), Edit, Share menu
+// (vCard / QR PNG / link), Add to Apple Wallet, Delete.
 
-import * as Clipboard from 'expo-clipboard';
 import * as Linking from 'expo-linking';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
-  Alert, Image, Pressable, ScrollView, Share, StyleSheet, Text, View,
+  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { captureRef } from 'react-native-view-shot';
 import QRCode from 'react-native-qrcode-svg';
 import { api, profileUrl } from '@/lib/api';
+import { sharePNGFromBase64, shareVCard, shareLink } from '@/lib/share';
 import { deleteCard, getCard } from '@/lib/storage';
 import { templateStyle } from '@/lib/templates';
 import type { Card } from '@/lib/types';
@@ -20,6 +21,7 @@ export default function CardDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [card, setCard] = useState<Card | null>(null);
+  const qrRef = useRef<View>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -42,41 +44,36 @@ export default function CardDetail() {
   }
 
   const tmpl = templateStyle(card.template, card.customColor);
-  // QR encodes the FULL vCard 3.0 (BEGIN:VCARD … END:VCARD). Recipient's
-  // default camera reads it offline and offers Save to Contacts directly —
-  // no internet needed on either side. The profile URL is included as
-  // a separate URL field so they can ALSO tap it later for the web
-  // version with photo and the Save-to-Contacts download button.
+  // FULL vCard in the QR — recipient's camera reads offline and offers
+  // Save to Contacts immediately. Profile URL appended as a URL field.
   const qrPayload = buildVCard(card, {
     profileUrl: card.slug ? profileUrl(card.slug) : undefined,
     photoUrl:   card.photoUrl,
   });
-  const shareUrl = card.slug ? profileUrl(card.slug) : null;
+  const slugUrl = card.slug ? profileUrl(card.slug) : null;
 
-  const onCopy = async () => {
-    if (!shareUrl) return;
-    await Clipboard.setStringAsync(shareUrl);
-    Alert.alert('Copied', shareUrl);
-  };
-  const onShare = async () => {
-    if (!shareUrl) return;
-    await Share.share({ message: `${card.name} — ${shareUrl}`, url: shareUrl });
-  };
+  const onShare = () =>
+    Alert.alert('Share card', undefined, [
+      { text: 'Share as vCard', onPress: () => shareVCard(card, slugUrl ?? undefined).catch(e => Alert.alert('Share failed', String(e))) },
+      { text: 'Share as QR image', onPress: async () => {
+          try {
+            const b64 = await captureRef(qrRef, { format: 'png', quality: 1, result: 'base64' });
+            const safe = (card.name || 'qr').replace(/[^a-zA-Z0-9_-]+/g, '_');
+            await sharePNGFromBase64(b64, `${safe}.png`, 'Share QR image');
+          } catch (e) { Alert.alert('Share failed', String(e)); }
+        }},
+      ...(slugUrl ? [{ text: 'Share as link', onPress: () => shareLink(card.name, slugUrl).catch(e => Alert.alert('Share failed', String(e))) }] : []),
+      { text: 'Cancel', style: 'cancel' as const },
+    ]);
+
   const onDelete = () =>
     Alert.alert('Delete card', `Remove "${card.label}: ${card.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive',
+      { text: 'Delete', style: 'destructive',
         onPress: async () => {
-          try {
-            // Delete server copy first so the next remote-list sync doesn't
-            // resurrect the card from Postgres into local storage. Best-
-            // effort — if offline the local delete still wins for now.
-            try { await api.deleteCard(card.id); } catch { /* offline — ok */ }
-            await deleteCard(card.id);
-          } finally {
-            router.back();
-          }
+          try { await api.deleteCard(card.id); } catch { /* offline ok */ }
+          await deleteCard(card.id);
+          router.back();
         },
       },
     ]);
@@ -106,41 +103,33 @@ export default function CardDetail() {
           </View>
         </View>
 
-        <View style={styles.qrFrame}>
-          <QRCode value={qrPayload} size={240} backgroundColor="#fff" />
+        <View style={styles.qrFrame} ref={qrRef} collapsable={false}>
+          <QRCode value={qrPayload} size={260} backgroundColor="#fff" />
         </View>
         <Text style={styles.hint}>Anyone can scan this with their default camera.</Text>
 
-        {shareUrl && (
-          <View style={styles.row}>
-            <Pressable style={[styles.iconBtn, { flex: 1 }]} onPress={onCopy}>
-              <Text style={styles.iconBtnText}>Copy link</Text>
-            </Pressable>
-            <Pressable style={[styles.iconBtn, { flex: 1 }]} onPress={onShare}>
-              <Text style={styles.iconBtnText}>Share</Text>
-            </Pressable>
-          </View>
-        )}
-
         <View style={styles.actions}>
+          <Pressable style={styles.action} onPress={onShare}>
+            <Text style={styles.actionText}>Share card</Text>
+          </Pressable>
           {card.slug ? (
             <Pressable
-              style={styles.action}
+              style={styles.actionSecondary}
               onPress={async () => {
-                try {
-                  await Linking.openURL(api.applePassUrl(card.slug!));
-                } catch (e: unknown) {
-                  Alert.alert('Could not open Wallet', (e as { message?: string })?.message || 'unknown error');
-                }
+                try { await Linking.openURL(api.applePassUrl(card.slug!)); }
+                catch (e) { Alert.alert('Could not open Wallet', String(e)); }
               }}
             >
-              <Text style={styles.actionText}>Add to Apple Wallet</Text>
+              <Text style={styles.actionSecondaryText}>Add to Apple Wallet</Text>
             </Pressable>
           ) : (
-            <Pressable style={[styles.action, { opacity: 0.5 }]} disabled>
-              <Text style={styles.actionText}>Saving card to cloud…</Text>
+            <Pressable style={[styles.actionSecondary, { opacity: 0.5 }]} disabled>
+              <Text style={styles.actionSecondaryText}>Saving card to cloud…</Text>
             </Pressable>
           )}
+          <Pressable style={styles.actionSecondary} onPress={() => router.push(`/card/edit/${card.id}`)}>
+            <Text style={styles.actionSecondaryText}>Edit</Text>
+          </Pressable>
           <Pressable style={styles.deleteBtn} onPress={onDelete}>
             <Text style={styles.deleteText}>Delete card</Text>
           </Pressable>
@@ -165,12 +154,11 @@ const styles = StyleSheet.create({
   company: { fontSize: 14, marginTop: 2 },
   qrFrame: { padding: 16, backgroundColor: '#fff', borderRadius: 16 },
   hint: { fontSize: 13, opacity: 0.6, textAlign: 'center' },
-  row: { flexDirection: 'row', gap: 12, width: '100%' },
-  iconBtn: { padding: 14, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.08)', alignItems: 'center' },
-  iconBtnText: { fontSize: 14, fontWeight: '600' },
   actions: { width: '100%', gap: 12, marginTop: 4 },
   action: { padding: 16, borderRadius: 999, backgroundColor: '#111', alignItems: 'center' },
   actionText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  actionSecondary: { padding: 14, borderRadius: 999, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center' },
+  actionSecondaryText: { fontSize: 15, fontWeight: '600' },
   deleteBtn: { padding: 14, borderRadius: 999, alignItems: 'center', marginTop: 8 },
   deleteText: { color: '#DC2626', fontSize: 14, fontWeight: '600' },
   cta: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, backgroundColor: '#111' },

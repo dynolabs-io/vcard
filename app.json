@@ -12,8 +12,8 @@
       "supportsTablet": false,
       "bundleIdentifier": "io.dynolabs.vcard",
       "infoPlist": {
-        "NSCameraUsageDescription": "Used to scan vCard QR codes from other people.",
-        "NSPhotoLibraryUsageDescription": "Used to pick a profile photo for your card.",
+        "NSCameraUsageDescription": "Take a profile photo for your card.",
+        "NSPhotoLibraryUsageDescription": "Pick a profile photo for your card from your library.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
