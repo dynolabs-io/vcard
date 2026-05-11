@@ -65,18 +65,34 @@ jobs:
           build_id = builds['data'][0]['id']
           print(f'build_id={build_id}')
 
-          # 5. Explicitly assign this build to Founders (covers the case where the
-          # PATCH doesn't retroactively expose pre-existing builds)
-          rel = { 'data': [ { 'type': 'betaGroups', 'id': group_id } ] }
-          r = requests.post(f'{base}/v1/builds/{build_id}/relationships/betaGroups',
+          # 5. Inspect buildBetaDetail (export compliance, beta state)
+          bd = requests.get(f'{base}/v1/builds/{build_id}/buildBetaDetail', headers=h, timeout=20).json()
+          print('buildBetaDetail:', json.dumps(bd, indent=2)[:1200])
+
+          # 6. Try assigning from BOTH directions — use the group's relationship endpoint
+          # which is the documented forward direction.
+          rel = { 'data': [ { 'type': 'builds', 'id': build_id } ] }
+          r = requests.post(f'{base}/v1/betaGroups/{group_id}/relationships/builds',
               headers={**h, 'Content-Type': 'application/json'},
               data=json.dumps(rel), timeout=20)
-          print(f'assign status={r.status_code}')
+          print(f'group→build assign status={r.status_code}')
           if r.status_code >= 300:
-              print(r.text)
+              print('  body:', r.text)
 
-          # 6. Verify
-          bg = requests.get(f'{base}/v1/builds/{build_id}/betaGroups', headers=h, timeout=20).json()
-          names = [g['attributes'].get('name') for g in bg.get('data', [])]
-          print(f'  build {ver} now assigned to groups: {names}')
+          # 7. List all internal beta groups for this app (there may be an auto
+          # "App Store Connect Users" group separate from the Founders one)
+          all_groups = requests.get(f'{base}/v1/betaGroups?filter[app]={app_id}', headers=h, timeout=20).json()
+          print()
+          print('All beta groups:')
+          for g in all_groups.get('data', []):
+              ga = g['attributes']
+              print(f"  {ga.get('name')} id={g['id']} internal={ga.get('isInternalGroup')} hasAll={ga.get('hasAccessToAllBuilds')}")
+
+          # 8. Verify assignment landed (with eventual-consistency retry)
+          for attempt in range(3):
+              time.sleep(2)
+              bg = requests.get(f'{base}/v1/builds/{build_id}/betaGroups', headers=h, timeout=20).json()
+              names = [g['attributes'].get('name') for g in bg.get('data', [])]
+              print(f'  attempt {attempt+1}: build {ver} groups = {names}')
+              if names: break
           PY
