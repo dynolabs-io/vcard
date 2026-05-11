@@ -24,7 +24,5 @@ appId: io.dynolabs.vcard
 # pushed detail page.
 - swipe:
     direction: DOWN
-    start: 50%, 5%
-    end: 50%, 90%
 - tapOn: "Back"
 - assertVisible: "Your cards"
