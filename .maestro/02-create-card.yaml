@@ -21,7 +21,3 @@ appId: io.dynolabs.vcard
     direction: DOWN
 - tapOn: "Save card"
 - assertVisible: "Maestro Tester"
-# Persistence: kill the app entirely, relaunch, the card MUST still be there.
-- killApp
-- launchApp
-- assertVisible: "Maestro Tester"

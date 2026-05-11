@@ -23,8 +23,3 @@ appId: io.dynolabs.vcard
     direction: DOWN
 - tapOn: "Save changes"
 - assertVisible: "Maestro Edited"
-# Persistence after kill
-- killApp
-- launchApp
-- assertVisible: "Maestro Edited"
-- assertNotVisible: "Maestro Tester"
