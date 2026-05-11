@@ -13,6 +13,7 @@ import { api, profileUrl } from '@/lib/api';
 import { sharePNGFromBase64, shareVCard, shareLink } from '@/lib/share';
 import { deleteCard, getCard } from '@/lib/storage';
 import { templateStyle } from '@/lib/templates';
+import { trace } from '@/lib/telemetry';
 import type { Card } from '@/lib/types';
 import { buildVCard } from '@/lib/vcard';
 
@@ -53,16 +54,21 @@ export default function CardDetail() {
 
   const onShare = () =>
     Alert.alert('Share card', undefined, [
-      { text: 'Share as vCard', onPress: () => shareVCard(card, slugUrl ?? undefined).catch(e => Alert.alert('Share failed', String(e))) },
-      { text: 'Share as QR image', onPress: async () => {
-          try {
+      { text: 'Share as vCard', onPress: () =>
+          trace('share-vcard', { cardId: card.id, slug: card.slug, hasProfileUrl: !!slugUrl },
+            () => shareVCard(card, slugUrl ?? undefined))
+          .catch(e => Alert.alert('Share failed', String(e))) },
+      { text: 'Share as QR image', onPress: () =>
+          trace('share-qr', { cardId: card.id }, async () => {
             const { captureRef } = require('react-native-view-shot');
             const b64 = await captureRef(qrRef, { format: 'png', quality: 1, result: 'base64' });
             const safe = (card.name || 'qr').replace(/[^a-zA-Z0-9_-]+/g, '_');
             await sharePNGFromBase64(b64, `${safe}.png`, 'Share QR image');
-          } catch (e) { Alert.alert('Share failed', String(e)); }
-        }},
-      ...(slugUrl ? [{ text: 'Share as link', onPress: () => shareLink(card.name, slugUrl).catch(e => Alert.alert('Share failed', String(e))) }] : []),
+          }).catch(e => Alert.alert('Share failed', String(e))) },
+      ...(slugUrl ? [{ text: 'Share as link', onPress: () =>
+          trace('share-link', { cardId: card.id, slugUrl },
+            () => shareLink(card.name, slugUrl))
+          .catch(e => Alert.alert('Share failed', String(e))) }] : []),
       { text: 'Cancel', style: 'cancel' as const },
     ]);
 
@@ -115,10 +121,11 @@ export default function CardDetail() {
           {card.slug ? (
             <Pressable
               style={styles.actionSecondary}
-              onPress={async () => {
-                try { await Linking.openURL(api.applePassUrl(card.slug!)); }
-                catch (e) { Alert.alert('Could not open Wallet', String(e)); }
-              }}
+              onPress={() =>
+                trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
+                  () => Linking.openURL(api.applePassUrl(card.slug!)))
+                .catch(e => Alert.alert('Could not open Wallet', String(e)))
+              }
             >
               <Text style={styles.actionSecondaryText}>Add to Apple Wallet</Text>
             </Pressable>

@@ -5,6 +5,9 @@ import 'react-native-reanimated';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { installGlobalErrorHandler } from '@/lib/telemetry';
+
+installGlobalErrorHandler();
 
 export const unstable_settings = {
   anchor: '(tabs)',

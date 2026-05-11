@@ -62,36 +62,28 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
     }
   };
 
-  // Photo picker — lazy-loads expo-image-picker to keep CardForm static
-  // imports clean of native modules. If the picker module fails to load,
-  // an Alert tells the user; the form itself never crashes. Errors also
-  // POST to /v1/crash so we can debug from the API logs without the
-  // operator's phone.
+  // Photo picker — every step traced. Each phase POSTs to /v1/crash so
+  // we can see exactly where it dies on the user's phone (lazy-require,
+  // permission request, picker launch, normalize, upload).
   const onPickPhoto = (source: 'camera' | 'library') => async () => {
     if (photoBusy) return;
     setPhotoBusy(true);
+    const { trace } = require('@/lib/telemetry');
     try {
-      const photoMod = require('@/lib/photo');
-      const uri = await photoMod.pickPhoto(source);
-      if (!uri) return;
-      const normalized = await photoMod.normalize(uri);
-      setDraft(d => ({ ...d, photoUrl: normalized }));
-      if (draft.slug) {
-        const url = await photoMod.uploadPhoto(draft.slug, normalized);
-        setDraft(d => ({ ...d, photoUrl: url }));
-      }
+      await trace(`photo-${source}`, { hasSlug: !!draft.slug }, async () => {
+        const photoMod = require('@/lib/photo');
+        const uri = await trace(`photo-${source}-pick`, {}, () => photoMod.pickPhoto(source));
+        if (!uri) return;
+        const normalized = await trace(`photo-${source}-normalize`, {}, () => photoMod.normalize(uri));
+        setDraft(d => ({ ...d, photoUrl: normalized }));
+        if (draft.slug) {
+          const url = await trace(`photo-${source}-upload`, { slug: draft.slug },
+            () => photoMod.uploadPhoto(draft.slug, normalized));
+          setDraft(d => ({ ...d, photoUrl: url }));
+        }
+      });
     } catch (e: unknown) {
-      const msg = (e as { message?: string })?.message || String(e);
-      Alert.alert('Photo failed', msg);
-      // Best-effort log to server so we can debug from logs
-      try {
-        const { config } = require('@/lib/config');
-        fetch(`${config.apiBase}/v1/crash`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ where: 'photo-picker', source, message: msg, stack: (e as Error)?.stack }),
-        }).catch(() => {});
-      } catch { /* ignore */ }
+      Alert.alert('Photo failed', (e as { message?: string })?.message || String(e));
     } finally {
       setPhotoBusy(false);
     }
