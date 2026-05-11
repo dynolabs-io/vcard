@@ -156,7 +156,7 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
             <TextInput style={[styles.input, isDark && styles.inputDark]}
               value={draft.name} onChangeText={t => setDraft({ ...draft, name: t })}
               placeholder="Your name" placeholderTextColor={isDark ? '#666' : '#999'}
-              autoFocus={!initial.name} returnKeyType="next"
+              returnKeyType="next"
               onSubmitEditing={() => titleRef.current?.focus()} />
           </Field>
           <Field label="Title">
