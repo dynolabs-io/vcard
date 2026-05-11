@@ -3,7 +3,13 @@ appId: io.dynolabs.vcard
 # Share as vCard. The crash happens INSIDE Share-as-vCard's onPress
 # (calling expo-sharing). Tapping it for real surfaces the crash.
 # Success = iOS share sheet appears (UIActivityViewController).
-- launchApp
+- launchApp:
+    stopApp: false
+- runFlow:
+    when:
+      notVisible: "Maestro Edited"
+    commands:
+      - assertVisible: "Your cards"
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
     element: "Share card"

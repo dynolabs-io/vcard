@@ -1,7 +1,8 @@
 appId: io.dynolabs.vcard
 ---
 # Back arrow chrome — never show "(tabs)" as the back button label.
-- launchApp
+- launchApp:
+    stopApp: false
 - tapOn: "Maestro Edited"
 # We're on the card detail page; the back arrow is at top-left.
 # The Stack.Screen options set headerBackButtonDisplayMode='minimal'

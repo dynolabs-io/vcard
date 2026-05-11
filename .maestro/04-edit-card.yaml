@@ -3,7 +3,8 @@ appId: io.dynolabs.vcard
 # Edit card + persist after kill. We're already on the edit form (from
 # flow 03 photo-picker which left us here). Change the name, save,
 # kill, relaunch, assert.
-- launchApp
+- launchApp:
+    stopApp: false
 - assertVisible: "Your cards"
 - tapOn: "Maestro Tester"
 - scrollUntilVisible:

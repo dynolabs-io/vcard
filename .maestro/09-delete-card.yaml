@@ -2,7 +2,8 @@ appId: io.dynolabs.vcard
 ---
 # Delete card — uses anchored regex to match the alert button, not the
 # page-level "Delete card" text.
-- launchApp
+- launchApp:
+    stopApp: false
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
     element: "Delete card"

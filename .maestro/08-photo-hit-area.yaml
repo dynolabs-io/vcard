@@ -2,7 +2,8 @@ appId: io.dynolabs.vcard
 ---
 # Photo dialog must only open when tapping the avatar circle / "Add
 # photo" hint — NOT when tapping anywhere else in the upper region.
-- launchApp
+- launchApp:
+    stopApp: false
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
     element: "Edit"

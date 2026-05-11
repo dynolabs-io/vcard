@@ -6,7 +6,8 @@ appId: io.dynolabs.vcard
 # If the picker module is broken (expo-image-picker not autolinked),
 # this flow catches it: either we see "Photo failed" Alert (caught) or
 # the next step fails because PHPicker never opened.
-- launchApp
+- launchApp:
+    stopApp: false
 - tapOn: "Maestro Tester"
 - tapOn: "Edit"
 - waitForAnimationToEnd:

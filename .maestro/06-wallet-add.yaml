@@ -6,7 +6,8 @@ appId: io.dynolabs.vcard
 # This flow ALSO proves the pass-signer is reachable from the simulator
 # (the simulator is behind macos-runner-NAT, but api.dynolabs.io is
 # publicly routable so this should work).
-- launchApp
+- launchApp:
+    stopApp: false
 - tapOn: "Maestro Edited"
 # The Add to Apple Wallet button only appears when card.slug exists
 # (i.e. server-roundtripped). Give the API a few seconds.
