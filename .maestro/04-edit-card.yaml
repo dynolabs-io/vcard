@@ -24,3 +24,8 @@ appId: io.dynolabs.vcard
     direction: DOWN
 - tapOn: "Save changes"
 - assertVisible: "Maestro Edited"
+# Save returns to card detail page. Navigate back to cards list so the
+# next flow has a known starting state.
+- back
+- assertVisible: "Your cards"
+- assertVisible: "Maestro Edited"
