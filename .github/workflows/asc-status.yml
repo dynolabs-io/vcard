@@ -59,6 +59,24 @@ jobs:
               intst = (bd_obj or {}).get('attributes', {}).get('internalBuildState', '?')
               comp = a.get('usesNonExemptEncryption', '?')
               print(f"{a.get('version',''):<7}{a.get('processingState',''):<10}{short_ver:<10}{str(comp):<14}{str(ext):<24}{str(intst):<24}")
+          # Individual testers per build (these are App Store Connect users with
+          # internal-tester role — they get builds outside any beta group).
+          print()
+          print('=== Individual testers + per-build access ===')
+          # Test top 2 builds
+          for b in builds.get('data', [])[:2]:
+              bid = b['id']; ver = b['attributes'].get('version','')
+              it = requests.get(f'{base}/v1/builds/{bid}/individualTesters', headers=h, timeout=20).json()
+              testers = [(t['attributes'].get('email'), t['attributes'].get('inviteType')) for t in it.get('data', [])]
+              print(f"build {ver}: individualTesters = {testers}")
+          # All beta testers known to this app
+          all_t = requests.get(f'{base}/v1/betaTesters?filter[apps]={app_id}&limit=100&fields[betaTesters]=email,firstName,lastName,inviteType,state', headers=h, timeout=20).json()
+          print()
+          print('All beta testers for app:')
+          for t in all_t.get('data', []):
+              ta = t['attributes']
+              print(f"  {ta.get('email')} ({ta.get('inviteType')}, state={ta.get('state')})")
+          print()
           # Also list internal beta groups and members
           print()
           print('--- Beta Groups ---')
