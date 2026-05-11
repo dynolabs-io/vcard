@@ -1,0 +1,45 @@
+name: ASC Build Status
+
+on:
+  workflow_dispatch:
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyjwt cryptography requests
+      - name: Query ASC for recent builds
+        env:
+          KEY_ID:    ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import os, base64, time, jwt, requests, json, sys
+          key = base64.b64decode(os.environ['PRIVATE_KEY_B64'])
+          token = jwt.encode(
+              { 'iss': os.environ['ISSUER_ID'], 'iat': int(time.time()),
+                'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1' },
+              key, algorithm='ES256',
+              headers={ 'kid': os.environ['KEY_ID'] })
+          h = { 'Authorization': f'Bearer {token}' }
+          # Find the app
+          apps = requests.get('https://api.appstoreconnect.apple.com/v1/apps?filter[bundleId]=io.dynolabs.vcard', headers=h, timeout=20).json()
+          if not apps.get('data'):
+              print('::error::App not found for io.dynolabs.vcard')
+              print(json.dumps(apps, indent=2))
+              sys.exit(1)
+          app_id = apps['data'][0]['id']
+          print(f'app_id={app_id}')
+          # List recent builds
+          builds = requests.get(
+              f'https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-version&limit=20&fields[builds]=version,uploadedDate,processingState,expired,minOsVersion,usesNonExemptEncryption',
+              headers=h, timeout=20).json()
+          print(f"{'build':<8}{'state':<14}{'uploaded':<26}{'expired':<8}")
+          for b in builds.get('data', []):
+              a = b['attributes']
+              print(f"{a.get('version',''):<8}{a.get('processingState',''):<14}{str(a.get('uploadedDate','')):<26}{str(a.get('expired','')):<8}")
+          PY
