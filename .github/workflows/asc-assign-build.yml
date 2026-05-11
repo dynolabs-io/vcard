@@ -119,12 +119,14 @@ jobs:
               tester_id = existing['data'][0]['id']
               print(f'tester {email} already exists: id={tester_id}')
           else:
+              # Apple requires the create relationship to be betaGroups (not apps).
+              # Adding to Founders group gives them app access transitively.
               create_body = {
                   'data': {
                       'type': 'betaTesters',
                       'attributes': { 'email': email, 'firstName': 'Ali', 'lastName': 'Baysal' },
                       'relationships': {
-                          'apps': { 'data': [ { 'type': 'apps', 'id': app_id } ] },
+                          'betaGroups': { 'data': [ { 'type': 'betaGroups', 'id': group_id } ] },
                       },
                   }
               }
