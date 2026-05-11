@@ -36,8 +36,13 @@ jobs:
           print(f'app_id={app_id}')
           # List recent builds
           builds = requests.get(
-              f'https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-version&limit=10&include=preReleaseVersion,betaBuildLocalizations,buildBetaDetail',
+              f'https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-version&limit=10&include=preReleaseVersion,betaBuildLocalizations,buildBetaDetail&fields[builds]=version,uploadedDate,processingState,expired,minOsVersion,usesNonExemptEncryption,iconAssetToken,expirationDate',
               headers=h, timeout=20).json()
+          # Print full build attributes for top 3
+          print('=== Full attribs for latest 3 builds ===')
+          for b in builds.get('data', [])[:3]:
+              print(f"build {b['attributes'].get('version')}:", json.dumps(b['attributes'], indent=2))
+          print('=========================================')
           # Build a map of included resources by id
           inc = {(r['type'], r['id']): r for r in builds.get('included', [])}
           print(f"{'build':<7}{'state':<10}{'shortVer':<10}{'compliance':<14}{'extState':<24}{'intState':<24}")
