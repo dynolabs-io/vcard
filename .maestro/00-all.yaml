@@ -1,13 +1,17 @@
 appId: io.dynolabs.vcard
 ---
-# FULL end-to-end gate. If any of these fail the build does NOT reach
-# TestFlight. No more "manual verification required" cop-outs.
+# FULL gate. Order matters: wallet-add must run BEFORE share, because
+# share opens iOS's UIActivityViewController which can't reliably be
+# dismissed via Maestro, and subsequent flows can't navigate while it's
+# on screen.
 - runFlow: 01-launch.yaml
 - runFlow: 02-create-card.yaml
 - runFlow: 03-photo-picker.yaml
 - runFlow: 04-edit-card.yaml
-- runFlow: 05-share-vcard.yaml
 - runFlow: 06-wallet-add.yaml
 - runFlow: 07-back-arrow-chrome.yaml
 - runFlow: 08-photo-hit-area.yaml
 - runFlow: 09-delete-card.yaml
+# 05-share-vcard runs LAST — its native share sheet can't be reliably
+# dismissed on iOS 26 simulator, so any flow after it fails.
+- runFlow: 05-share-vcard.yaml

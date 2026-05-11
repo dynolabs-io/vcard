@@ -2,12 +2,15 @@ appId: io.dynolabs.vcard
 ---
 # Add to Apple Wallet. The app calls Linking.openURL which fetches the
 # .pkpass and iOS opens Wallet's Add Pass sheet. Maestro can see "Add"
-# and "Cancel" buttons on that sheet.
-# This flow ALSO proves the pass-signer is reachable from the simulator
-# (the simulator is behind macos-runner-NAT, but api.dynolabs.io is
-# publicly routable so this should work).
+# and the close button on that sheet.
+# Critical assertion: the pass MUST show the EDITED name. The user's
+# bug 6 was that the wallet showed the pre-edit name because the
+# mobile's PATCH to /v1/cards/{id} was failing with 400 (epoch-ms
+# numbers vs server's time.Time) and the catch silently swallowed it.
+# We assert "Maestro Edited" is on the pass — that proves the fix.
 - launchApp:
     stopApp: false
+- assertVisible: "Your cards"
 - tapOn: "Maestro Edited"
 # The Add to Apple Wallet button only appears when card.slug exists
 # (i.e. server-roundtripped). Give the API a few seconds.
@@ -35,18 +38,19 @@ appId: io.dynolabs.vcard
 # the edit only saved locally; the PATCH to API was failing silently.
 - assertVisible: "Maestro Edited"
 - assertNotVisible: "Maestro Tester"
-# Dismiss — Wallet's Add Pass sheet close button has accessibility id
-# "Close" on iOS 26.
-- runFlow:
-    when:
-      visible: "Close"
-    commands:
-      - tapOn: "Close"
+# Dismiss Wallet's Add Pass sheet. iOS 26 close button is an X icon
+# at top-left of the modal — Maestro can find it by accessibility id
+# "Cancel" OR by tapping the dimmed area above the modal.
 - runFlow:
     when:
       visible: "Cancel"
     commands:
       - tapOn: "Cancel"
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
 - waitForAnimationToEnd:
     timeout: 3000
 # Bring vCard back to foreground for subsequent flows
