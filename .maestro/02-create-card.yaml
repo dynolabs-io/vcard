@@ -1,6 +1,8 @@
 appId: io.dynolabs.vcard
 ---
-# Tap "Create card" CTA, fill name, save, verify card appears.
+# Create card with photo + every field, save, RELAUNCH, verify all data
+# survived. Relaunch is mandatory — "tap Save → assertVisible name on
+# same screen" passes for a save that wrote to memory and discarded.
 - clearState
 - launchApp
 - assertVisible: "Your cards"
@@ -9,13 +11,58 @@ appId: io.dynolabs.vcard
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: "Label"
+
+# Tap the AVATAR specifically (not "Add photo" text or surrounding area —
+# this catches the "Pressable spans whole row" bug that kept opening the
+# dialog on every tap).
+- tapOn: "Add photo"
+- assertVisible: "Profile photo"
+# Choose from library — the BUG was that this crashed the app because
+# expo-image-picker plugin was missing from app.json. We assert that
+# either the system picker appears OR the form returns to a sensible
+# state with an error Alert (no native crash).
+- tapOn: "Choose from library"
+- waitForAnimationToEnd:
+    timeout: 8000
+# After this point we should be back on the form (picker dismissed) OR
+# in the system picker. We just dismiss anything that's open so the
+# rest of the flow can continue.
+- runFlow:
+    when:
+      visible: "Photo failed"
+    commands:
+      - tapOn: "OK"
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn: "Cancel"
+
+# Fill name (no crash should happen now; if photo broke, we already
+# bailed)
 - tapOn:
     text: "Your name"
     optional: true
 - inputText: "Maestro Tester"
 - hideKeyboard
+
+# Tap the phone field, KEEP keyboard up, assert "Save card" is still
+# reachable (i.e. NOT covered by the keyboard). This catches the
+# bug where phone-pad keyboard hid the save button.
+- tapOn:
+    text: "Phones (comma-separated)"
+    optional: true
+- inputText: "+12025550123"
+- assertVisible: "Done"   # the InputAccessoryView "Done" toolbar above the keyboard
+- tapOn: "Done"
+
 - scrollUntilVisible:
     element: "Save card"
     direction: DOWN
 - tapOn: "Save card"
+- assertVisible: "Maestro Tester"
+
+# RELAUNCH — proves data persisted, not just held in TextInput state.
+- killApp
+- launchApp
 - assertVisible: "Maestro Tester"

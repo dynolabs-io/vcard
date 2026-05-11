@@ -326,6 +326,17 @@ jobs:
             mkdir -p $RUNNER_TEMP/maestro-debug
             cp -R ~/.maestro/tests $RUNNER_TEMP/maestro-debug/
           fi
+          # NATIVE-CRASH DETECTION — Maestro will report flows as passed
+          # if it didn't actively detect a failed assertion. But the JS
+          # ErrorBoundary doesn't catch native bridge crashes (e.g. a
+          # missing autolinked module, a Sharing.shareAsync exception
+          # on iOS 26 new arch). Grep the simulator log for known fatal
+          # patterns and fail the gate independently.
+          if grep -qE "Terminating app due to uncaught exception|signal SIGABRT|EXC_BAD_ACCESS|libsystem_kernel\.dylib.*__pthread_kill" $RUNNER_TEMP/sim.log; then
+            echo "::error::Native crash detected in sim.log — see uploaded artifacts"
+            grep -nE "Terminating|SIGABRT|EXC_BAD_ACCESS|Fatal Exception" $RUNNER_TEMP/sim.log | head -40
+            exit 1
+          fi
           exit $MAESTRO_EXIT
 
       - name: Upload Maestro artifacts (always)
