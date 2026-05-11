@@ -1,0 +1,82 @@
+name: ASC Assign Build to Founders
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_version:
+        description: 'CFBundleVersion to assign (e.g. 50)'
+        required: true
+        default: '50'
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyjwt cryptography requests
+      - name: Toggle Founders to all-builds + assign requested build
+        env:
+          KEY_ID:    ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          BUILD_VERSION: ${{ inputs.build_version }}
+        run: |
+          python3 - <<'PY'
+          import os, base64, time, jwt, requests, json, sys
+          key = base64.b64decode(os.environ['PRIVATE_KEY_B64'])
+          token = jwt.encode(
+              { 'iss': os.environ['ISSUER_ID'], 'iat': int(time.time()),
+                'exp': int(time.time()) + 1200, 'aud': 'appstoreconnect-v1' },
+              key, algorithm='ES256', headers={ 'kid': os.environ['KEY_ID'] })
+          h = { 'Authorization': f'Bearer {token}' }
+          base = 'https://api.appstoreconnect.apple.com'
+
+          # 1. Find the app
+          apps = requests.get(f'{base}/v1/apps?filter[bundleId]=io.dynolabs.vcard', headers=h, timeout=20).json()
+          app_id = apps['data'][0]['id']
+          print(f'app_id={app_id}')
+
+          # 2. Find the Founders group
+          groups = requests.get(f'{base}/v1/betaGroups?filter[app]={app_id}', headers=h, timeout=20).json()
+          founders = next((g for g in groups['data'] if g['attributes']['name'] == 'Founders'), None)
+          if not founders:
+              print('::error::Founders beta group not found'); sys.exit(1)
+          group_id = founders['id']
+          print(f'group_id={group_id}  hasAccessToAllBuilds={founders["attributes"]["hasAccessToAllBuilds"]}')
+
+          # 3. Flip Founders to hasAccessToAllBuilds=True (futureproof for future uploads)
+          patch_body = { 'data': { 'type': 'betaGroups', 'id': group_id,
+              'attributes': { 'hasAccessToAllBuilds': True } } }
+          r = requests.patch(f'{base}/v1/betaGroups/{group_id}',
+              headers={**h, 'Content-Type': 'application/json'},
+              data=json.dumps(patch_body), timeout=20)
+          print(f'patch status={r.status_code}')
+          if r.status_code >= 300:
+              print(r.text)
+
+          # 4. Find the requested build (by version)
+          ver = os.environ['BUILD_VERSION']
+          builds = requests.get(f'{base}/v1/builds?filter[app]={app_id}&filter[version]={ver}&limit=1',
+              headers=h, timeout=20).json()
+          if not builds.get('data'):
+              print(f'::error::No build with version {ver}'); sys.exit(1)
+          build_id = builds['data'][0]['id']
+          print(f'build_id={build_id}')
+
+          # 5. Explicitly assign this build to Founders (covers the case where the
+          # PATCH doesn't retroactively expose pre-existing builds)
+          rel = { 'data': [ { 'type': 'betaGroups', 'id': group_id } ] }
+          r = requests.post(f'{base}/v1/builds/{build_id}/relationships/betaGroups',
+              headers={**h, 'Content-Type': 'application/json'},
+              data=json.dumps(rel), timeout=20)
+          print(f'assign status={r.status_code}')
+          if r.status_code >= 300:
+              print(r.text)
+
+          # 6. Verify
+          bg = requests.get(f'{base}/v1/builds/{build_id}/betaGroups', headers=h, timeout=20).json()
+          names = [g['attributes'].get('name') for g in bg.get('data', [])]
+          print(f'  build {ver} now assigned to groups: {names}')
+          PY
