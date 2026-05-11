@@ -425,7 +425,7 @@ jobs:
         # 204 from this POST = success; do NOT re-poll the GET to confirm —
         # it's eventually consistent and lies for several minutes.
         run: |
-          pip install --quiet pyjwt cryptography requests
+          python3 -m pip install --quiet --break-system-packages pyjwt cryptography requests
           python3 - <<'PY'
           import os, base64, time, jwt, requests, json, sys
           # Build a JWT for ASC API (ES256 with the .p8 we already decoded earlier)
