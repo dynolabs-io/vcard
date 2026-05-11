@@ -15,7 +15,8 @@ appId: io.dynolabs.vcard
     text: "Your name"
     optional: true
 - inputText: "Maestro Tester"
-- hideKeyboard
+- swipe:
+    direction: DOWN
 - scrollUntilVisible:
     element: "Save card"
     direction: DOWN

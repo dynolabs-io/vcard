@@ -18,7 +18,8 @@ appId: io.dynolabs.vcard
     text: "Maestro Tester"
 - eraseText: 14
 - inputText: "Maestro Edited"
-- hideKeyboard
+- swipe:
+    direction: DOWN
 - scrollUntilVisible:
     element: "Save changes"
     direction: DOWN

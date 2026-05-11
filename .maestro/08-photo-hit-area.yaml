@@ -18,7 +18,8 @@ appId: io.dynolabs.vcard
     text: "Label"
     optional: true
 - assertNotVisible: "Profile photo"
-- hideKeyboard
+- swipe:
+    direction: DOWN
 # Navigate back: Edit form (modal) → detail → cards list. The modal is
 # dismissed via the swipe-down gesture; back arrow only exists on the
 # pushed detail page.
