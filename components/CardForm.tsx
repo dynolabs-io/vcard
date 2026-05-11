@@ -142,12 +142,14 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
             <TextInput style={[styles.input, isDark && styles.inputDark]}
               value={draft.label} onChangeText={t => setDraft({ ...draft, label: t })}
               placeholder="Work, Personal, …" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoCorrect={false} autoCapitalize="words"
               returnKeyType="next" />
           </Field>
           <Field label="Name">
             <TextInput style={[styles.input, isDark && styles.inputDark]}
               value={draft.name} onChangeText={t => setDraft({ ...draft, name: t })}
               placeholder="Your name" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoCorrect={false} autoCapitalize="words" spellCheck={false}
               returnKeyType="next"
               onSubmitEditing={() => titleRef.current?.focus()} />
           </Field>
@@ -156,6 +158,7 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
               style={[styles.input, isDark && styles.inputDark]}
               value={draft.title ?? ''} onChangeText={t => setDraft({ ...draft, title: t })}
               placeholder="Founder" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoCorrect={false} autoCapitalize="words"
               returnKeyType="next"
               onSubmitEditing={() => companyRef.current?.focus()} />
           </Field>
@@ -164,6 +167,7 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
               style={[styles.input, isDark && styles.inputDark]}
               value={draft.company ?? ''} onChangeText={t => setDraft({ ...draft, company: t })}
               placeholder="Dynolabs" placeholderTextColor={isDark ? '#666' : '#999'}
+              autoCorrect={false} autoCapitalize="words"
               returnKeyType="next"
               onSubmitEditing={() => emailRef.current?.focus()} />
           </Field>
