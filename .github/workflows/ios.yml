@@ -403,3 +403,77 @@ jobs:
             exit 1
           fi
           echo "::notice::Upload succeeded"
+
+      - name: Assign uploaded build to "Founders" beta group
+        # Apple's internal beta groups default to hasAccessToAllBuilds=False
+        # and the API rejects PATCHing that to True. Without an explicit per-build
+        # POST to /betaGroups/{id}/relationships/builds, new builds upload fine
+        # and reach IN_BETA_TESTING but stay invisible to testers — TestFlight
+        # keeps showing the previous build.
+        #
+        # 204 from this POST = success; do NOT re-poll the GET to confirm —
+        # it's eventually consistent and lies for several minutes.
+        run: |
+          pip install --quiet pyjwt cryptography requests
+          python3 - <<'PY'
+          import os, base64, time, jwt, requests, json, sys
+          # Build a JWT for ASC API (ES256 with the .p8 we already decoded earlier)
+          key_b64 = os.environ['APP_STORE_CONNECT_PRIVATE_KEY']
+          key = base64.b64decode(key_b64)
+          token = jwt.encode(
+              { 'iss': os.environ['APP_STORE_CONNECT_ISSUER_ID'],
+                'iat': int(time.time()),
+                'exp': int(time.time()) + 1200,
+                'aud': 'appstoreconnect-v1' },
+              key, algorithm='ES256',
+              headers={ 'kid': os.environ['APP_STORE_CONNECT_KEY_ID'] })
+          h = { 'Authorization': f'Bearer {token}' }
+          base = 'https://api.appstoreconnect.apple.com'
+          bundle_id = os.environ['BUNDLE_ID']
+          run_number = os.environ['RUN_NUMBER']
+          group_name = os.environ['BETA_GROUP_NAME']
+
+          # Find the app
+          apps = requests.get(f'{base}/v1/apps?filter[bundleId]={bundle_id}', headers=h, timeout=20).json()
+          if not apps.get('data'):
+              print(f'::warning::App {bundle_id} not in ASC yet — skipping assignment'); sys.exit(0)
+          app_id = apps['data'][0]['id']
+
+          # Find the beta group
+          groups = requests.get(f'{base}/v1/betaGroups?filter[app]={app_id}', headers=h, timeout=20).json()
+          group = next((g for g in groups['data'] if g['attributes']['name'] == group_name), None)
+          if not group:
+              print(f'::warning::Beta group "{group_name}" not found — create it once in ASC, future runs will pick it up'); sys.exit(0)
+          group_id = group['id']
+
+          # Wait for the just-uploaded build to appear in ASC (altool returns
+          # before processing finishes; we need the build resource to exist).
+          build_id = None
+          for attempt in range(30):    # ~10 min
+              builds = requests.get(f'{base}/v1/builds?filter[app]={app_id}&filter[version]={run_number}&limit=1', headers=h, timeout=20).json()
+              if builds.get('data'):
+                  build_id = builds['data'][0]['id']
+                  break
+              time.sleep(20)
+          if not build_id:
+              print(f'::warning::Build {run_number} not in ASC after 10 min — assignment skipped'); sys.exit(0)
+
+          # POST the assignment. 204 = done. We do NOT verify with a GET —
+          # eventual consistency makes the verification GET lie for minutes.
+          rel = { 'data': [ { 'type': 'builds', 'id': build_id } ] }
+          r = requests.post(f'{base}/v1/betaGroups/{group_id}/relationships/builds',
+              headers={**h, 'Content-Type': 'application/json'},
+              data=json.dumps(rel), timeout=20)
+          if r.status_code == 204:
+              print(f'::notice::Build {run_number} assigned to "{group_name}" — TestFlight refresh will show it')
+          else:
+              print(f'::error::Assignment failed: HTTP {r.status_code} {r.text}')
+              sys.exit(1)
+          PY
+        env:
+          APP_STORE_CONNECT_KEY_ID:    ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          BUNDLE_ID: io.dynolabs.vcard
+          RUN_NUMBER: ${{ github.run_number }}
+          BETA_GROUP_NAME: Founders
