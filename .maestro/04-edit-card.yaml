@@ -24,8 +24,10 @@ appId: io.dynolabs.vcard
     direction: DOWN
 - tapOn: "Save changes"
 - assertVisible: "Maestro Edited"
-# Save returns to card detail page. Navigate back to cards list so the
-# next flow has a known starting state.
-- back
+# Save returns to card detail page. Navigate back to cards list. The
+# back button's accessibility label is 'Back' (set via headerBackTitle
+# in app/_layout.tsx). iOS has no hardware back so Maestro's `back`
+# command is a no-op.
+- tapOn: "Back"
 - assertVisible: "Your cards"
 - assertVisible: "Maestro Edited"
