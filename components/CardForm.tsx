@@ -64,22 +64,34 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
 
   // Photo picker — lazy-loads expo-image-picker to keep CardForm static
   // imports clean of native modules. If the picker module fails to load,
-  // an Alert tells the user; the form itself never crashes.
+  // an Alert tells the user; the form itself never crashes. Errors also
+  // POST to /v1/crash so we can debug from the API logs without the
+  // operator's phone.
   const onPickPhoto = (source: 'camera' | 'library') => async () => {
     if (photoBusy) return;
     setPhotoBusy(true);
     try {
-      const { pickPhoto, normalize, uploadPhoto } = require('@/lib/photo');
-      const uri = await pickPhoto(source);
+      const photoMod = require('@/lib/photo');
+      const uri = await photoMod.pickPhoto(source);
       if (!uri) return;
-      const normalized = await normalize(uri);
+      const normalized = await photoMod.normalize(uri);
       setDraft(d => ({ ...d, photoUrl: normalized }));
       if (draft.slug) {
-        const url = await uploadPhoto(draft.slug, normalized);
+        const url = await photoMod.uploadPhoto(draft.slug, normalized);
         setDraft(d => ({ ...d, photoUrl: url }));
       }
     } catch (e: unknown) {
-      Alert.alert('Photo', (e as { message?: string })?.message || 'failed');
+      const msg = (e as { message?: string })?.message || String(e);
+      Alert.alert('Photo failed', msg);
+      // Best-effort log to server so we can debug from logs
+      try {
+        const { config } = require('@/lib/config');
+        fetch(`${config.apiBase}/v1/crash`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ where: 'photo-picker', source, message: msg, stack: (e as Error)?.stack }),
+        }).catch(() => {});
+      } catch { /* ignore */ }
     } finally {
       setPhotoBusy(false);
     }
@@ -101,25 +113,38 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+        // Modal presentation eats more chrome — use larger offset so the
+        // phone-pad keyboard never covers the focused phone field.
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
           contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustKeyboardInsets
         >
-          {/* Photo picker */}
-          <Pressable style={styles.photoPicker} onPress={onChoosePhoto}>
-            {draft.photoUrl ? (
-              <Image source={{ uri: draft.photoUrl }} style={styles.photo} />
-            ) : (
-              <View style={[styles.photo, styles.photoFallback]}>
-                <Text style={styles.photoInitial}>{(draft.name || '?').slice(0,1).toUpperCase()}</Text>
-              </View>
-            )}
-            <Text style={styles.photoHint}>{photoBusy ? 'Working…' : draft.photoUrl ? 'Change photo' : 'Add photo'}</Text>
-          </Pressable>
+          {/* Photo picker — Pressable wraps ONLY the avatar circle.
+              Earlier the Pressable spanned the full row width, so any tap
+              in the upper band of the form opened the photo dialog. */}
+          <View style={styles.photoPicker}>
+            <Pressable
+              onPress={onChoosePhoto}
+              hitSlop={8}
+              style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
+            >
+              {draft.photoUrl ? (
+                <Image source={{ uri: draft.photoUrl }} style={styles.photo} />
+              ) : (
+                <View style={[styles.photo, styles.photoFallback]}>
+                  <Text style={styles.photoInitial}>{(draft.name || '?').slice(0,1).toUpperCase()}</Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable onPress={onChoosePhoto} hitSlop={4}>
+              <Text style={styles.photoHint}>{photoBusy ? 'Working…' : draft.photoUrl ? 'Change photo' : 'Add photo'}</Text>
+            </Pressable>
+          </View>
 
           <Field label="Label">
             <TextInput style={[styles.input, isDark && styles.inputDark]}

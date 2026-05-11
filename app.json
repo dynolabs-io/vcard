@@ -38,6 +38,13 @@
       "expo-router",
       "expo-camera",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Pick a profile photo for your card from your library.",
+          "cameraPermission": "Take a profile photo for your card."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
