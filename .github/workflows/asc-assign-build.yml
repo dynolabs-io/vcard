@@ -7,6 +7,10 @@ on:
         description: 'CFBundleVersion to assign (e.g. 50)'
         required: true
         default: '50'
+      tester_email:
+        description: 'Email to invite as individual tester'
+        required: true
+        default: 'alierenbaysal@gmail.com'
 
 jobs:
   assign:
@@ -22,6 +26,7 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           PRIVATE_KEY_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           BUILD_VERSION: ${{ inputs.build_version }}
+          TESTER_EMAIL: ${{ inputs.tester_email }}
         run: |
           python3 - <<'PY'
           import os, base64, time, jwt, requests, json, sys
@@ -95,4 +100,56 @@ jobs:
               names = [g['attributes'].get('name') for g in bg.get('data', [])]
               print(f'  attempt {attempt+1}: build {ver} groups = {names}')
               if names: break
+
+          # 9. List ASC users (account members — they get internal builds automatically
+          # IF they have the right role)
+          print()
+          print('=== App Store Connect users on the account ===')
+          users = requests.get(f'{base}/v1/users?limit=50&fields[users]=username,roles,allAppsVisible',
+              headers=h, timeout=20).json()
+          for u in users.get('data', []):
+              ua = u['attributes']
+              print(f"  {ua.get('username')} roles={ua.get('roles')} allAppsVisible={ua.get('allAppsVisible')}")
+
+          # 10. Invite the requested email as an individual beta tester for this app
+          email = os.environ['TESTER_EMAIL']
+          # Check if already exists
+          existing = requests.get(f'{base}/v1/betaTesters?filter[email]={email}', headers=h, timeout=20).json()
+          if existing.get('data'):
+              tester_id = existing['data'][0]['id']
+              print(f'tester {email} already exists: id={tester_id}')
+          else:
+              create_body = {
+                  'data': {
+                      'type': 'betaTesters',
+                      'attributes': { 'email': email, 'firstName': 'Ali', 'lastName': 'Baysal' },
+                      'relationships': {
+                          'apps': { 'data': [ { 'type': 'apps', 'id': app_id } ] },
+                      },
+                  }
+              }
+              r = requests.post(f'{base}/v1/betaTesters',
+                  headers={**h, 'Content-Type': 'application/json'},
+                  data=json.dumps(create_body), timeout=20)
+              print(f'create-tester status={r.status_code}')
+              if r.status_code >= 300:
+                  print('  body:', r.text)
+              tester_id = r.json().get('data', {}).get('id') if r.status_code < 300 else None
+
+          # 11. Assign tester to Founders group
+          if tester_id:
+              rel = { 'data': [ { 'type': 'betaTesters', 'id': tester_id } ] }
+              r = requests.post(f'{base}/v1/betaGroups/{group_id}/relationships/betaTesters',
+                  headers={**h, 'Content-Type': 'application/json'},
+                  data=json.dumps(rel), timeout=20)
+              print(f'add-tester-to-group status={r.status_code}')
+              if r.status_code >= 300: print('  body:', r.text)
+
+              # 12. Assign tester individually to build 50 (parallel path)
+              rel = { 'data': [ { 'type': 'builds', 'id': build_id } ] }
+              r = requests.post(f'{base}/v1/betaTesters/{tester_id}/relationships/builds',
+                  headers={**h, 'Content-Type': 'application/json'},
+                  data=json.dumps(rel), timeout=20)
+              print(f'assign-tester-to-build status={r.status_code}')
+              if r.status_code >= 300: print('  body:', r.text)
           PY
