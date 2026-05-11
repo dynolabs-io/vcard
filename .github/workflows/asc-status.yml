@@ -61,6 +61,7 @@ jobs:
               print(f"{a.get('version',''):<7}{a.get('processingState',''):<10}{short_ver:<10}{str(comp):<14}{str(ext):<24}{str(intst):<24}")
           # Individual testers per build (these are App Store Connect users with
           # internal-tester role — they get builds outside any beta group).
+          base = 'https://api.appstoreconnect.apple.com'
           print()
           print('=== Individual testers + per-build access ===')
           # Test top 2 builds
