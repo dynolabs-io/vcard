@@ -7,10 +7,12 @@ appId: io.dynolabs.vcard
     element: "Delete card"
     direction: DOWN
 - tapOn: "Delete card"
+# Confirm-Alert. Match the destructive "Delete" button exactly (^Delete$)
+# so we don't catch the page-level "Delete card" button still visible
+# behind the alert.
 - assertVisible:
-    text: "Delete"
+    text: "^Delete$"
 - tapOn:
-    text: "Delete"
-    index: 1
+    text: "^Delete$"
 - assertVisible: "Your cards"
 - assertNotVisible: "Maestro Edited"
