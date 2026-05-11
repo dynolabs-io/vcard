@@ -36,10 +36,42 @@ jobs:
           print(f'app_id={app_id}')
           # List recent builds
           builds = requests.get(
-              f'https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-version&limit=20&fields[builds]=version,uploadedDate,processingState,expired,minOsVersion,usesNonExemptEncryption',
+              f'https://api.appstoreconnect.apple.com/v1/builds?filter[app]={app_id}&sort=-version&limit=10&include=preReleaseVersion,betaBuildLocalizations,buildBetaDetail',
               headers=h, timeout=20).json()
-          print(f"{'build':<8}{'state':<14}{'uploaded':<26}{'expired':<8}")
+          # Build a map of included resources by id
+          inc = {(r['type'], r['id']): r for r in builds.get('included', [])}
+          print(f"{'build':<7}{'state':<10}{'shortVer':<10}{'compliance':<14}{'extState':<24}{'intState':<24}")
           for b in builds.get('data', []):
               a = b['attributes']
-              print(f"{a.get('version',''):<8}{a.get('processingState',''):<14}{str(a.get('uploadedDate','')):<26}{str(a.get('expired','')):<8}")
+              # Get short version from preReleaseVersion
+              prv = b.get('relationships', {}).get('preReleaseVersion', {}).get('data') or {}
+              prv_obj = inc.get(('preReleaseVersions', prv.get('id')))
+              short_ver = (prv_obj or {}).get('attributes', {}).get('version', '?') if prv_obj else '?'
+              # Get beta detail
+              bd = b.get('relationships', {}).get('buildBetaDetail', {}).get('data') or {}
+              bd_obj = inc.get(('buildBetaDetails', bd.get('id')))
+              ext = (bd_obj or {}).get('attributes', {}).get('externalBuildState', '?')
+              intst = (bd_obj or {}).get('attributes', {}).get('internalBuildState', '?')
+              comp = a.get('usesNonExemptEncryption', '?')
+              print(f"{a.get('version',''):<7}{a.get('processingState',''):<10}{short_ver:<10}{str(comp):<14}{str(ext):<24}{str(intst):<24}")
+          # Also list internal beta groups and members
+          print()
+          print('--- Beta Groups ---')
+          groups = requests.get(
+              f'https://api.appstoreconnect.apple.com/v1/betaGroups?filter[app]={app_id}&include=betaTesters',
+              headers=h, timeout=20).json()
+          for g in groups.get('data', []):
+              ga = g['attributes']
+              print(f"  {ga.get('name','')} (internal={ga.get('isInternalGroup')}, hasAccessToAllBuilds={ga.get('hasAccessToAllBuilds')})")
+          # Check which builds are in which beta groups
+          print()
+          print('--- Build → Beta Group Assignments (latest 5 builds) ---')
+          for b in builds.get('data', [])[:5]:
+              bid = b['id']
+              ver = b['attributes'].get('version','')
+              bg = requests.get(
+                  f'https://api.appstoreconnect.apple.com/v1/builds/{bid}/betaGroups',
+                  headers=h, timeout=20).json()
+              names = [g['attributes'].get('name') for g in bg.get('data', [])]
+              print(f"  build {ver}: groups = {names}")
           PY
