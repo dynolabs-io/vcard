@@ -44,40 +44,6 @@ export async function trace<T>(where: string, ctx: TraceCtx, fn: () => Promise<T
   }
 }
 
-let installed = false;
-
-export function installGlobalErrorHandler(): void {
-  if (installed) return;
-  installed = true;
-  // RN's global error handler — catches uncaught JS errors that would
-  // otherwise show only a redbox/whitebox.
-  const ErrorUtils = (globalThis as unknown as { ErrorUtils?: {
-    getGlobalHandler: () => (e: Error, isFatal?: boolean) => void;
-    setGlobalHandler: (h: (e: Error, isFatal?: boolean) => void) => void;
-  }}).ErrorUtils;
-  if (!ErrorUtils) return;
-  const orig = ErrorUtils.getGlobalHandler();
-  ErrorUtils.setGlobalHandler((e, isFatal) => {
-    void postCrash({
-      where: 'global',
-      phase: 'uncaught',
-      isFatal: Boolean(isFatal),
-      error: String(e),
-      stack: e?.stack,
-      name: e?.name,
-    });
-    orig(e, isFatal);
-  });
-  // Unhandled promise rejections
-  const proc = (globalThis as unknown as { process?: { on?: (e: string, f: (r: unknown) => void) => void }}).process;
-  if (proc?.on) {
-    proc.on('unhandledRejection', (reason) => {
-      void postCrash({
-        where: 'global',
-        phase: 'unhandledRejection',
-        error: String(reason),
-        stack: (reason as Error)?.stack,
-      });
-    });
-  }
-}
+// Global error handler was previously installed at module top-level here
+// but caused v60 to crash on relaunch. Reverted to explicit per-call
+// trace() only. Add back once we have proper RN-safe global handler.
