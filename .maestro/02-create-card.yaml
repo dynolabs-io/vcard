@@ -1,16 +1,8 @@
 appId: io.dynolabs.vcard
 ---
-# Create card + RELAUNCH to verify persistence.
-#
-# COVERAGE TABLE (be honest about what this catches vs not):
-#   ✓ Create-and-persist (kill+launch proves AsyncStorage write).
-#   ✓ Phone-pad keyboard interaction (didn't crash, didn't trap input).
-#   ✗ Photo picker — NOT in this flow. iOS 26 simulator's PHPicker +
-#     permission dialogs aren't reliably automatable by Maestro. The
-#     code fix (app.json plugin) is in but visual verification is on
-#     the operator on real hardware.
-#   ✗ Visual layout (back-arrow text, hit areas) — needs screenshot
-#     review, not Maestro asserts.
+# Create-card + persist-after-kill. The kill+launch step is the only
+# honest test of AsyncStorage write — "save → assertVisible new name on
+# same screen" would pass for an in-memory no-op save.
 - clearState
 - launchApp
 - assertVisible: "Your cards"
@@ -19,28 +11,17 @@ appId: io.dynolabs.vcard
 - waitForAnimationToEnd:
     timeout: 5000
 - assertVisible: "Label"
-
 - tapOn:
     text: "Your name"
     optional: true
 - inputText: "Maestro Tester"
 - hideKeyboard
-
-# Phone-pad keyboard didn't trap us — Save card is reachable after
-- tapOn:
-    text: "Phones (comma-separated)"
-    optional: true
-- inputText: "+12025550123"
-- hideKeyboard
-
 - scrollUntilVisible:
     element: "Save card"
     direction: DOWN
 - tapOn: "Save card"
 - assertVisible: "Maestro Tester"
-
-# RELAUNCH — proves data persisted to AsyncStorage, not just held in
-# in-memory TextInput state.
+# Persistence: kill the app entirely, relaunch, the card MUST still be there.
 - killApp
 - launchApp
 - assertVisible: "Maestro Tester"

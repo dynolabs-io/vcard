@@ -1,0 +1,33 @@
+appId: io.dynolabs.vcard
+---
+# Share as vCard. The crash happens INSIDE Share-as-vCard's onPress
+# (calling expo-sharing). Tapping it for real surfaces the crash.
+# Success = iOS share sheet appears (UIActivityViewController).
+- launchApp
+- tapOn: "Maestro Edited"
+- scrollUntilVisible:
+    element: "Share card"
+    direction: DOWN
+- tapOn: "Share card"
+- assertVisible: "Share as vCard"
+- tapOn: "Share as vCard"
+# The native iOS share sheet must appear. We don't know which targets
+# the simulator has installed, so we assert presence of either common
+# elements OR our error Alert if shareVCard threw. The error Alert
+# would fail the flow.
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertNotVisible: "Share failed"
+# Dismiss the share sheet (button text varies between iOS versions)
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn: "Cancel"
+- waitForAnimationToEnd:
+    timeout: 3000

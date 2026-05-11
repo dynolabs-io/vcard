@@ -1,0 +1,20 @@
+appId: io.dynolabs.vcard
+---
+# Photo dialog must only open when tapping the avatar circle / "Add
+# photo" hint — NOT when tapping anywhere else in the upper region.
+- launchApp
+- tapOn: "Maestro Edited"
+- scrollUntilVisible:
+    element: "Edit"
+    direction: DOWN
+- tapOn: "Edit"
+- waitForAnimationToEnd:
+    timeout: 5000
+# Tap on the "Label" field — that's above the avatar in z-order on a
+# broken layout but below it once fixed. Tapping the LABEL field should
+# focus the label TextInput, NOT open the photo dialog.
+- tapOn:
+    text: "Label"
+    optional: true
+- assertNotVisible: "Profile photo"
+- hideKeyboard

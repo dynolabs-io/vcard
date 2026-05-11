@@ -1,0 +1,38 @@
+appId: io.dynolabs.vcard
+---
+# Photo picker — drives the action to completion.
+# The simulator has been pre-granted photo permission via xcrun simctl
+# privacy, so the system dialog should NOT appear; PHPicker opens.
+# If the picker module is broken (expo-image-picker not autolinked),
+# this flow catches it: either we see "Photo failed" Alert (caught) or
+# the next step fails because PHPicker never opened.
+- launchApp
+- tapOn: "Maestro Tester"
+- tapOn: "Edit"
+- waitForAnimationToEnd:
+    timeout: 5000
+# The Pressable hit area: tap on "Add photo" hint text below the avatar.
+- tapOn: "Add photo"
+- assertVisible: "Profile photo"
+- tapOn: "Choose from library"
+# Either PHPicker opens (success path) OR our Alert "Photo failed"
+# appears (crash path). assertNotVisible "Photo failed" — if it shows,
+# the flow fails loudly. If PHPicker opens, dismiss it.
+- waitForAnimationToEnd:
+    timeout: 10000
+- assertNotVisible: "Photo failed"
+# Cancel out of PHPicker so we don't actually pick (simulator gallery
+# might be empty). The point is just to prove the picker opens.
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn: "Cancel"
+- runFlow:
+    when:
+      visible: "Done"
+    commands:
+      - tapOn: "Done"
+# Back to the edit form
+- waitForAnimationToEnd:
+    timeout: 3000

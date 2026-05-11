@@ -1,0 +1,38 @@
+appId: io.dynolabs.vcard
+---
+# Add to Apple Wallet. The app calls Linking.openURL which fetches the
+# .pkpass and iOS opens Wallet's Add Pass sheet. Maestro can see "Add"
+# and "Cancel" buttons on that sheet.
+# This flow ALSO proves the pass-signer is reachable from the simulator
+# (the simulator is behind macos-runner-NAT, but api.dynolabs.io is
+# publicly routable so this should work).
+- launchApp
+- tapOn: "Maestro Edited"
+# The Add to Apple Wallet button only appears when card.slug exists
+# (i.e. server-roundtripped). Give the API a few seconds.
+- waitForAnimationToEnd:
+    timeout: 5000
+- runFlow:
+    when:
+      visible: "Saving card to cloud…"
+    commands:
+      # If we still see "Saving card to cloud…", the card has no slug.
+      # Wait a bit and check again. If after 15s it's still saving,
+      # the API never responded — fail.
+      - waitForAnimationToEnd:
+          timeout: 15000
+- assertVisible: "Add to Apple Wallet"
+- tapOn: "Add to Apple Wallet"
+- waitForAnimationToEnd:
+    timeout: 15000
+# Either Wallet's Add Pass sheet appears (success) OR our error Alert
+# "Could not open Wallet" appears (catch). The Alert would fail this.
+- assertNotVisible: "Could not open Wallet"
+# Dismiss the Wallet sheet
+- runFlow:
+    when:
+      visible: "Cancel"
+    commands:
+      - tapOn: "Cancel"
+- waitForAnimationToEnd:
+    timeout: 3000

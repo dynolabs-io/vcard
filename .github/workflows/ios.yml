@@ -289,10 +289,16 @@ jobs:
           xcrun simctl privacy "$SIM_UDID" grant photos    io.dynolabs.vcard || true
           xcrun simctl privacy "$SIM_UDID" grant camera    io.dynolabs.vcard || true
           xcrun simctl privacy "$SIM_UDID" grant contacts  io.dynolabs.vcard || true
-          # Pre-grant permissions so iOS doesn't show the system prompt mid-test
-          xcrun simctl privacy "$SIM_UDID" grant photos    io.dynolabs.vcard || true
-          xcrun simctl privacy "$SIM_UDID" grant camera    io.dynolabs.vcard || true
-          xcrun simctl privacy "$SIM_UDID" grant contacts  io.dynolabs.vcard || true
+          # Seed the simulator's Photos library with one image so PHPicker
+          # has content when the photo flow tests "Choose from library".
+          # Use any PNG from the repo assets — the icon is fine.
+          curl -fsSL -o /tmp/seed.jpg "https://picsum.photos/seed/picsum/512/512" 2>/dev/null || \
+            convert -size 512x512 xc:blue /tmp/seed.jpg 2>/dev/null || \
+            cp ./assets/images/icon.png /tmp/seed.jpg 2>/dev/null || true
+          if [ -f /tmp/seed.jpg ]; then
+            xcrun simctl addmedia "$SIM_UDID" /tmp/seed.jpg || true
+            echo "Seeded sim Photos with /tmp/seed.jpg"
+          fi
 
       - name: Install Maestro
         run: |
