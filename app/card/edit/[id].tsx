@@ -38,12 +38,28 @@ export default function EditCard() {
       } catch { /* keep local */ }
     }
     const merged = { ...next, photoUrl };
+    // Strip server-managed fields. The server's Card has createdAt/updatedAt
+    // as time.Time and we send them as numbers (epoch ms) — JSON unmarshal
+    // would reject the whole body with 400, the catch below would silently
+    // fall back to local-only save, and the user would see "wallet shows
+    // stale data" because the server never received the edit.
+    // ID is the path param; deviceId never changes; timestamps are server-side.
+    const { createdAt, updatedAt, id, deviceId, ...patch } = merged;
+    void createdAt; void updatedAt; void id; void deviceId;
+    let saved = merged;
     try {
-      const updated = await api.updateCard(initial.id, merged);
-      await saveLocal(updated);
-    } catch {
-      await saveLocal(merged);
+      saved = await api.updateCard(initial.id, patch);
+    } catch (e) {
+      // Best-effort log so we see API failures server-side
+      try {
+        await fetch(`${require('@/lib/config').config.apiBase}/v1/crash`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ where: 'edit-card-patch', error: String(e), stack: (e as Error)?.stack, cardId: initial.id }),
+        });
+      } catch {}
     }
+    await saveLocal(saved);
     router.back();
   };
 

@@ -29,7 +29,19 @@ appId: io.dynolabs.vcard
 # Either Wallet's Add Pass sheet appears (success) OR our error Alert
 # "Could not open Wallet" appears (catch). The Alert would fail this.
 - assertNotVisible: "Could not open Wallet"
-# Dismiss the Wallet sheet
+# THE wallet bug check: the pass MUST show the CURRENT card name
+# ("Maestro Edited" after flow 04's edit), not the stale created name.
+# This is the user's bug 6 — wallet was showing the old card because
+# the edit only saved locally; the PATCH to API was failing silently.
+- assertVisible: "Maestro Edited"
+- assertNotVisible: "Maestro Tester"
+# Dismiss — Wallet's Add Pass sheet close button has accessibility id
+# "Close" on iOS 26.
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
 - runFlow:
     when:
       visible: "Cancel"
@@ -37,3 +49,6 @@ appId: io.dynolabs.vcard
       - tapOn: "Cancel"
 - waitForAnimationToEnd:
     timeout: 3000
+# Bring vCard back to foreground for subsequent flows
+- launchApp:
+    stopApp: false
