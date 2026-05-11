@@ -4,7 +4,10 @@ appId: io.dynolabs.vcard
 - launchApp:
     stopApp: false
 - tapOn: "Maestro Edited"
-# We're on the card detail page; the back arrow is at top-left.
-# The Stack.Screen options set headerBackButtonDisplayMode='minimal'
-# AND headerBackTitle=''. So "(tabs)" must NOT appear in the chrome.
+# The Stack.Screen sets headerBackButtonDisplayMode='minimal' so the
+# back button shows only a chevron, AND headerBackTitle='Back' so the
+# accessibility label is "Back" not "(tabs)". The whole point: VoiceOver
+# users shouldn't hear "(tabs)", and Maestro's a11y-tree-based
+# visibility must also not see "(tabs)".
 - assertNotVisible: "(tabs)"
+- assertVisible: "Card"  # the route title — proves we ARE on detail

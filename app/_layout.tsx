@@ -27,7 +27,16 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="card/new" options={{ headerShown: true, presentation: 'modal', title: 'New Card' }} />
-          <Stack.Screen name="card/[id]" options={{ headerShown: true, title: 'Card', headerBackButtonDisplayMode: 'minimal', headerBackTitle: '' }} />
+          <Stack.Screen
+            name="card/[id]"
+            options={{
+              headerShown: true,
+              title: 'Card',
+              headerBackButtonDisplayMode: 'minimal',
+              headerBackTitle: 'Back',
+              headerBackButtonMenuEnabled: false,
+            }}
+          />
           <Stack.Screen name="card/edit/[id]" options={{ headerShown: true, presentation: 'modal', title: 'Edit Card' }} />
         </Stack>
         <StatusBar style="auto" />
