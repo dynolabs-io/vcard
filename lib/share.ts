@@ -51,7 +51,10 @@ export async function sharePNGFromBase64(base64: string, fileName: string, dialo
   const file = new File(Paths.cache, fileName);
   if (file.exists) file.delete();
   file.create();
-  file.base64 = base64;
+  // expo-file-system 19 expects file.write(content, { encoding: 'base64' }).
+  // file.base64 = ... is not a valid setter; previously this silently
+  // failed and shared an empty file.
+  file.write(base64, { encoding: 'base64' });
   await Sharing.shareAsync(file.uri, {
     mimeType: 'image/png',
     UTI: 'public.png',
@@ -60,11 +63,9 @@ export async function sharePNGFromBase64(base64: string, fileName: string, dialo
 }
 
 export async function shareLink(name: string, url: string): Promise<void> {
-  const { File, Paths } = require('expo-file-system');
-  const Sharing = require('expo-sharing');
-  const file = new File(Paths.cache, '.tmp.txt');
-  if (file.exists) file.delete();
-  file.create();
-  file.write(`${name} — ${url}`);
-  await Sharing.shareAsync(file.uri, { mimeType: 'text/plain', dialogTitle: 'Share link' });
+  // Share the URL as a real link via React Native's built-in Share API
+  // (not a .tmp text file via expo-sharing). The receiver sees a tappable
+  // URL preview in Messages/Mail/etc instead of a text attachment.
+  const { Share } = require('react-native');
+  await Share.share({ message: `${name} — ${url}`, url });
 }
