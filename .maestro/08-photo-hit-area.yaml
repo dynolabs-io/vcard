@@ -20,10 +20,13 @@ appId: io.dynolabs.vcard
 - assertNotVisible: "Profile photo"
 - swipe:
     direction: DOWN
-# Navigate back: Edit form (modal) → detail → cards list. The modal is
-# dismissed via the swipe-down gesture; back arrow only exists on the
-# pushed detail page.
-- swipe:
+# Navigate back: Edit form (modal) → detail → cards list. The cleanest
+# path is via Save changes (which router.back's to detail) then the
+# Back chevron. Swipe-down dismissal of iOS modals is not reliable
+# through Maestro's generic 'swipe direction:' command.
+- scrollUntilVisible:
+    element: "Save changes"
     direction: DOWN
+- tapOn: "Save changes"
 - tapOn: "Back"
 - assertVisible: "Your cards"
