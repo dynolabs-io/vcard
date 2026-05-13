@@ -34,6 +34,14 @@ appId: io.dynolabs.vcard
       visible: "Done"
     commands:
       - tapOn: "Done"
-# Back to the edit form
+# Back to the edit form. Now navigate back to cards list so subsequent
+# flows start from a known state. Save Changes dismisses the modal
+# (returns to detail page), then Back chevron returns to cards list.
 - waitForAnimationToEnd:
     timeout: 3000
+- scrollUntilVisible:
+    element: "Save changes"
+    direction: DOWN
+- tapOn: "Save changes"
+- tapOn: "Back"
+- assertVisible: "Your cards"
