@@ -3,8 +3,11 @@ appId: io.dynolabs.vcard
 # Create-card + persist-after-kill. The kill+launch step is the only
 # honest test of AsyncStorage write — "save → assertVisible new name on
 # same screen" would pass for an in-memory no-op save.
-- clearState
-- launchApp
+# Don't clearState here — flow 01-launch already did it. Consecutive
+# clearState + relaunch on iOS sim is flaky (app comes up as black
+# screen on second launch).
+- launchApp:
+    stopApp: false
 - assertVisible: "Your cards"
 - tapOn: "Create card"
 - assertVisible: "New Card"
