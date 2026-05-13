@@ -18,8 +18,13 @@ appId: io.dynolabs.vcard
     text: "Label"
     optional: true
 - assertNotVisible: "Profile photo"
-- swipe:
-    direction: DOWN
+# Tapping the Label LABEL focused its TextInput → keyboard up → form
+# scrolled to keep the field visible, pushing Save Changes off-screen.
+# Tap somewhere non-interactive (the page title) to dismiss keyboard
+# without leaving the modal.
+- tapOn:
+    text: "Edit Card"
+    optional: true
 # Navigate back: Edit form (modal) → detail → cards list. The cleanest
 # path is via Save changes (which router.back's to detail) then the
 # Back chevron. Swipe-down dismissal of iOS modals is not reliable
