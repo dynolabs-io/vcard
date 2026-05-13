@@ -35,10 +35,12 @@ appId: io.dynolabs.vcard
       visible: "Cancel"
     commands:
       - tapOn: "Cancel"
-# iOS 26 share sheet sometimes has neither Close nor Cancel text in
-# Maestro's a11y tree. Tap above the sheet (top 5% of screen) to
-# dismiss via the standard tap-outside-modal gesture.
-- tapOn:
-    point: "50%, 3%"
+# iOS share sheet doesn't expose Cancel/Close. "Copy" is always present
+# and dismisses the sheet without launching another app — clean exit.
+- runFlow:
+    when:
+      visible: "Copy"
+    commands:
+      - tapOn: "Copy"
 - waitForAnimationToEnd:
     timeout: 3000
