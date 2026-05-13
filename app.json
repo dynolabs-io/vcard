@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "dynolabs-vcard",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "io.dynolabs.vcard",
@@ -55,7 +55,8 @@
             "backgroundColor": "#0B0B0F"
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "apiBase": "https://api.dynolabs.io",
