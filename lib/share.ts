@@ -22,15 +22,46 @@ async function logStep(step: string, ctx: Record<string, unknown>): Promise<void
   } catch { /* never throw from logger */ }
 }
 
+async function fetchPhotoAsBase64(photoUrl: string): Promise<string | undefined> {
+  // Inline the photo into the vCard PHOTO field. iOS Contacts only
+  // auto-fetches PHOTO from URL on some flows — embedding base64
+  // guarantees the receiver sees the image immediately.
+  try {
+    // Strip any cache-busting query param before fetching — server
+    // accepts both but caching is cleaner without.
+    const res = await fetch(photoUrl);
+    if (!res.ok) return undefined;
+    const blob = await res.blob();
+    const reader = new FileReader();
+    return await new Promise<string | undefined>((resolve) => {
+      reader.onloadend = () => {
+        const result = reader.result as string;
+        // strip "data:image/jpeg;base64,"
+        const i = result.indexOf(',');
+        resolve(i >= 0 ? result.slice(i + 1) : result);
+      };
+      reader.onerror = () => resolve(undefined);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return undefined;
+  }
+}
+
 export async function shareVCard(card: Card, profileUrl?: string): Promise<void> {
   await logStep('share-vcard.1.before-require-fs', {});
   const { File, Paths } = require('expo-file-system');
   await logStep('share-vcard.2.before-require-sharing', { hasFile: !!File, hasPaths: !!Paths });
   const Sharing = require('expo-sharing');
   await logStep('share-vcard.3.after-requires', { hasSharing: !!Sharing, hasShareAsync: !!Sharing?.shareAsync });
-  const text = buildVCard(card, { profileUrl, photoUrl: card.photoUrl });
+  // Try to embed photo so receiver's Contacts gets the image inline.
+  let thumbnailBase64: string | undefined;
+  if (card.photoUrl) {
+    thumbnailBase64 = await fetchPhotoAsBase64(card.photoUrl);
+  }
+  const text = buildVCard(card, { profileUrl, photoUrl: card.photoUrl, thumbnailBase64 });
   const fileName = `${safe(card.name || 'vcard')}.vcf`;
-  await logStep('share-vcard.4.before-new-file', { cachePath: Paths?.cache, fileName });
+  await logStep('share-vcard.4.before-new-file', { cachePath: Paths?.cache, fileName, hasThumb: !!thumbnailBase64 });
   const file = new File(Paths.cache, fileName);
   await logStep('share-vcard.5.after-new-file', { uri: file.uri });
   if (file.exists) file.delete();

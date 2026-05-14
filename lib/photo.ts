@@ -81,7 +81,11 @@ export async function uploadPhoto(slug: string, localUri: string): Promise<strin
     if (!upload.ok) throw new Error(`upload failed: HTTP ${upload.status}`);
     const json = (await upload.json()) as { url?: string };
     if (!json.url) throw new Error('upload returned no url');
-    return json.url;
+    // Append cache-busting param so the next time the user uploads a
+    // new photo for the same slug, iOS/RN Image doesn't show the
+    // previously cached version. The pass-signer + downstream readers
+    // strip the ?v= silently.
+    return `${json.url}?v=${Date.now()}`;
   } finally {
     clearTimeout(timer);
   }
