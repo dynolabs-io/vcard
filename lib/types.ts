@@ -4,6 +4,13 @@
 
 export type CardTemplate = 'mono' | 'gradient' | 'glass' | 'custom';
 
+// Apple Wallet pass layout. Maps to Apple's pass style + assets:
+//   compact     → eventTicket, small ~25% center barcode (default, like Starbucks)
+//   bigqr       → eventTicket + strip.png-as-QR, ~50% of pass is the QR
+//   photoBack   → eventTicket + background.png = user photo, small QR overlay
+//   minimal     → generic style, just QR + name, no fields
+export type WalletStyle = 'compact' | 'bigqr' | 'photoBack' | 'minimal';
+
 export type Social = {
   kind: 'linkedin' | 'x' | 'instagram' | 'github' | 'website';
   url: string;
@@ -25,6 +32,7 @@ export type Card = {
   photoUrl?: string;     // hi-res URL on cdn.dynolabs.io (set after upload)
   template: CardTemplate;
   customColor?: string;  // hex, only when template === 'custom'
+  walletStyle?: WalletStyle;  // default 'compact' if omitted
   deviceId?: string;     // bound at create time
   createdAt: string | number;  // server returns ISO string; local stores epoch ms
   updatedAt: string | number;
@@ -38,6 +46,7 @@ export const emptyCard = (): Card => ({
   phones: [],
   socials: [],
   template: 'mono',
+  walletStyle: 'bigqr',
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });

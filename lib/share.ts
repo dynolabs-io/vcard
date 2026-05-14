@@ -61,7 +61,23 @@ export async function shareVCard(card: Card, profileUrl?: string): Promise<void>
   }
   const text = buildVCard(card, { profileUrl, photoUrl: card.photoUrl, thumbnailBase64 });
   const fileName = `${safe(card.name || 'vcard')}.vcf`;
-  await logStep('share-vcard.4.before-new-file', { cachePath: Paths?.cache, fileName, hasThumb: !!thumbnailBase64 });
+  // Log the actual vCard text we're emitting. Receiver-side re-encoding
+  // (WhatsApp, iOS Contacts re-share, etc.) can strip fields after this
+  // point, but the bytes we WRITE are captured here.
+  await logStep('share-vcard.4.before-new-file', {
+    cachePath: Paths?.cache,
+    fileName,
+    hasThumb: !!thumbnailBase64,
+    cardFields: {
+      name: card.name, title: card.title, company: card.company,
+      emailCount: card.emails?.length, phoneCount: card.phones?.length,
+      hasPhotoUrl: !!card.photoUrl,
+    },
+    // Photo base64 trimmed; we just want the structural fields visible.
+    rawVCard: thumbnailBase64
+      ? text.replace(/PHOTO;ENCODING=b;TYPE=JPEG:[^\r\n]+/, 'PHOTO;ENCODING=b;TYPE=JPEG:<' + thumbnailBase64.length + '-bytes>')
+      : text,
+  });
   const file = new File(Paths.cache, fileName);
   await logStep('share-vcard.5.after-new-file', { uri: file.uri });
   if (file.exists) file.delete();

@@ -11,7 +11,15 @@ import {
 import type { TextInput as TextInputType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
-import { type Card, type CardTemplate } from '@/lib/types';
+import { type Card, type CardTemplate, type WalletStyle } from '@/lib/types';
+
+// Apple Wallet pass layout choices the user can pick.
+const WALLET_STYLES: { id: WalletStyle; name: string; preview: string }[] = [
+  { id: 'bigqr',     name: 'Big QR',     preview: '▓▓▓\n▓▓▓\n— text —' },
+  { id: 'photoBack', name: 'Photo back', preview: '◼ photo ◼\nname • QR' },
+  { id: 'compact',   name: 'Compact',    preview: '◻ ◻ ◻\nname\n▓ qr ▓' },
+  { id: 'minimal',   name: 'Minimal',    preview: 'name\n\n  ▓▓\n  ▓▓' },
+];
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
 
@@ -210,6 +218,26 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
               })}
             </View>
           </Field>
+          <Field label="Wallet pass layout">
+            <View style={styles.templateRow}>
+              {WALLET_STYLES.map(w => {
+                const selected = (draft.walletStyle ?? 'compact') === w.id;
+                return (
+                  <Pressable
+                    key={w.id}
+                    onPress={() => setDraft({ ...draft, walletStyle: w.id })}
+                    style={[
+                      styles.walletChip,
+                      selected && styles.walletChipSelected,
+                    ]}
+                  >
+                    <Text style={[styles.walletName, selected && styles.walletNameSelected]}>{w.name}</Text>
+                    <Text style={styles.walletPreview}>{w.preview}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Field>
           {draft.template === 'custom' && (
             <Field label="Accent color">
               <View style={styles.colorRow}>
@@ -288,6 +316,11 @@ const styles = StyleSheet.create({
   colorRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   swatch: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: 'transparent' },
   swatchSelected: { borderColor: '#000' },
+  walletChip: { padding: 10, borderRadius: 12, minWidth: 96, alignItems: 'center', backgroundColor: 'rgba(127,127,127,0.10)', borderWidth: 2, borderColor: 'transparent' },
+  walletChipSelected: { borderColor: '#0A66C2', backgroundColor: 'rgba(10,102,194,0.10)' },
+  walletName: { fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  walletNameSelected: { color: '#0A66C2' },
+  walletPreview: { fontSize: 9, opacity: 0.6, textAlign: 'center', fontFamily: 'Menlo' },
   preview: { padding: 18, borderRadius: 18, marginTop: 4 },
   pLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   pName: { fontSize: 22, fontWeight: '700', marginTop: 4 },
