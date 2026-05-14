@@ -44,3 +44,11 @@ appId: io.dynolabs.vcard
       - tapOn: "Copy"
 - waitForAnimationToEnd:
     timeout: 3000
+# Navigate back to cards list so subsequent flows (09-delete) have a
+# known starting state.
+- runFlow:
+    when:
+      visible: "Back"
+    commands:
+      - tapOn: "Back"
+- assertVisible: "Your cards"
