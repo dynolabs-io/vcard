@@ -4,12 +4,18 @@
 
 export type CardTemplate = 'mono' | 'gradient' | 'glass' | 'custom';
 
-// Apple Wallet pass layout. Maps to Apple's pass style + assets:
-//   compact     → eventTicket, small ~25% center barcode (default, like Starbucks)
-//   bigqr       → eventTicket + strip.png-as-QR, ~50% of pass is the QR
-//   photoBack   → eventTicket + background.png = user photo, small QR overlay
-//   minimal     → generic style, just QR + name, no fields
-export type WalletStyle = 'compact' | 'bigqr' | 'photoBack' | 'minimal';
+// Apple Wallet pass layout. Maps to Apple's pass style + assets.
+// iOS 18+ "poster*" styles use preferredStyleSchemes for the new
+// posterEventTicket layout (full-bleed artwork, Nene Royal style).
+// Older iOS gracefully falls back to the legacy eventTicket layout.
+export type WalletStyle =
+  | 'posterQR'      // iOS 18+ enhanced: entire pass front IS the QR (recommended)
+  | 'posterPhoto'   // iOS 18+ enhanced: full-bleed user photo, fields overlay
+  | 'posterBrand'   // iOS 18+ enhanced: branded composite (photo + brand color)
+  | 'bigqr'         // legacy: big QR as strip banner
+  | 'photoBack'     // legacy: photo as blurred background, small QR
+  | 'compact'       // legacy: standard eventTicket center barcode
+  | 'minimal';      // legacy: generic style, just QR + name
 
 export type Social = {
   kind: 'linkedin' | 'x' | 'instagram' | 'github' | 'website';
@@ -46,7 +52,7 @@ export const emptyCard = (): Card => ({
   phones: [],
   socials: [],
   template: 'mono',
-  walletStyle: 'bigqr',
+  walletStyle: 'posterQR',
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });

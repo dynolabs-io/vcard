@@ -15,10 +15,13 @@ import { type Card, type CardTemplate, type WalletStyle } from '@/lib/types';
 
 // Apple Wallet pass layout choices the user can pick.
 const WALLET_STYLES: { id: WalletStyle; name: string; hint: string }[] = [
-  { id: 'bigqr',     name: 'Big QR',     hint: 'Large QR banner' },
-  { id: 'photoBack', name: 'Photo',      hint: 'Photo behind text' },
-  { id: 'compact',   name: 'Compact',    hint: 'Small QR + fields' },
-  { id: 'minimal',   name: 'Minimal',    hint: 'Just QR + name' },
+  { id: 'posterQR',    name: 'Full QR',     hint: 'Whole pass is the QR' },
+  { id: 'posterPhoto', name: 'Photo card',  hint: 'Photo fills the pass' },
+  { id: 'posterBrand', name: 'Branded',     hint: 'Photo + brand color' },
+  { id: 'bigqr',       name: 'QR banner',   hint: 'Wide QR up top' },
+  { id: 'photoBack',   name: 'Photo back',  hint: 'Photo blurred behind' },
+  { id: 'compact',     name: 'Standard',    hint: 'Default Wallet layout' },
+  { id: 'minimal',     name: 'Minimal',     hint: 'Just QR + name' },
 ];
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
