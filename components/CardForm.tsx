@@ -14,11 +14,11 @@ import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate, type WalletStyle } from '@/lib/types';
 
 // Apple Wallet pass layout choices the user can pick.
-const WALLET_STYLES: { id: WalletStyle; name: string; preview: string }[] = [
-  { id: 'bigqr',     name: 'Big QR',     preview: '▓▓▓\n▓▓▓\n— text —' },
-  { id: 'photoBack', name: 'Photo back', preview: '◼ photo ◼\nname • QR' },
-  { id: 'compact',   name: 'Compact',    preview: '◻ ◻ ◻\nname\n▓ qr ▓' },
-  { id: 'minimal',   name: 'Minimal',    preview: 'name\n\n  ▓▓\n  ▓▓' },
+const WALLET_STYLES: { id: WalletStyle; name: string; hint: string }[] = [
+  { id: 'bigqr',     name: 'Big QR',     hint: 'Large QR banner' },
+  { id: 'photoBack', name: 'Photo',      hint: 'Photo behind text' },
+  { id: 'compact',   name: 'Compact',    hint: 'Small QR + fields' },
+  { id: 'minimal',   name: 'Minimal',    hint: 'Just QR + name' },
 ];
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
@@ -232,7 +232,7 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
                     ]}
                   >
                     <Text style={[styles.walletName, selected && styles.walletNameSelected]}>{w.name}</Text>
-                    <Text style={styles.walletPreview}>{w.preview}</Text>
+                    <Text style={styles.walletPreview}>{w.hint}</Text>
                   </Pressable>
                 );
               })}
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   walletChipSelected: { borderColor: '#0A66C2', backgroundColor: 'rgba(10,102,194,0.10)' },
   walletName: { fontSize: 13, fontWeight: '700', marginBottom: 4 },
   walletNameSelected: { color: '#0A66C2' },
-  walletPreview: { fontSize: 9, opacity: 0.6, textAlign: 'center', fontFamily: 'Menlo' },
+  walletPreview: { fontSize: 11, opacity: 0.6, textAlign: 'center' },
   preview: { padding: 18, borderRadius: 18, marginTop: 4 },
   pLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   pName: { fontSize: 22, fontWeight: '700', marginTop: 4 },
