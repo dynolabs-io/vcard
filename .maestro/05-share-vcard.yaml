@@ -45,10 +45,16 @@ appId: io.dynolabs.vcard
 - waitForAnimationToEnd:
     timeout: 3000
 # Navigate back to cards list so subsequent flows (09-delete) have a
-# known starting state.
+# known starting state. Try the iOS back chevron first; iOS 26 sometimes
+# hides it from the a11y tree so fall back to the bottom Cards tab.
 - runFlow:
     when:
       visible: "Back"
     commands:
       - tapOn: "Back"
+- runFlow:
+    when:
+      notVisible: "Your cards"
+    commands:
+      - tapOn: "Cards"
 - assertVisible: "Your cards"
