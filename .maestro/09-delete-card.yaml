@@ -1,10 +1,14 @@
 appId: io.dynolabs.vcard
 ---
-# Delete card — uses anchored regex to match the alert button, not the
-# page-level "Delete card" text.
+# Delete card — Apple Contacts pattern: destructive lives inside Edit.
+# Tap Edit (header right) → scroll to "Delete card" → confirm.
 - launchApp:
     stopApp: false
 - tapOn: "Maestro Edited"
+- tapOn: "Edit"
+- assertVisible: "Edit Card"
+- waitForAnimationToEnd:
+    timeout: 3000
 - scrollUntilVisible:
     element: "Delete card"
     direction: DOWN
@@ -13,5 +17,10 @@ appId: io.dynolabs.vcard
     text: "^Delete$"
 - tapOn:
     text: "^Delete$"
+- runFlow:
+    when:
+      notVisible: "Your cards"
+    commands:
+      - tapOn: "Cards"
 - assertVisible: "Your cards"
 - assertNotVisible: "Maestro Edited"

@@ -7,9 +7,8 @@ appId: io.dynolabs.vcard
 - launchApp:
     stopApp: false
 - tapOn: "Maestro Tester"
-- scrollUntilVisible:
-    element: "Edit"
-    direction: DOWN
+# Edit lives in the navigation header right (Apple Contacts style),
+# no scroll needed.
 - tapOn: "Edit"
 - waitForAnimationToEnd:
     timeout: 5000
@@ -24,5 +23,9 @@ appId: io.dynolabs.vcard
     element: "Save changes"
     direction: DOWN
 - tapOn: "Save changes"
-- tapOn: "Back"
+- runFlow:
+    when:
+      notVisible: "Cards"
+    commands:
+      - tapOn: "Cards"
 - assertVisible: "Your cards"

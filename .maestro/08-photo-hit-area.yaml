@@ -5,33 +5,23 @@ appId: io.dynolabs.vcard
 - launchApp:
     stopApp: false
 - tapOn: "Maestro Edited"
-- scrollUntilVisible:
-    element: "Edit"
-    direction: DOWN
 - tapOn: "Edit"
 - waitForAnimationToEnd:
     timeout: 5000
-# Tap on the "Label" field — that's above the avatar in z-order on a
-# broken layout but below it once fixed. Tapping the LABEL field should
-# focus the label TextInput, NOT open the photo dialog.
 - tapOn:
     text: "Label"
     optional: true
 - assertNotVisible: "Profile photo"
-# Tapping the Label LABEL focused its TextInput → keyboard up → form
-# scrolled to keep the field visible, pushing Save Changes off-screen.
-# Tap somewhere non-interactive (the page title) to dismiss keyboard
-# without leaving the modal.
 - tapOn:
     text: "Edit Card"
     optional: true
-# Navigate back: Edit form (modal) → detail → cards list. The cleanest
-# path is via Save changes (which router.back's to detail) then the
-# Back chevron. Swipe-down dismissal of iOS modals is not reliable
-# through Maestro's generic 'swipe direction:' command.
 - scrollUntilVisible:
     element: "Save changes"
     direction: DOWN
 - tapOn: "Save changes"
-- tapOn: "Back"
+- runFlow:
+    when:
+      notVisible: "Your cards"
+    commands:
+      - tapOn: "Cards"
 - assertVisible: "Your cards"

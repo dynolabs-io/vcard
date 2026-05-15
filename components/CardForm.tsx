@@ -24,9 +24,12 @@ type Props = {
   submitLabel: string;
   /** First-time create can prefill from the device. Skip on edit. */
   enablePrefill?: boolean;
+  /** Optional Delete action shown at the very bottom of the form
+   *  (typical Apple Contacts pattern: destructive lives inside Edit). */
+  onDelete?: () => void;
 };
 
-export function CardForm({ initial, onSubmit, submitLabel }: Props) {
+export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
   const isDark = useColorScheme() === 'dark';
   const [draft, setDraft] = useState<Card>(initial);
   const [emailsInput, setEmailsInput] = useState((initial.emails || []).join(', '));
@@ -300,6 +303,17 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
           >
             <Text style={styles.ctaText}>{saving ? 'Saving…' : submitLabel}</Text>
           </Pressable>
+          {onDelete && (
+            <Pressable
+              onPress={onDelete}
+              accessibilityLabel="Delete card"
+              accessibilityRole="button"
+              testID="card-delete"
+              style={styles.deleteCta}
+            >
+              <Text style={styles.deleteCtaText}>Delete card</Text>
+            </Pressable>
+          )}
           <View style={{ height: 24 }} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -336,6 +350,8 @@ const styles = StyleSheet.create({
   inputDark: { color: '#fff' },
   cta: { padding: 16, borderRadius: 999, backgroundColor: '#111', alignItems: 'center', marginTop: 12 },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  deleteCta: { padding: 14, alignItems: 'center', marginTop: 8 },
+  deleteCtaText: { color: '#DC2626', fontSize: 15, fontWeight: '500' },
   disabled: { opacity: 0.4 },
   templateRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   templateChip: { padding: 12, borderRadius: 12, minWidth: 72, alignItems: 'center', borderWidth: 2, borderColor: 'transparent' },

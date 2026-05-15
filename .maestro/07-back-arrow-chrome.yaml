@@ -10,4 +10,5 @@ appId: io.dynolabs.vcard
 # users shouldn't hear "(tabs)", and Maestro's a11y-tree-based
 # visibility must also not see "(tabs)".
 - assertNotVisible: "(tabs)"
-- assertVisible: "Card"  # the route title — proves we ARE on detail
+# Title is now the card's name (Apple Contacts pattern), not "Card".
+- assertVisible: "Maestro Edited"

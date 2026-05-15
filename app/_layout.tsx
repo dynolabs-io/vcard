@@ -31,9 +31,10 @@ export default function RootLayout() {
             name="card/[id]"
             options={{
               headerShown: true,
-              title: 'Card',
+              // Title is set dynamically per card from the detail screen
+              // via <Stack.Screen options={{ title: card.name }} />.
               headerBackButtonDisplayMode: 'minimal',
-              headerBackTitle: 'Back',
+              headerBackTitle: 'Cards',
               headerBackButtonMenuEnabled: false,
             }}
           />

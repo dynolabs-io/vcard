@@ -1,30 +1,19 @@
 appId: io.dynolabs.vcard
 ---
-# Share flow — tap "Share as vCard" for REAL, wait for the iOS share
-# sheet, then dismiss. Earlier this flow tapped Cancel on the in-app
-# Alert and never invoked the share handler — the crash happens INSIDE
-# Share-as-vCard's onPress.
+# Share menu — tap "Share as vCard" for REAL, wait for the iOS share
+# sheet, then dismiss.
 - launchApp
 - tapOn: "Maestro Edited"
-- scrollUntilVisible:
-    element: "Share"
-    direction: DOWN
 - tapOn: "Share"
 - assertVisible: "Share as vCard"
 - tapOn: "Share as vCard"
-# iOS share sheet appears. It contains either app icons OR a "Cancel"
-# button at the bottom (UIActivityViewController). We don't pick a
-# share target (would actually send), but we DO assert the sheet
-# appeared — the crash bug would prevent it from ever showing.
 - waitForAnimationToEnd:
     timeout: 8000
 - runFlow:
     when:
       visible: "Share failed"
     commands:
-      # If we got here, shareVCard threw — the test should fail loud.
       - assertVisible: "this-string-does-not-exist-fail-the-flow"
-# Otherwise dismiss the share sheet
 - runFlow:
     when:
       visible: "Close"

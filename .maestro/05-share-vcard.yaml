@@ -1,8 +1,7 @@
 appId: io.dynolabs.vcard
 ---
-# Share as vCard. The crash happens INSIDE Share-as-vCard's onPress
-# (calling expo-sharing). Tapping it for real surfaces the crash.
-# Success = iOS share sheet appears (UIActivityViewController).
+# Share as vCard. Tap Share icon → Share as vCard. Success = iOS share
+# sheet appears (UIActivityViewController).
 - launchApp:
     stopApp: false
 - runFlow:
@@ -11,16 +10,9 @@ appId: io.dynolabs.vcard
     commands:
       - assertVisible: "Your cards"
 - tapOn: "Maestro Edited"
-- scrollUntilVisible:
-    element: "Share"
-    direction: DOWN
 - tapOn: "Share"
 - assertVisible: "Share as vCard"
 - tapOn: "Share as vCard"
-# The native iOS share sheet must appear. We don't know which targets
-# the simulator has installed, so we assert presence of either common
-# elements OR our error Alert if shareVCard threw. The error Alert
-# would fail the flow.
 - waitForAnimationToEnd:
     timeout: 10000
 - assertNotVisible: "Share failed"
@@ -35,8 +27,6 @@ appId: io.dynolabs.vcard
       visible: "Cancel"
     commands:
       - tapOn: "Cancel"
-# iOS share sheet doesn't expose Cancel/Close. "Copy" is always present
-# and dismisses the sheet without launching another app — clean exit.
 - runFlow:
     when:
       visible: "Copy"
@@ -45,13 +35,8 @@ appId: io.dynolabs.vcard
 - waitForAnimationToEnd:
     timeout: 3000
 # Navigate back to cards list so subsequent flows (09-delete) have a
-# known starting state. Try the iOS back chevron first; iOS 26 sometimes
-# hides it from the a11y tree so fall back to the bottom Cards tab.
-- runFlow:
-    when:
-      visible: "Back"
-    commands:
-      - tapOn: "Back"
+# known starting state. The bottom Cards tab is the reliable fallback
+# when the iOS 26 back chevron is missing from the a11y tree.
 - runFlow:
     when:
       notVisible: "Your cards"

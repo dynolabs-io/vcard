@@ -3,10 +3,10 @@
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, Alert, View } from 'react-native';
 import { CardForm } from '@/components/CardForm';
 import { api } from '@/lib/api';
-import { getCard, saveCard as saveLocal } from '@/lib/storage';
+import { deleteCard, getCard, saveCard as saveLocal } from '@/lib/storage';
 import type { Card } from '@/lib/types';
 
 export default function EditCard() {
@@ -72,5 +72,26 @@ export default function EditCard() {
     router.back();
   };
 
-  return <CardForm initial={initial} onSubmit={onSubmit} submitLabel="Save changes" />;
+  const onDelete = () =>
+    Alert.alert(
+      'Delete card',
+      `Remove "${initial.label}: ${initial.name || '(no name)'}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try { await api.deleteCard(initial.id); } catch { /* offline ok */ }
+            await deleteCard(initial.id);
+            // Pop the edit modal AND the detail screen so we land back
+            // on /cards. dismissAll first (modal), then back from detail.
+            router.dismissAll?.();
+            router.back();
+          },
+        },
+      ],
+    );
+
+  return <CardForm initial={initial} onSubmit={onSubmit} onDelete={onDelete} submitLabel="Save changes" />;
 }
