@@ -39,6 +39,7 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
   const [phonesInput, setPhonesInput] = useState((initial.phones || []).join(', '));
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [logoBusy, setLogoBusy] = useState(false);
 
   // Refs for sequential next-field focus on Return.
   const titleRef   = useRef<TextInputType>(null);
@@ -100,6 +101,41 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
       { text: 'Take photo',     onPress: onPickPhoto('camera') },
       { text: 'Choose from library', onPress: onPickPhoto('library') },
       ...(draft.photoUrl ? [{ text: 'Remove photo', style: 'destructive' as const, onPress: () => setDraft(d => ({ ...d, photoUrl: undefined })) }] : []),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  // Brand logo picker — same plumbing as photo but writes brandLogoUrl
+  // and uploads to a separate path (slug-brand) so it doesn't overwrite
+  // the profile photo at the same key.
+  const onPickLogo = (source: 'camera' | 'library') => async () => {
+    if (logoBusy) return;
+    setLogoBusy(true);
+    const { trace } = require('@/lib/telemetry');
+    try {
+      await trace(`logo-${source}`, { hasSlug: !!draft.slug }, async () => {
+        const photoMod = require('@/lib/photo');
+        const uri = await trace(`logo-${source}-pick`, {}, () => photoMod.pickPhoto(source));
+        if (!uri) return;
+        const normalized = await trace(`logo-${source}-normalize`, {}, () => photoMod.normalize(uri));
+        setDraft(d => ({ ...d, brandLogoUrl: normalized }));
+        if (draft.slug) {
+          const uploadSlug = `${draft.slug}-brand`;
+          const url = await trace(`logo-${source}-upload`, { slug: uploadSlug },
+            () => photoMod.uploadPhoto(uploadSlug, normalized));
+          setDraft(d => ({ ...d, brandLogoUrl: url }));
+        }
+      });
+    } catch (e: unknown) {
+      Alert.alert('Logo failed', (e as { message?: string })?.message || String(e));
+    } finally {
+      setLogoBusy(false);
+    }
+  };
+  const onChooseLogo = () => {
+    Alert.alert('Brand logo', undefined, [
+      { text: 'Choose from library', onPress: onPickLogo('library') },
+      ...(draft.brandLogoUrl ? [{ text: 'Remove logo', style: 'destructive' as const, onPress: () => setDraft(d => ({ ...d, brandLogoUrl: undefined })) }] : []),
       { text: 'Cancel', style: 'cancel' },
     ]);
   };
