@@ -144,10 +144,28 @@ export default function CardDetail() {
 
   return (
     <>
-      {/* Dynamic title (card's unique name) + Edit on the right */}
+      {/* Dynamic title (card's unique name) + custom Back / Edit buttons.
+          We override the default chevron because iOS 26's auto back-button
+          resource-id flips between 'BackButton' and absent after a couple
+          navigation cycles, making it impossible for Maestro to find
+          reliably. A labeled Pressable is stable. */}
       <Stack.Screen
         options={{
           title: card.name || ' ',
+          headerBackVisible: false,
+          headerLeft: () => (
+            <Pressable
+              onPress={() => router.back()}
+              accessibilityLabel="Back"
+              accessibilityRole="button"
+              testID="card-back"
+              hitSlop={12}
+              style={({ pressed }) => ({ opacity: pressed ? 0.5 : 1, flexDirection: 'row', alignItems: 'center' })}
+            >
+              <SymbolView name="chevron.left" tintColor="#0A66C2" resizeMode="scaleAspectFit" style={styles.headerChevron} />
+              <Text style={styles.headerBackLabel}>Cards</Text>
+            </Pressable>
+          ),
           headerRight: () => (
             <Pressable
               onPress={() => router.push(`/card/edit/${card.id}`)}
@@ -226,6 +244,8 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: PAGE_PADDING, paddingTop: 18, paddingBottom: 40, alignItems: 'center', gap: 24 },
 
   headerEdit: { fontSize: 17, color: '#0A66C2', fontWeight: '500' },
+  headerChevron: { width: 14, height: 22 },
+  headerBackLabel: { fontSize: 17, color: '#0A66C2', fontWeight: '400', marginLeft: 2 },
 
   avatarBlock: { alignItems: 'center', gap: 10 },
   avatar: { width: 100, height: 100, borderRadius: 50 },
