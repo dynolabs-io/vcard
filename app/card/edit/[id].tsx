@@ -55,7 +55,7 @@ export default function EditCard() {
     // ID is the path param; deviceId never changes; timestamps are server-side.
     const { createdAt, updatedAt, id, deviceId, ...patch } = merged;
     void createdAt; void updatedAt; void id; void deviceId;
-    let saved = merged;
+    let saved: Card = merged;
     try {
       saved = await api.updateCard(initial.id, patch);
     } catch (e) {

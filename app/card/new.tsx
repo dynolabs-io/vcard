@@ -1,4 +1,6 @@
 // Create-card route. Renders the shared CardForm with an empty card.
+// After save we navigate to the new card's detail page so the Add to
+// Apple Wallet button is one tap away.
 
 import { useRouter } from 'expo-router';
 import { CardForm } from '@/components/CardForm';
@@ -12,15 +14,25 @@ export default function NewCard() {
 
   const onSubmit = async (next: Card) => {
     const localPhoto = next.photoUrl?.startsWith('file:') ? next.photoUrl : undefined;
-    const saved = await createCardSynced({ ...next, photoUrl: localPhoto ? undefined : next.photoUrl });
+    const localLogo  = next.brandLogoUrl?.startsWith('file:') ? next.brandLogoUrl : undefined;
+    const saved = await createCardSynced({
+      ...next,
+      photoUrl: localPhoto ? undefined : next.photoUrl,
+      brandLogoUrl: localLogo ? undefined : next.brandLogoUrl,
+    });
     if (!saved?.id) throw new Error('save returned empty');
-    if (localPhoto && saved.slug) {
+
+    if (saved.slug && (localPhoto || localLogo)) {
       try {
         const { uploadPhoto } = require('@/lib/photo');
-        const url = await uploadPhoto(saved.slug, localPhoto);
-        // PATCH server with photoUrl so web-profile + pass-signer can see it.
-        // Previously we only saved locally — that's why dynolabs.io/c/<slug>
-        // showed empty image, and Wallet pass had no thumbnail.
+        let photoUrl: string | undefined = saved.photoUrl;
+        let brandLogoUrl: string | undefined = saved.brandLogoUrl;
+        if (localPhoto) {
+          try { photoUrl = await uploadPhoto(saved.slug, localPhoto); } catch {}
+        }
+        if (localLogo) {
+          try { brandLogoUrl = await uploadPhoto(`${saved.slug}-brand`, localLogo); } catch {}
+        }
         try {
           const updated = await api.updateCard(saved.id, {
             label: saved.label,
@@ -32,18 +44,22 @@ export default function NewCard() {
             socials: saved.socials,
             template: saved.template,
             customColor: saved.customColor,
-            walletStyle: saved.walletStyle,
-            brandLogoUrl: saved.brandLogoUrl,
-            photoUrl: url,
+            photoUrl,
+            brandLogoUrl,
           });
           await saveLocal(updated);
         } catch {
-          // Server PATCH failed — keep local copy with the new photo URL
-          await saveLocal({ ...saved, photoUrl: url });
+          await saveLocal({ ...saved, photoUrl, brandLogoUrl });
         }
-      } catch {/* picker upload failed — keep card without photo */}
+      } catch {/* picker upload failed — keep card without photo/logo */}
     }
-    router.back();
+    // Land on the new card's detail page (NOT the list) so Add to Wallet
+    // is one tap away. replace() so Back doesn't bounce to the form.
+    if (saved.id) {
+      router.replace(`/card/${saved.id}`);
+    } else {
+      router.back();
+    }
   };
 
   return <CardForm initial={emptyCard()} onSubmit={onSubmit} submitLabel="Save card" />;

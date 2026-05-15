@@ -4,15 +4,6 @@
 
 export type CardTemplate = 'mono' | 'gradient' | 'glass' | 'custom';
 
-// Apple Wallet pass strip image. Apple's eventTicket renders one image
-// at the top of the pass (~25% of pass height). We use that slot for
-// either the user's profile photo or the brand logo on a colored band.
-// The iOS 18 posterEventTicket "full-bleed" layout requires Apple NFC
-// entitlement we don't have — so we work within the legacy layout's limits.
-export type WalletStyle =
-  | 'photoStrip'   // user's profile photo, full-width strip
-  | 'logoStrip';   // brand color background + centered company logo
-
 export type Social = {
   kind: 'linkedin' | 'x' | 'instagram' | 'github' | 'website';
   url: string;
@@ -35,7 +26,6 @@ export type Card = {
   brandLogoUrl?: string; // company/brand logo, separate from face photo
   template: CardTemplate;
   customColor?: string;  // hex, only when template === 'custom'
-  walletStyle?: WalletStyle;  // default 'photoStrip' if photo present, else 'logoStrip'
   deviceId?: string;     // bound at create time
   createdAt: string | number;  // server returns ISO string; local stores epoch ms
   updatedAt: string | number;
@@ -49,7 +39,6 @@ export const emptyCard = (): Card => ({
   phones: [],
   socials: [],
   template: 'mono',
-  walletStyle: 'photoStrip',
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
