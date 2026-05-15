@@ -7,9 +7,9 @@ appId: io.dynolabs.vcard
 - launchApp
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
-    element: "Share card"
+    element: "Share"
     direction: DOWN
-- tapOn: "Share card"
+- tapOn: "Share"
 - assertVisible: "Share as vCard"
 - tapOn: "Share as vCard"
 # iOS share sheet appears. It contains either app icons OR a "Cancel"

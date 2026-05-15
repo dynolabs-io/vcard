@@ -12,9 +12,9 @@ appId: io.dynolabs.vcard
       - assertVisible: "Your cards"
 - tapOn: "Maestro Edited"
 - scrollUntilVisible:
-    element: "Share card"
+    element: "Share"
     direction: DOWN
-- tapOn: "Share card"
+- tapOn: "Share"
 - assertVisible: "Share as vCard"
 - tapOn: "Share as vCard"
 # The native iOS share sheet must appear. We don't know which targets
