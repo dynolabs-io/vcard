@@ -29,12 +29,13 @@ export async function pickPhoto(source: Source): Promise<string | null> {
     const p = await ImagePicker.requestCameraPermissionsAsync();
     await logStep('pickPhoto.4a.after-camera-permission', { granted: p.granted, status: p.status });
     if (!p.granted) throw new Error('Camera permission denied');
-  } else {
-    await logStep('pickPhoto.3b.before-library-permission', {});
-    const p = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    await logStep('pickPhoto.4b.after-library-permission', { granted: p.granted, status: p.status });
-    if (!p.granted) throw new Error('Photo Library permission denied');
   }
+  // iOS 14+ launchImageLibraryAsync uses the system PHPicker which runs
+  // out-of-process and DOES NOT require photo library permission — it's
+  // designed so apps see only the picked asset, nothing else. Requesting
+  // permission triggers the "Limited Access / Select More Photos / Keep
+  // Current Selection" prompt, which is the iOS limited-library flow.
+  // Skip it; the picker handles its own UX.
   await logStep('pickPhoto.5.before-launch', { source });
   const result = source === 'camera'
     ? await ImagePicker.launchCameraAsync({

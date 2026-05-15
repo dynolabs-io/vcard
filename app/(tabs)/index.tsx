@@ -1,31 +1,51 @@
 // Cards list — primary screen. Shows the user's stack of cards. Tap a
-// card to open its detail/QR view; "+" creates a new card.
+// card to open its detail/QR view; "+" creates a new card; swipe a row
+// left to reveal Delete.
 
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useRef, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Swipeable } from 'react-native-gesture-handler';
+import { api } from '@/lib/api';
+import { deleteCard } from '@/lib/storage';
 import { listCardsRemoteOrLocal } from '@/lib/sync';
 import type { Card } from '@/lib/types';
 
 export default function CardsScreen() {
   const router = useRouter();
   const [cards, setCards] = useState<Card[]>([]);
-  const [source, setSource] = useState<'remote' | 'local'>('local');
+  const openSwipeRef = useRef<Swipeable | null>(null);
 
-  // Refresh on focus. Local + remote in parallel — local renders immediately,
-  // remote replaces it once it arrives so the screen never feels blocked.
-  useFocusEffect(
-    useCallback(() => {
-      let cancelled = false;
-      listCardsRemoteOrLocal().then(r => {
-        if (cancelled) return;
-        setCards(r.cards);
-        setSource(r.source);
-      });
-      return () => { cancelled = true; };
-    }, []),
-  );
+  const refresh = useCallback(async () => {
+    const r = await listCardsRemoteOrLocal();
+    setCards(r.cards);
+  }, []);
+
+  useFocusEffect(useCallback(() => {
+    let cancelled = false;
+    listCardsRemoteOrLocal().then(r => { if (!cancelled) setCards(r.cards); });
+    return () => { cancelled = true; };
+  }, []));
+
+  const onDelete = (card: Card) => {
+    Alert.alert(
+      'Delete card',
+      `Remove "${card.label}: ${card.name || '(no name)'}"?`,
+      [
+        { text: 'Cancel', style: 'cancel', onPress: () => openSwipeRef.current?.close() },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try { await api.deleteCard(card.id); } catch { /* offline ok */ }
+            await deleteCard(card.id);
+            await refresh();
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <SafeAreaView style={styles.root}>
@@ -48,19 +68,50 @@ export default function CardsScreen() {
           contentContainerStyle={styles.list}
           data={cards}
           keyExtractor={c => c.id}
-          renderItem={({ item }) => (
-            <Pressable
-              style={styles.row}
-              onPress={() => router.push(`/card/${item.id}`)}
-              accessible
-              accessibilityLabel={item.name || '(no name)'}
-              testID={`card-row-${item.name}`}
-            >
-              <Text style={styles.rowLabel}>{item.label}</Text>
-              <Text style={styles.rowName}>{item.name || '(no name)'}</Text>
-              {item.title && <Text style={styles.rowSub}>{item.title}{item.company ? ` · ${item.company}` : ''}</Text>}
-            </Pressable>
-          )}
+          renderItem={({ item }) => {
+            const swipeRef = { current: null as Swipeable | null };
+            const renderRightActions = () => (
+              <View style={styles.swipeActionRow}>
+                <Pressable
+                  style={styles.deleteAction}
+                  onPress={() => {
+                    openSwipeRef.current = swipeRef.current;
+                    onDelete(item);
+                  }}
+                >
+                  <Text style={styles.deleteActionIcon}>🗑</Text>
+                  <Text style={styles.deleteActionLabel}>Delete</Text>
+                </Pressable>
+              </View>
+            );
+            return (
+              <Swipeable
+                ref={r => { swipeRef.current = r; }}
+                renderRightActions={renderRightActions}
+                overshootRight={false}
+                friction={2}
+                rightThreshold={40}
+                onSwipeableWillOpen={() => {
+                  if (openSwipeRef.current && openSwipeRef.current !== swipeRef.current) {
+                    openSwipeRef.current.close();
+                  }
+                  openSwipeRef.current = swipeRef.current;
+                }}
+              >
+                <Pressable
+                  style={styles.row}
+                  onPress={() => router.push(`/card/${item.id}`)}
+                  accessible
+                  accessibilityLabel={item.name || '(no name)'}
+                  testID={`card-row-${item.name}`}
+                >
+                  <Text style={styles.rowLabel}>{item.label}</Text>
+                  <Text style={styles.rowName}>{item.name || '(no name)'}</Text>
+                  {item.title && <Text style={styles.rowSub}>{item.title}{item.company ? ` · ${item.company}` : ''}</Text>}
+                </Pressable>
+              </Swipeable>
+            );
+          }}
         />
       )}
     </SafeAreaView>
@@ -83,4 +134,8 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, opacity: 0.6, textTransform: 'uppercase' },
   rowName: { fontSize: 18, fontWeight: '600', marginTop: 4 },
   rowSub: { fontSize: 13, opacity: 0.7, marginTop: 2 },
+  swipeActionRow: { flexDirection: 'row', alignItems: 'center' },
+  deleteAction: { width: 96, height: '100%', backgroundColor: '#DC2626', justifyContent: 'center', alignItems: 'center', borderRadius: 16, marginLeft: 8 },
+  deleteActionIcon: { fontSize: 24 },
+  deleteActionLabel: { color: '#fff', fontWeight: '700', marginTop: 4 },
 });

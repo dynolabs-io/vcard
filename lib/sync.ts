@@ -29,6 +29,31 @@ export async function listCardsRemoteOrLocal(): Promise<{ cards: Card[]; source:
   }
 }
 
+/** When the local copy of a card is missing its server slug (e.g. an
+ *  earlier create raced the network timeout and we kept the local stub),
+ *  fetch from the server by deviceId and find the matching row. Falls
+ *  back to the local card unchanged if the server has nothing. */
+export async function refetchCardIfMissingSlug(local: Card): Promise<Card> {
+  if (local.slug) return local;
+  try {
+    const did = await getDeviceId();
+    const remote = await api.listCards(did);
+    // Heuristic: same name + same creation order → same card. Newest first.
+    const match = remote
+      .filter(r => r.name === local.name && r.label === local.label)
+      .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0];
+    if (match?.slug) {
+      // Persist so future opens already have the slug.
+      const { saveCard, deleteCard } = await import('./storage');
+      await saveCard(match);
+      // Remove the local-only stub since its id no longer matches.
+      if (local.id !== match.id) await deleteCard(local.id);
+      return match;
+    }
+  } catch {/* offline — fall through */}
+  return local;
+}
+
 export async function createCardSynced(input: Card): Promise<Card> {
   const localId = freshId();
   const localStub: Card = {

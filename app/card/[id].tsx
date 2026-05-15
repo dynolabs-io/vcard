@@ -1,5 +1,9 @@
 // Card detail. QR (full vCard, offline-scannable), Edit, Share menu
 // (vCard / QR PNG / link), Add to Apple Wallet, Delete.
+//
+// Layout priority: the 3 critical actions (Share / Wallet / Edit) sit
+// IMMEDIATELY below the hero so they're visible without scrolling on a
+// standard iPhone. QR is below — secondary use case.
 
 import * as Linking from 'expo-linking';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
@@ -11,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api, profileUrl } from '@/lib/api';
 import { sharePNGFromBase64, shareVCard, shareLink } from '@/lib/share';
-import { deleteCard, getCard } from '@/lib/storage';
+import { deleteCard, getCard, saveCard as saveLocal } from '@/lib/storage';
+import { refetchCardIfMissingSlug } from '@/lib/sync';
 import { templateStyle } from '@/lib/templates';
 import { trace } from '@/lib/telemetry';
 import type { Card } from '@/lib/types';
@@ -27,7 +32,20 @@ export default function CardDetail() {
     useCallback(() => {
       if (!id) return;
       let cancelled = false;
-      getCard(id).then(c => { if (!cancelled) setCard(c ?? null); });
+      (async () => {
+        const local = await getCard(id);
+        if (cancelled || !local) { setCard(local ?? null); return; }
+        setCard(local);
+        // If local copy is missing the server slug (timed-out create) we
+        // fix it up here so "Add to Apple Wallet" actually becomes tappable.
+        if (!local.slug) {
+          const fresh = await refetchCardIfMissingSlug(local);
+          if (!cancelled && fresh.slug) {
+            setCard(fresh);
+            await saveLocal(fresh);
+          }
+        }
+      })();
       return () => { cancelled = true; };
     }, [id]),
   );
@@ -44,8 +62,6 @@ export default function CardDetail() {
   }
 
   const tmpl = templateStyle(card.template, card.customColor);
-  // FULL vCard in the QR — recipient's camera reads offline and offers
-  // Save to Contacts immediately. Profile URL appended as a URL field.
   const qrPayload = buildVCard(card, {
     profileUrl: card.slug ? profileUrl(card.slug) : undefined,
     photoUrl:   card.photoUrl,
@@ -93,38 +109,61 @@ export default function CardDetail() {
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* HERO: brand-color background, large photo, brand logo top-right badge */}
+        {/* COMPACT HERO — photo + name side-by-side. Lets the 3 critical
+            action buttons sit above the fold on a standard iPhone. */}
         <View style={[styles.hero, { backgroundColor: accent }]}>
+          <View style={styles.heroPhotoWrap}>
+            {card.photoUrl ? (
+              <Image source={{ uri: card.photoUrl }} style={styles.heroPhoto} />
+            ) : (
+              <View style={[styles.heroPhoto, styles.heroPhotoFallback]}>
+                <Text style={styles.heroInitial}>{(card.name || '?').slice(0, 1).toUpperCase()}</Text>
+              </View>
+            )}
+          </View>
+          <View style={styles.heroText}>
+            <Text style={styles.heroName} numberOfLines={1}>{card.name || '(no name)'}</Text>
+            {!!card.title && <Text style={styles.heroSub} numberOfLines={1}>{card.title}</Text>}
+            {!!card.company && <Text style={styles.heroSub} numberOfLines={1}>{card.company}</Text>}
+          </View>
           {card.brandLogoUrl && (
             <View style={styles.brandBadge}>
               <Image source={{ uri: card.brandLogoUrl }} style={styles.brandBadgeImg} resizeMode="contain" />
             </View>
           )}
-          <View style={styles.photoWrap}>
-            {card.photoUrl ? (
-              <Image source={{ uri: card.photoUrl }} style={styles.photoLarge} />
-            ) : (
-              <View style={[styles.photoLarge, styles.photoFallback]}>
-                <Text style={styles.photoInitialLarge}>{(card.name || '?').slice(0, 1).toUpperCase()}</Text>
-              </View>
-            )}
-          </View>
-          <Text style={styles.heroName}>{card.name || '(no name)'}</Text>
-          {!!card.title && (
-            <Text style={styles.heroTitle}>
-              {card.title}{card.company ? ` · ${card.company}` : ''}
-            </Text>
+        </View>
+
+        {/* 3 CRITICAL ACTIONS — above the fold. */}
+        <View style={styles.criticalRow}>
+          <Pressable style={[styles.criticalBtn, { backgroundColor: accent }]} onPress={onShare}>
+            <Text style={styles.criticalIcon}>📤</Text>
+            <Text style={styles.criticalLabelOn}>Share</Text>
+          </Pressable>
+          {card.slug ? (
+            <Pressable
+              style={styles.criticalBtn}
+              onPress={() =>
+                trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
+                  () => Linking.openURL(api.applePassUrl(card.slug!)))
+                  .catch(e => Alert.alert('Could not open Wallet', String(e)))
+              }
+            >
+              <Text style={styles.criticalIcon}>🍎</Text>
+              <Text style={styles.criticalLabel}>Wallet</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={[styles.criticalBtn, { opacity: 0.5 }]} disabled>
+              <Text style={styles.criticalIcon}>🍎</Text>
+              <Text style={styles.criticalLabel}>Syncing…</Text>
+            </Pressable>
           )}
-          {!card.title && !!card.company && <Text style={styles.heroTitle}>{card.company}</Text>}
+          <Pressable style={styles.criticalBtn} onPress={() => router.push(`/card/edit/${card.id}`)}>
+            <Text style={styles.criticalIcon}>✏️</Text>
+            <Text style={styles.criticalLabel}>Edit</Text>
+          </Pressable>
         </View>
 
-        {/* QR — clear, centered, generous padding */}
-        <View style={styles.qrFrame} ref={qrRef} collapsable={false}>
-          <QRCode value={qrPayload} size={280} backgroundColor="#fff" />
-        </View>
-        <Text style={styles.hint}>Scan with any camera.</Text>
-
-        {/* Quick actions — only show buttons where data exists */}
+        {/* Quick contact actions — only show buttons where data exists */}
         {(primaryPhone || primaryEmail || websiteSocial || linkedinSocial) && (
           <View style={styles.quickRow}>
             {primaryPhone && (
@@ -154,33 +193,15 @@ export default function CardDetail() {
           </View>
         )}
 
-        <View style={styles.actions}>
-          <Pressable style={[styles.action, { backgroundColor: accent }]} onPress={onShare}>
-            <Text style={styles.actionText}>Share card</Text>
-          </Pressable>
-          {card.slug ? (
-            <Pressable
-              style={styles.actionSecondary}
-              onPress={() =>
-                trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
-                  () => Linking.openURL(api.applePassUrl(card.slug!)))
-                  .catch(e => Alert.alert('Could not open Wallet', String(e)))
-              }
-            >
-              <Text style={styles.actionSecondaryText}>Add to Apple Wallet</Text>
-            </Pressable>
-          ) : (
-            <Pressable style={[styles.actionSecondary, { opacity: 0.5 }]} disabled>
-              <Text style={styles.actionSecondaryText}>Saving card to cloud…</Text>
-            </Pressable>
-          )}
-          <Pressable style={styles.actionSecondary} onPress={() => router.push(`/card/edit/${card.id}`)}>
-            <Text style={styles.actionSecondaryText}>Edit</Text>
-          </Pressable>
-          <Pressable style={styles.deleteBtn} onPress={onDelete}>
-            <Text style={styles.deleteText}>Delete card</Text>
-          </Pressable>
+        {/* QR — below the fold, secondary use case. */}
+        <View style={styles.qrFrame} ref={qrRef} collapsable={false}>
+          <QRCode value={qrPayload} size={240} backgroundColor="#fff" />
         </View>
+        <Text style={styles.hint}>Scan with any camera to save contact.</Text>
+
+        <Pressable style={styles.deleteBtn} onPress={onDelete}>
+          <Text style={styles.deleteText}>Delete card</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
@@ -189,29 +210,38 @@ export default function CardDetail() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  scroll: { padding: 20, alignItems: 'center', gap: 18, paddingBottom: 40 },
-  hero: { width: '100%', borderRadius: 24, padding: 24, paddingTop: 28, paddingBottom: 28, alignItems: 'center' },
-  brandBadge: { position: 'absolute', top: 14, right: 14, width: 44, height: 44, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', padding: 4 },
+  scroll: { padding: 16, alignItems: 'center', gap: 14, paddingBottom: 40 },
+
+  // Compact horizontal hero (~100px tall) — leaves room for actions above fold.
+  hero: { width: '100%', borderRadius: 20, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 14 },
+  heroPhotoWrap: { },
+  heroPhoto: { width: 72, height: 72, borderRadius: 36, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)' },
+  heroPhotoFallback: { alignItems: 'center', justifyContent: 'center' },
+  heroInitial: { color: '#fff', fontSize: 28, fontWeight: '700' },
+  heroText: { flex: 1, justifyContent: 'center', gap: 2 },
+  heroName: { color: '#fff', fontSize: 20, fontWeight: '700' },
+  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 13 },
+  brandBadge: { width: 44, height: 44, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', padding: 4 },
   brandBadgeImg: { width: 36, height: 36 },
-  photoWrap: { marginBottom: 14 },
-  photoLarge: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 3, borderColor: 'rgba(255,255,255,0.20)' },
-  photoFallback: { alignItems: 'center', justifyContent: 'center' },
-  photoInitialLarge: { color: '#fff', fontSize: 72, fontWeight: '700' },
-  heroName: { color: '#fff', fontSize: 28, fontWeight: '700', textAlign: 'center' },
-  heroTitle: { color: 'rgba(255,255,255,0.85)', fontSize: 15, marginTop: 6, textAlign: 'center' },
-  qrFrame: { padding: 16, backgroundColor: '#fff', borderRadius: 16 },
-  hint: { fontSize: 13, opacity: 0.6, textAlign: 'center' },
-  quickRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
-  quickBtn: { minWidth: 72, padding: 12, borderRadius: 14, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', gap: 4 },
-  quickIcon: { fontSize: 22 },
-  quickLabel: { fontSize: 12, fontWeight: '600' },
-  actions: { width: '100%', gap: 12, marginTop: 4 },
-  action: { padding: 16, borderRadius: 999, alignItems: 'center' },
-  actionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
-  actionSecondary: { padding: 14, borderRadius: 999, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center' },
-  actionSecondaryText: { fontSize: 15, fontWeight: '600' },
-  deleteBtn: { padding: 14, borderRadius: 999, alignItems: 'center', marginTop: 8 },
+
+  // 3 critical buttons — equal width, sit immediately under hero.
+  criticalRow: { flexDirection: 'row', gap: 10, width: '100%' },
+  criticalBtn: { flex: 1, paddingVertical: 12, borderRadius: 16, alignItems: 'center', backgroundColor: 'rgba(127,127,127,0.12)', gap: 4 },
+  criticalIcon: { fontSize: 22 },
+  criticalLabel: { fontSize: 13, fontWeight: '700' },
+  criticalLabelOn: { color: '#fff', fontSize: 13, fontWeight: '700' },
+
+  quickRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center', width: '100%' },
+  quickBtn: { minWidth: 68, padding: 10, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.10)', alignItems: 'center', gap: 4 },
+  quickIcon: { fontSize: 20 },
+  quickLabel: { fontSize: 11, fontWeight: '600' },
+
+  qrFrame: { padding: 14, backgroundColor: '#fff', borderRadius: 16 },
+  hint: { fontSize: 12, opacity: 0.6, textAlign: 'center' },
+
+  deleteBtn: { padding: 12, alignItems: 'center', marginTop: 12 },
   deleteText: { color: '#DC2626', fontSize: 14, fontWeight: '600' },
+
   cta: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, backgroundColor: '#111' },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '600' },
 });
