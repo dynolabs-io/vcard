@@ -23,7 +23,7 @@ export default function CardsScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title}>Cards</Text>
+        <Text style={styles.title}>Your cards</Text>
         <Pressable
           onPress={() => router.push('/card/new')}
           accessibilityLabel="Add card"

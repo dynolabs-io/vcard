@@ -25,7 +25,7 @@ appId: io.dynolabs.vcard
 - tapOn: "Save changes"
 - runFlow:
     when:
-      notVisible: "Cards"
+      notVisible: "Your cards"
     commands:
       - tapOn: "Cards"
 - assertVisible: "Your cards"
