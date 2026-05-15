@@ -64,7 +64,9 @@ export function buildVCard(card: Card, opts: VCardOptions = {}): string {
  */
 export function onlineVCardURL(slug: string, opts: { apiBase?: string } = {}): string {
   const base = opts.apiBase ?? 'https://api.dynolabs.io';
-  return `${base}/v/${encodeURIComponent(slug)}.vcf`;
+  // No .vcf suffix — server identifies the response with Content-Type
+  // (Go 1.22 ServeMux can't match wildcards with literal-suffix segments).
+  return `${base}/v/${encodeURIComponent(slug)}`;
 }
 
 function splitName(full: string): { last: string; first: string } {
