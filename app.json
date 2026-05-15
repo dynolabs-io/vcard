@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "io.dynolabs.vcard",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Take a profile photo for your card.",
         "NSPhotoLibraryUsageDescription": "Pick a profile photo for your card from your library.",
@@ -56,7 +57,9 @@
           }
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-secure-store",
+      "expo-apple-authentication"
     ],
     "extra": {
       "apiBase": "https://api.dynolabs.io",

@@ -27,6 +27,7 @@ export type Card = {
   template: CardTemplate;
   customColor?: string;  // hex, only when template === 'custom'
   deviceId?: string;     // bound at create time
+  userId?: string;       // set when card is synced to a signed-in user
   createdAt: string | number;  // server returns ISO string; local stores epoch ms
   updatedAt: string | number;
 };

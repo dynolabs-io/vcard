@@ -20,14 +20,22 @@ export type VCardOptions = {
   profileUrl?: string;
 };
 
+/**
+ * Builds the OFFLINE-mode vCard string emitted into the QR. Byte-identical
+ * to the server's pass-signer buildVCardText() — both must produce the
+ * SAME bytes for a given card so the in-app QR and the Wallet pass's
+ * offline QR are interchangeable.
+ *
+ * No PHOTO line is emitted: iOS Camera will not fetch remote URIs from a
+ * scanned QR (verified), and embedding base64 here would make the QR
+ * unreadable. For photo-on-save, use the ONLINE-mode QR which contains
+ * just the .vcf URL — the recipient's Safari loads it and iOS Contacts
+ * imports the full vCard with the embedded high-res photo.
+ */
 export function buildVCard(card: Card, opts: VCardOptions = {}): string {
   const lines: string[] = [];
   lines.push('BEGIN:VCARD');
   lines.push('VERSION:3.0');
-  // N: structured name. iOS Camera uses N for the saved contact's
-  // display name. Without it iOS falls back to ORG (company) — that
-  // bug previously made the saved contact show as "Dynolabs" instead
-  // of the person's name.
   const { last, first } = splitName(card.name);
   lines.push(`N:${escape(last)};${escape(first)};;;`);
   lines.push(`FN:${escape(card.name)}`);
@@ -36,18 +44,27 @@ export function buildVCard(card: Card, opts: VCardOptions = {}): string {
   for (const email of card.emails) lines.push(`EMAIL;TYPE=INTERNET:${escape(email)}`);
   for (const phone of card.phones) lines.push(`TEL;TYPE=CELL:${escape(phone)}`);
   for (const s of card.socials) lines.push(`URL;TYPE=${socialType(s)}:${escape(s.url)}`);
-  // Profile URL: TYPE=WORK so iOS labels it "work" instead of "homepage".
   if (opts.profileUrl) lines.push(`URL;TYPE=WORK:${escape(opts.profileUrl)}`);
+  // Embedded thumbnails only used for SHARE-as-vCard (file transfer
+  // path), never for the QR — see shareVCard() in lib/share.ts.
   if (opts.thumbnailBase64) {
-    // Embedded base64 JPEG: iOS Camera ONLY saves embedded photos from
-    // a scanned QR — remote PHOTO;VALUE=uri references are ignored.
     lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${opts.thumbnailBase64}`);
   }
-  // photoUrl is kept as a hint but won't appear in the saved contact.
-  // Drop it from the QR payload so we don't waste scannable bandwidth.
-  lines.push(`REV:${new Date().toISOString()}`);
   lines.push('END:VCARD');
   return lines.join('\r\n');
+}
+
+/**
+ * Online-mode QR payload — just the .vcf URL. When the recipient scans,
+ * iOS Camera offers to open in Safari; Safari fetches the URL and iOS
+ * imports the vCard (with the embedded full-resolution photo). This is
+ * the only way to deliver a high-res photo to a saved iOS contact via
+ * QR — iOS Camera deliberately won't fetch PHOTO;VALUE=URI references
+ * from scanned QR text, only via explicit user network actions.
+ */
+export function onlineVCardURL(slug: string, opts: { apiBase?: string } = {}): string {
+  const base = opts.apiBase ?? 'https://api.dynolabs.io';
+  return `${base}/v/${encodeURIComponent(slug)}.vcf`;
 }
 
 function splitName(full: string): { last: string; first: string } {

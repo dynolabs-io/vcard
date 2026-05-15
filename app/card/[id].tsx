@@ -17,13 +17,14 @@ import type { SymbolViewProps } from 'expo-symbols';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import QRCode from 'react-native-qrcode-svg';
 import { api, profileUrl } from '@/lib/api';
+import { config } from '@/lib/config';
 import { sharePNGFromBase64, shareVCard, shareLink } from '@/lib/share';
 import { getCard, saveCard as saveLocal } from '@/lib/storage';
 import { refetchCardIfMissingSlug } from '@/lib/sync';
 import { templateStyle } from '@/lib/templates';
 import { trace } from '@/lib/telemetry';
 import type { Card } from '@/lib/types';
-import { buildVCard } from '@/lib/vcard';
+import { buildVCard, onlineVCardURL } from '@/lib/vcard';
 
 const PAGE_PADDING = 20;
 
@@ -32,6 +33,11 @@ export default function CardDetail() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const [card, setCard] = useState<Card | null>(null);
+  // Online (rich) = QR is a URL → recipient online → Safari → vCard
+  // with full-res embedded photo → contact saved with avatar.
+  // Offline (basic) = QR is text vCard → instant save, no photo.
+  // Default Online — most use cases have network at scan time.
+  const [qrMode, setQrMode] = useState<'offline' | 'online'>('online');
   const qrRef = useRef<View>(null);
 
   useFocusEffect(
@@ -69,10 +75,15 @@ export default function CardDetail() {
   }
 
   const tmpl = templateStyle(card.template, card.customColor);
-  const qrPayload = buildVCard(card, {
-    profileUrl: card.slug ? profileUrl(card.slug) : undefined,
-    photoUrl:   card.photoUrl,
-  });
+  // QR payload swaps between modes. Online mode requires a slug
+  // (server-side .vcf URL), so if we don't have one yet, force Offline.
+  const effectiveMode: 'offline' | 'online' = card.slug ? qrMode : 'offline';
+  const qrPayload =
+    effectiveMode === 'online' && card.slug
+      ? onlineVCardURL(card.slug, { apiBase: config.apiBase })
+      : buildVCard(card, {
+          profileUrl: card.slug ? profileUrl(card.slug) : undefined,
+        });
   const slugUrl = card.slug ? profileUrl(card.slug) : null;
   const accent = card.customColor || (tmpl.card.backgroundColor || '#0A66C2');
 
@@ -122,16 +133,38 @@ export default function CardDetail() {
     id: 'share', symbol: 'square.and.arrow.up', label: 'share', a11y: 'Share',
     onPress: onShare,
   });
+  // ONE Wallet button that opens a chooser — tap → pick which pass.
+  // Each pass has its own QR mode and its own serial number, so both
+  // can sit in Apple Wallet at the same time.
+  const onWallet = () => {
+    if (!card.slug) return;
+    Alert.alert(
+      'Add to Apple Wallet',
+      'Both passes can coexist in Wallet. Pick which to add now.',
+      [
+        {
+          text: 'Online (rich) — recipient saves with full photo',
+          onPress: () =>
+            trace('wallet-open', { cardId: card.id, slug: card.slug, mode: 'online', url: api.applePassUrl(card.slug!, 'online') },
+              () => Linking.openURL(api.applePassUrl(card.slug!, 'online')))
+              .catch(e => Alert.alert('Could not open Wallet', String(e))),
+        },
+        {
+          text: 'Offline (basic) — instant save, no photo, no network',
+          onPress: () =>
+            trace('wallet-open', { cardId: card.id, slug: card.slug, mode: 'offline', url: api.applePassUrl(card.slug!, 'offline') },
+              () => Linking.openURL(api.applePassUrl(card.slug!, 'offline')))
+              .catch(e => Alert.alert('Could not open Wallet', String(e))),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
   actions.push({
     id: 'wallet', symbol: 'wallet.pass.fill', label: card.slug ? 'wallet' : 'syncing',
     a11y: card.slug ? 'Wallet' : 'Syncing',
     disabled: !card.slug,
-    onPress: () => {
-      if (!card.slug) return;
-      trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
-        () => Linking.openURL(api.applePassUrl(card.slug!)))
-        .catch(e => Alert.alert('Could not open Wallet', String(e)));
-    },
+    onPress: onWallet,
   });
   if (websiteSocial) actions.push({
     id: 'website', symbol: 'safari.fill', label: 'web', a11y: 'Website',
@@ -231,7 +264,34 @@ export default function CardDetail() {
           <View ref={qrRef} collapsable={false} style={[styles.qrFrame, { width: qrSize, height: qrSize }]}>
             <QRCode value={qrPayload} size={qrSize - 28} backgroundColor="#fff" />
           </View>
-          <Text style={styles.hint}>Scan with any camera to save contact.</Text>
+
+          {/* Mode switcher — visible only when we have a slug (offline
+              mode is always usable; online needs the server endpoint). */}
+          {card.slug && (
+            <View style={styles.modeRow}>
+              <Pressable
+                onPress={() => setQrMode('offline')}
+                accessibilityLabel="Offline QR mode"
+                accessibilityRole="button"
+                style={[styles.modeChip, effectiveMode === 'offline' && styles.modeChipActive]}
+              >
+                <Text style={[styles.modeLabel, effectiveMode === 'offline' && styles.modeLabelActive]}>Offline (basic)</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => setQrMode('online')}
+                accessibilityLabel="Online QR mode"
+                accessibilityRole="button"
+                style={[styles.modeChip, effectiveMode === 'online' && styles.modeChipActive]}
+              >
+                <Text style={[styles.modeLabel, effectiveMode === 'online' && styles.modeLabelActive]}>Online (rich)</Text>
+              </Pressable>
+            </View>
+          )}
+          <Text style={styles.hint}>
+            {effectiveMode === 'online'
+              ? 'Recipient online → contact saves with your photo.'
+              : 'Saves instantly, no network. No photo on saved contact.'}
+          </Text>
         </ScrollView>
       </SafeAreaView>
     </>
@@ -261,6 +321,11 @@ const styles = StyleSheet.create({
   actionLabel: { fontSize: 11, fontWeight: '500', color: 'rgba(60,60,67,0.85)', textTransform: 'lowercase' },
 
   qrFrame: { backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(127,127,127,0.15)' },
+  modeRow: { flexDirection: 'row', gap: 8, alignSelf: 'center', backgroundColor: 'rgba(127,127,127,0.10)', borderRadius: 12, padding: 4 },
+  modeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 9 },
+  modeChipActive: { backgroundColor: '#fff' },
+  modeLabel: { fontSize: 13, fontWeight: '500', color: 'rgba(60,60,67,0.85)' },
+  modeLabelActive: { color: '#0A66C2', fontWeight: '600' },
   hint: { fontSize: 12, opacity: 0.5, textAlign: 'center' },
 
   cta: { paddingHorizontal: 24, paddingVertical: 12, borderRadius: 999, backgroundColor: '#111' },

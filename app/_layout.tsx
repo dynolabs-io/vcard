@@ -6,6 +6,7 @@ import 'react-native-reanimated';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { bootAuth } from '@/lib/auth';
 import { prewarmImagePicker } from '@/lib/photo';
 
 export const unstable_settings = {
@@ -15,9 +16,11 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
-  // Pre-warm the image picker native module ~1.5 s after launch so the
-  // first user tap on "Add photo" doesn't pay the cold-start latency.
+  // Auth boot (loads token from Keychain, wires Authorization header)
+  // runs immediately; image-picker prewarm waits 1.5 s so it doesn't
+  // compete with first-render work.
   useEffect(() => {
+    void bootAuth();
     const t = setTimeout(prewarmImagePicker, 1500);
     return () => clearTimeout(t);
   }, []);
@@ -48,6 +51,7 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen name="card/edit/[id]" options={{ headerShown: true, presentation: 'modal', title: 'Edit Card' }} />
+          <Stack.Screen name="merge" options={{ headerShown: true, presentation: 'modal', title: 'Sync your cards' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

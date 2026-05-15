@@ -7,6 +7,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AccountButton } from '@/components/AccountButton';
 import { listCardsRemoteOrLocal } from '@/lib/sync';
 import type { Card } from '@/lib/types';
 
@@ -24,13 +25,16 @@ export default function CardsScreen() {
     <SafeAreaView style={styles.root}>
       <View style={styles.header}>
         <Text style={styles.title}>Your cards</Text>
-        <Pressable
-          onPress={() => router.push('/card/new')}
-          accessibilityLabel="Add card"
-          style={styles.addBtn}
-        >
-          <Text style={styles.addBtnText}>+</Text>
-        </Pressable>
+        <View style={styles.headerRight}>
+          <AccountButton />
+          <Pressable
+            onPress={() => router.push('/card/new')}
+            accessibilityLabel="Add card"
+            style={styles.addBtn}
+          >
+            <Text style={styles.addBtnText}>+</Text>
+          </Pressable>
+        </View>
       </View>
       {cards.length === 0 ? (
         <View style={styles.empty}>
@@ -71,6 +75,7 @@ export default function CardsScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   title: { fontSize: 34, fontWeight: '700', letterSpacing: -0.5 },
   addBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', justifyContent: 'center' },
   addBtnText: { fontSize: 22, lineHeight: 22, fontWeight: '500' },
