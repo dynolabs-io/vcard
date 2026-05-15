@@ -1,10 +1,12 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { prewarmImagePicker } from '@/lib/photo';
 
 export const unstable_settings = {
   anchor: '(tabs)',
@@ -12,6 +14,13 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  // Pre-warm the image picker native module ~1.5 s after launch so the
+  // first user tap on "Add photo" doesn't pay the cold-start latency.
+  useEffect(() => {
+    const t = setTimeout(prewarmImagePicker, 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <ErrorBoundary>

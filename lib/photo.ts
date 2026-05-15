@@ -15,6 +15,22 @@ async function logStep(step: string, ctx: Record<string, unknown>): Promise<void
   } catch { /* never throw from logger */ }
 }
 
+// Pre-warm the native module so the FIRST picker open doesn't pay the
+// cold-start cost (expo-image-picker binds a native bridge on first
+// require — that adds 1–3 s on iOS 26). Call this once shortly after
+// app launch; subsequent require()s return the cached module instantly.
+//
+// Per [[native-modules-lazy-only-iOS26]] we still call require() at
+// call time (not a top-level import). This helper just pulls the
+// reference into memory before the user taps Add photo.
+let _warmedPicker = false;
+export function prewarmImagePicker(): void {
+  if (_warmedPicker) return;
+  _warmedPicker = true;
+  try { require('expo-image-picker'); } catch { /* ignore */ }
+  try { require('expo-image-manipulator'); } catch { /* ignore */ }
+}
+
 export async function pickPhoto(source: Source): Promise<string | null> {
   await logStep('pickPhoto.1.before-require', { source });
   const ImagePicker = require('expo-image-picker');
@@ -29,25 +45,38 @@ export async function pickPhoto(source: Source): Promise<string | null> {
     const p = await ImagePicker.requestCameraPermissionsAsync();
     await logStep('pickPhoto.4a.after-camera-permission', { granted: p.granted, status: p.status });
     if (!p.granted) throw new Error('Camera permission denied');
+  } else {
+    // Photo Library: iOS 14+ PHPicker runs out-of-process and doesn't
+    // require permission — but if the user previously chose "Limited
+    // Access" iOS shows a banner ("Select More Photos / Keep Current
+    // Selection") inside the picker. Asking for FULL access here, with
+    // `granularPermissions: ['photo']`, gives the user a chance to flip
+    // to "Allow Access to All Photos" and stop the limited banner. If
+    // they decline, we silently fall back to PHPicker (which still
+    // works without any permission). Either way the picker opens.
+    try {
+      await logStep('pickPhoto.3b.before-library-permission', {});
+      const p = await ImagePicker.requestMediaLibraryPermissionsAsync(false, ['photo']);
+      await logStep('pickPhoto.4b.after-library-permission', { granted: p.granted, status: p.status, accessPrivileges: p.accessPrivileges });
+    } catch { /* PHPicker works without permission too */ }
   }
-  // iOS 14+ launchImageLibraryAsync uses the system PHPicker which runs
-  // out-of-process and DOES NOT require photo library permission — it's
-  // designed so apps see only the picked asset, nothing else. Requesting
-  // permission triggers the "Limited Access / Select More Photos / Keep
-  // Current Selection" prompt, which is the iOS limited-library flow.
-  // Skip it; the picker handles its own UX.
   await logStep('pickPhoto.5.before-launch', { source });
+  // `allowsEditing: true` invokes iOS's native crop sheet AFTER the
+  // user picks an asset — that adds 1–3 s every time. We do our own
+  // square center-crop in normalize() (which already resizes for
+  // upload), so skip the system editor and return immediately.
   const result = source === 'camera'
     ? await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
+        // Default to the front (selfie) camera for face-photo cards.
+        // The CameraType enum was renamed across versions; pass both
+        // the enum value (when present) AND the literal string so the
+        // native module accepts whichever it understands.
+        cameraType: ImagePicker?.CameraType?.front ?? 'front',
         quality: 0.9,
       })
     : await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
         quality: 0.9,
       });
   await logStep('pickPhoto.6.after-launch', {
@@ -57,11 +86,23 @@ export async function pickPhoto(source: Source): Promise<string | null> {
   return result.assets[0].uri;
 }
 
+// Resize + square center-crop to 512×512 JPEG. Replaces the system
+// editing screen we used to invoke via allowsEditing: true.
 export async function normalize(uri: string): Promise<string> {
   const ImageManipulator = require('expo-image-manipulator');
+  // First inspect dimensions so we can compute the center-crop square.
+  // manipulateAsync with [{}] (no ops) returns width/height in result.
+  const probe = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
+  const w = probe.width as number, h = probe.height as number;
+  const sz = Math.min(w, h);
+  const ox = Math.max(0, Math.floor((w - sz) / 2));
+  const oy = Math.max(0, Math.floor((h - sz) / 2));
   const out = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: 512, height: 512 } }],
+    [
+      { crop: { originX: ox, originY: oy, width: sz, height: sz } },
+      { resize: { width: 512, height: 512 } },
+    ],
     { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
   );
   return out.uri;

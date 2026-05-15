@@ -24,24 +24,38 @@ export function buildVCard(card: Card, opts: VCardOptions = {}): string {
   const lines: string[] = [];
   lines.push('BEGIN:VCARD');
   lines.push('VERSION:3.0');
+  // N: structured name. iOS Camera uses N for the saved contact's
+  // display name. Without it iOS falls back to ORG (company) — that
+  // bug previously made the saved contact show as "Dynolabs" instead
+  // of the person's name.
+  const { last, first } = splitName(card.name);
+  lines.push(`N:${escape(last)};${escape(first)};;;`);
   lines.push(`FN:${escape(card.name)}`);
   if (card.title) lines.push(`TITLE:${escape(card.title)}`);
   if (card.company) lines.push(`ORG:${escape(card.company)}`);
   for (const email of card.emails) lines.push(`EMAIL;TYPE=INTERNET:${escape(email)}`);
   for (const phone of card.phones) lines.push(`TEL;TYPE=CELL:${escape(phone)}`);
   for (const s of card.socials) lines.push(`URL;TYPE=${socialType(s)}:${escape(s.url)}`);
-  if (opts.profileUrl) lines.push(`URL:${escape(opts.profileUrl)}`);
+  // Profile URL: TYPE=WORK so iOS labels it "work" instead of "homepage".
+  if (opts.profileUrl) lines.push(`URL;TYPE=WORK:${escape(opts.profileUrl)}`);
   if (opts.thumbnailBase64) {
-    // Base64 images line-fold per RFC 6350 §3.2 — iOS Contacts tolerates
-    // single-line. Adds ~1.2KB to the QR but keeps offline-photo guarantee.
+    // Embedded base64 JPEG: iOS Camera ONLY saves embedded photos from
+    // a scanned QR — remote PHOTO;VALUE=uri references are ignored.
     lines.push(`PHOTO;ENCODING=b;TYPE=JPEG:${opts.thumbnailBase64}`);
   }
-  if (opts.photoUrl) {
-    lines.push(`PHOTO;VALUE=uri:${escape(opts.photoUrl)}`);
-  }
+  // photoUrl is kept as a hint but won't appear in the saved contact.
+  // Drop it from the QR payload so we don't waste scannable bandwidth.
   lines.push(`REV:${new Date().toISOString()}`);
   lines.push('END:VCARD');
   return lines.join('\r\n');
+}
+
+function splitName(full: string): { last: string; first: string } {
+  const s = (full || '').trim();
+  if (!s) return { last: '', first: '' };
+  const idx = s.lastIndexOf(' ');
+  if (idx <= 0) return { last: '', first: s };
+  return { last: s.slice(idx + 1), first: s.slice(0, idx).trim() };
 }
 
 function escape(v: string): string {
