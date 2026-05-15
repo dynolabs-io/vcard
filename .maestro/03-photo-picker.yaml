@@ -7,6 +7,9 @@ appId: io.dynolabs.vcard
 - launchApp:
     stopApp: false
 - tapOn: "Maestro Tester"
+- scrollUntilVisible:
+    element: "Edit"
+    direction: DOWN
 - tapOn: "Edit"
 - waitForAnimationToEnd:
     timeout: 5000
