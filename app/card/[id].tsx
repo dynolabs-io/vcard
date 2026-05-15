@@ -133,14 +133,26 @@ export default function CardDetail() {
           )}
         </View>
 
-        {/* 3 CRITICAL ACTIONS — above the fold. */}
+        {/* 3 CRITICAL ACTIONS — above the fold. Each Pressable has an
+            explicit accessibilityLabel so children with emoji + text
+            don't get collapsed into "<emoji> Edit" (Maestro looks up by
+            label string and was failing on the combined form). */}
         <View style={styles.criticalRow}>
-          <Pressable style={[styles.criticalBtn, { backgroundColor: accent }]} onPress={onShare}>
+          <Pressable
+            accessibilityLabel="Share"
+            accessibilityRole="button"
+            testID="card-share"
+            style={[styles.criticalBtn, { backgroundColor: accent }]}
+            onPress={onShare}
+          >
             <Text style={styles.criticalIcon}>📤</Text>
             <Text style={styles.criticalLabelOn}>Share</Text>
           </Pressable>
           {card.slug ? (
             <Pressable
+              accessibilityLabel="Wallet"
+              accessibilityRole="button"
+              testID="card-wallet"
               style={styles.criticalBtn}
               onPress={() =>
                 trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
@@ -152,12 +164,23 @@ export default function CardDetail() {
               <Text style={styles.criticalLabel}>Wallet</Text>
             </Pressable>
           ) : (
-            <Pressable style={[styles.criticalBtn, { opacity: 0.5 }]} disabled>
+            <Pressable
+              accessibilityLabel="Syncing"
+              accessibilityRole="button"
+              style={[styles.criticalBtn, { opacity: 0.5 }]}
+              disabled
+            >
               <Text style={styles.criticalIcon}>🍎</Text>
               <Text style={styles.criticalLabel}>Syncing…</Text>
             </Pressable>
           )}
-          <Pressable style={styles.criticalBtn} onPress={() => router.push(`/card/edit/${card.id}`)}>
+          <Pressable
+            accessibilityLabel="Edit"
+            accessibilityRole="button"
+            testID="card-edit"
+            style={styles.criticalBtn}
+            onPress={() => router.push(`/card/edit/${card.id}`)}
+          >
             <Text style={styles.criticalIcon}>✏️</Text>
             <Text style={styles.criticalLabel}>Edit</Text>
           </Pressable>
