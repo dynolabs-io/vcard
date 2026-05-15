@@ -13,15 +13,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate, type WalletStyle } from '@/lib/types';
 
-// Apple Wallet pass layout choices the user can pick.
+// Apple Wallet pass strip image — the prominent top banner on the pass.
 const WALLET_STYLES: { id: WalletStyle; name: string; hint: string }[] = [
-  { id: 'posterQR',    name: 'Full QR',     hint: 'Whole pass is the QR' },
-  { id: 'posterPhoto', name: 'Photo card',  hint: 'Photo fills the pass' },
-  { id: 'posterBrand', name: 'Branded',     hint: 'Photo + brand color' },
-  { id: 'bigqr',       name: 'QR banner',   hint: 'Wide QR up top' },
-  { id: 'photoBack',   name: 'Photo back',  hint: 'Photo blurred behind' },
-  { id: 'compact',     name: 'Standard',    hint: 'Default Wallet layout' },
-  { id: 'minimal',     name: 'Minimal',     hint: 'Just QR + name' },
+  { id: 'photoStrip', name: 'Photo', hint: 'Your photo across the top' },
+  { id: 'logoStrip',  name: 'Logo',  hint: 'Brand color + company logo' },
 ];
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
@@ -147,6 +142,26 @@ export function CardForm({ initial, onSubmit, submitLabel }: Props) {
             <Pressable onPress={onChoosePhoto} hitSlop={4}>
               <Text style={styles.photoHint}>{photoBusy ? 'Working…' : draft.photoUrl ? 'Change photo' : 'Add photo'}</Text>
             </Pressable>
+          </View>
+
+          {/* Brand logo — separate from profile photo. Used as Wallet pass
+              icon/logo, in-app card top-right badge, web profile header. */}
+          <View style={styles.brandLogoRow}>
+            <Pressable
+              onPress={onChooseLogo}
+              hitSlop={8}
+              style={({ pressed }) => [styles.brandLogoBox, { opacity: pressed ? 0.7 : 1 }]}
+            >
+              {draft.brandLogoUrl ? (
+                <Image source={{ uri: draft.brandLogoUrl }} style={styles.brandLogoImg} resizeMode="contain" />
+              ) : (
+                <Text style={styles.brandLogoEmpty}>+</Text>
+              )}
+            </Pressable>
+            <View style={styles.brandLogoCopy}>
+              <Text style={styles.brandLogoTitle}>Brand logo</Text>
+              <Text style={styles.brandLogoHint}>{logoBusy ? 'Uploading…' : draft.brandLogoUrl ? 'Tap to change or remove' : 'Optional company logo'}</Text>
+            </View>
           </View>
 
           <Field label="Label">
@@ -324,6 +339,13 @@ const styles = StyleSheet.create({
   walletName: { fontSize: 13, fontWeight: '700', marginBottom: 4 },
   walletNameSelected: { color: '#0A66C2' },
   walletPreview: { fontSize: 11, opacity: 0.6, textAlign: 'center' },
+  brandLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 6 },
+  brandLogoBox: { width: 64, height: 64, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.10)', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  brandLogoImg: { width: 64, height: 64 },
+  brandLogoEmpty: { fontSize: 28, color: '#0A66C2', fontWeight: '300' },
+  brandLogoCopy: { flex: 1 },
+  brandLogoTitle: { fontSize: 15, fontWeight: '600' },
+  brandLogoHint: { fontSize: 12, opacity: 0.6, marginTop: 2 },
   preview: { padding: 18, borderRadius: 18, marginTop: 4 },
   pLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
   pName: { fontSize: 22, fontWeight: '700', marginTop: 4 },

@@ -4,18 +4,14 @@
 
 export type CardTemplate = 'mono' | 'gradient' | 'glass' | 'custom';
 
-// Apple Wallet pass layout. Maps to Apple's pass style + assets.
-// iOS 18+ "poster*" styles use preferredStyleSchemes for the new
-// posterEventTicket layout (full-bleed artwork, Nene Royal style).
-// Older iOS gracefully falls back to the legacy eventTicket layout.
+// Apple Wallet pass strip image. Apple's eventTicket renders one image
+// at the top of the pass (~25% of pass height). We use that slot for
+// either the user's profile photo or the brand logo on a colored band.
+// The iOS 18 posterEventTicket "full-bleed" layout requires Apple NFC
+// entitlement we don't have — so we work within the legacy layout's limits.
 export type WalletStyle =
-  | 'posterQR'      // iOS 18+ enhanced: entire pass front IS the QR (recommended)
-  | 'posterPhoto'   // iOS 18+ enhanced: full-bleed user photo, fields overlay
-  | 'posterBrand'   // iOS 18+ enhanced: branded composite (photo + brand color)
-  | 'bigqr'         // legacy: big QR as strip banner
-  | 'photoBack'     // legacy: photo as blurred background, small QR
-  | 'compact'       // legacy: standard eventTicket center barcode
-  | 'minimal';      // legacy: generic style, just QR + name
+  | 'photoStrip'   // user's profile photo, full-width strip
+  | 'logoStrip';   // brand color background + centered company logo
 
 export type Social = {
   kind: 'linkedin' | 'x' | 'instagram' | 'github' | 'website';
@@ -35,10 +31,11 @@ export type Card = {
   emails: string[];
   phones: string[];
   socials: Social[];
-  photoUrl?: string;     // hi-res URL on cdn.dynolabs.io (set after upload)
+  photoUrl?: string;     // face photo, on cdn.dynolabs.io (set after upload)
+  brandLogoUrl?: string; // company/brand logo, separate from face photo
   template: CardTemplate;
   customColor?: string;  // hex, only when template === 'custom'
-  walletStyle?: WalletStyle;  // default 'compact' if omitted
+  walletStyle?: WalletStyle;  // default 'photoStrip' if photo present, else 'logoStrip'
   deviceId?: string;     // bound at create time
   createdAt: string | number;  // server returns ISO string; local stores epoch ms
   updatedAt: string | number;
@@ -52,7 +49,7 @@ export const emptyCard = (): Card => ({
   phones: [],
   socials: [],
   template: 'mono',
-  walletStyle: 'posterQR',
+  walletStyle: 'photoStrip',
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });

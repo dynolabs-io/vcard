@@ -32,6 +32,8 @@ export default function NewCard() {
             socials: saved.socials,
             template: saved.template,
             customColor: saved.customColor,
+            walletStyle: saved.walletStyle,
+            brandLogoUrl: saved.brandLogoUrl,
             photoUrl: url,
           });
           await saveLocal(updated);

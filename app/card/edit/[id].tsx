@@ -31,13 +31,22 @@ export default function EditCard() {
 
   const onSubmit = async (next: Card) => {
     let photoUrl = next.photoUrl;
-    if (next.slug && next.photoUrl?.startsWith('file:')) {
-      try {
-        const { uploadPhoto } = require('@/lib/photo');
-        photoUrl = await uploadPhoto(next.slug, next.photoUrl);
-      } catch { /* keep local */ }
+    let brandLogoUrl = next.brandLogoUrl;
+    if (next.slug) {
+      if (next.photoUrl?.startsWith('file:')) {
+        try {
+          const { uploadPhoto } = require('@/lib/photo');
+          photoUrl = await uploadPhoto(next.slug, next.photoUrl);
+        } catch { /* keep local */ }
+      }
+      if (next.brandLogoUrl?.startsWith('file:')) {
+        try {
+          const { uploadPhoto } = require('@/lib/photo');
+          brandLogoUrl = await uploadPhoto(`${next.slug}-brand`, next.brandLogoUrl);
+        } catch { /* keep local */ }
+      }
     }
-    const merged = { ...next, photoUrl };
+    const merged = { ...next, photoUrl, brandLogoUrl };
     // Strip server-managed fields. The server's Card has createdAt/updatedAt
     // as time.Time and we send them as numbers (epoch ms) — JSON unmarshal
     // would reject the whole body with 400, the catch below would silently

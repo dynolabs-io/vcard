@@ -84,38 +84,78 @@ export default function CardDetail() {
       },
     ]);
 
+  const accent = card.customColor || (tmpl.card.backgroundColor || '#0B0B0F');
+  const primaryEmail = card.emails?.[0];
+  const primaryPhone = card.phones?.[0];
+  const websiteSocial = card.socials?.find(s => s.kind === 'website');
+  const linkedinSocial = card.socials?.find(s => s.kind === 'linkedin');
+
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.cardFace, { backgroundColor: tmpl.card.backgroundColor || '#0B0B0F' }]}>
-          {tmpl.card.backgroundGradient && (
-            <View style={[StyleSheet.absoluteFill, {
-              backgroundColor: tmpl.card.backgroundGradient[0],
-              borderRadius: 24,
-            }]} />
+        {/* HERO: brand-color background, large photo, brand logo top-right badge */}
+        <View style={[styles.hero, { backgroundColor: accent }]}>
+          {card.brandLogoUrl && (
+            <View style={styles.brandBadge}>
+              <Image source={{ uri: card.brandLogoUrl }} style={styles.brandBadgeImg} resizeMode="contain" />
+            </View>
           )}
-          <View style={styles.cardInner}>
+          <View style={styles.photoWrap}>
             {card.photoUrl ? (
-              <Image source={{ uri: card.photoUrl }} style={styles.photo} />
+              <Image source={{ uri: card.photoUrl }} style={styles.photoLarge} />
             ) : (
-              <View style={[styles.photo, styles.photoFallback]}>
-                <Text style={styles.photoInitial}>{(card.name || '?').slice(0,1).toUpperCase()}</Text>
+              <View style={[styles.photoLarge, styles.photoFallback]}>
+                <Text style={styles.photoInitialLarge}>{(card.name || '?').slice(0, 1).toUpperCase()}</Text>
               </View>
             )}
-            <Text style={[styles.label,   tmpl.label]}>{card.label}</Text>
-            <Text style={[styles.name,    tmpl.name]}>{card.name || '(no name)'}</Text>
-            {!!card.title   && <Text style={[styles.title,   tmpl.title]}>{card.title}</Text>}
-            {!!card.company && <Text style={[styles.company, tmpl.company]}>{card.company}</Text>}
           </View>
+          <Text style={styles.heroName}>{card.name || '(no name)'}</Text>
+          {!!card.title && (
+            <Text style={styles.heroTitle}>
+              {card.title}{card.company ? ` · ${card.company}` : ''}
+            </Text>
+          )}
+          {!card.title && !!card.company && <Text style={styles.heroTitle}>{card.company}</Text>}
         </View>
 
+        {/* QR — clear, centered, generous padding */}
         <View style={styles.qrFrame} ref={qrRef} collapsable={false}>
-          <QRCode value={qrPayload} size={260} backgroundColor="#fff" />
+          <QRCode value={qrPayload} size={280} backgroundColor="#fff" />
         </View>
-        <Text style={styles.hint}>Anyone can scan this with their default camera.</Text>
+        <Text style={styles.hint}>Scan with any camera.</Text>
+
+        {/* Quick actions — only show buttons where data exists */}
+        {(primaryPhone || primaryEmail || websiteSocial || linkedinSocial) && (
+          <View style={styles.quickRow}>
+            {primaryPhone && (
+              <Pressable style={styles.quickBtn} onPress={() => Linking.openURL(`tel:${primaryPhone}`).catch(() => {})}>
+                <Text style={styles.quickIcon}>📞</Text>
+                <Text style={styles.quickLabel}>Call</Text>
+              </Pressable>
+            )}
+            {primaryEmail && (
+              <Pressable style={styles.quickBtn} onPress={() => Linking.openURL(`mailto:${primaryEmail}`).catch(() => {})}>
+                <Text style={styles.quickIcon}>✉️</Text>
+                <Text style={styles.quickLabel}>Email</Text>
+              </Pressable>
+            )}
+            {linkedinSocial && (
+              <Pressable style={styles.quickBtn} onPress={() => Linking.openURL(linkedinSocial.url).catch(() => {})}>
+                <Text style={styles.quickIcon}>💼</Text>
+                <Text style={styles.quickLabel}>LinkedIn</Text>
+              </Pressable>
+            )}
+            {websiteSocial && (
+              <Pressable style={styles.quickBtn} onPress={() => Linking.openURL(websiteSocial.url).catch(() => {})}>
+                <Text style={styles.quickIcon}>🌐</Text>
+                <Text style={styles.quickLabel}>Website</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
 
         <View style={styles.actions}>
-          <Pressable style={styles.action} onPress={onShare}>
+          <Pressable style={[styles.action, { backgroundColor: accent }]} onPress={onShare}>
             <Text style={styles.actionText}>Share card</Text>
           </Pressable>
           {card.slug ? (
@@ -124,7 +164,7 @@ export default function CardDetail() {
               onPress={() =>
                 trace('wallet-open', { cardId: card.id, slug: card.slug, url: api.applePassUrl(card.slug!) },
                   () => Linking.openURL(api.applePassUrl(card.slug!)))
-                .catch(e => Alert.alert('Could not open Wallet', String(e)))
+                  .catch(e => Alert.alert('Could not open Wallet', String(e)))
               }
             >
               <Text style={styles.actionSecondaryText}>Add to Apple Wallet</Text>
@@ -149,21 +189,25 @@ export default function CardDetail() {
 const styles = StyleSheet.create({
   root: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16 },
-  scroll: { padding: 24, alignItems: 'center', gap: 20, paddingBottom: 40 },
-  cardFace: { width: '100%', borderRadius: 24, overflow: 'hidden' },
-  cardInner: { padding: 24 },
-  photo: { width: 64, height: 64, borderRadius: 32, marginBottom: 12, backgroundColor: 'rgba(255,255,255,0.08)' },
+  scroll: { padding: 20, alignItems: 'center', gap: 18, paddingBottom: 40 },
+  hero: { width: '100%', borderRadius: 24, padding: 24, paddingTop: 28, paddingBottom: 28, alignItems: 'center' },
+  brandBadge: { position: 'absolute', top: 14, right: 14, width: 44, height: 44, borderRadius: 10, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center', padding: 4 },
+  brandBadgeImg: { width: 36, height: 36 },
+  photoWrap: { marginBottom: 14 },
+  photoLarge: { width: 180, height: 180, borderRadius: 90, backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 3, borderColor: 'rgba(255,255,255,0.20)' },
   photoFallback: { alignItems: 'center', justifyContent: 'center' },
-  photoInitial: { color: '#fff', fontSize: 24, fontWeight: '700' },
-  label: { fontSize: 11, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' },
-  name: { fontSize: 28, fontWeight: '700', marginTop: 8 },
-  title: { fontSize: 16, marginTop: 4 },
-  company: { fontSize: 14, marginTop: 2 },
+  photoInitialLarge: { color: '#fff', fontSize: 72, fontWeight: '700' },
+  heroName: { color: '#fff', fontSize: 28, fontWeight: '700', textAlign: 'center' },
+  heroTitle: { color: 'rgba(255,255,255,0.85)', fontSize: 15, marginTop: 6, textAlign: 'center' },
   qrFrame: { padding: 16, backgroundColor: '#fff', borderRadius: 16 },
   hint: { fontSize: 13, opacity: 0.6, textAlign: 'center' },
+  quickRow: { flexDirection: 'row', gap: 10, flexWrap: 'wrap', justifyContent: 'center' },
+  quickBtn: { minWidth: 72, padding: 12, borderRadius: 14, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center', gap: 4 },
+  quickIcon: { fontSize: 22 },
+  quickLabel: { fontSize: 12, fontWeight: '600' },
   actions: { width: '100%', gap: 12, marginTop: 4 },
-  action: { padding: 16, borderRadius: 999, backgroundColor: '#111', alignItems: 'center' },
-  actionText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  action: { padding: 16, borderRadius: 999, alignItems: 'center' },
+  actionText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   actionSecondary: { padding: 14, borderRadius: 999, backgroundColor: 'rgba(127,127,127,0.12)', alignItems: 'center' },
   actionSecondaryText: { fontSize: 15, fontWeight: '600' },
   deleteBtn: { padding: 14, borderRadius: 999, alignItems: 'center', marginTop: 8 },
