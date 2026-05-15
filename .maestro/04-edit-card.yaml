@@ -27,6 +27,7 @@ appId: io.dynolabs.vcard
     when:
       notVisible: "Your cards"
     commands:
-      - tapOn: "Cards"
+      - tapOn:
+          id: "BackButton"
 - assertVisible: "Your cards"
 - assertVisible: "Maestro Edited"
