@@ -13,8 +13,12 @@
       "bundleIdentifier": "io.dynolabs.vcard",
       "usesAppleSignIn": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Take a profile photo for your card.",
+        "NSCameraUsageDescription": "Take a profile photo for your card. Also used to scan others' QR cards into your rolodex.",
         "NSPhotoLibraryUsageDescription": "Pick a profile photo for your card from your library.",
+        "NSContactsUsageDescription": "Read your contacts to find Dynolabs cards you saved before installing this app, and keep them current as those people update their info.",
+        "NSContactsWriteUsageDescription": "Save scanned cards to your iPhone Contacts and update them when those people change their info.",
+        "NSLocationWhenInUseUsageDescription": "Remember where you scanned a card so you can find it later (e.g. \"the people I met at TechCrunch\").",
+        "NSCalendarsUsageDescription": "Match a scanned card to the calendar event you were at when you scanned (e.g. auto-tag with the conference name).",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -59,7 +63,25 @@
       ],
       "expo-localization",
       "expo-secure-store",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Read your contacts to find Dynolabs cards you saved before installing this app, and keep them current."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Remember where you scanned a card so you can find it later."
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Match a scanned card to the calendar event you were at when you scanned."
+        }
+      ]
     ],
     "extra": {
       "apiBase": "https://api.dynolabs.io",

@@ -7,7 +7,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import {
-  Alert, Image, Pressable, StyleSheet, Text, View, useWindowDimensions,
+  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import QRCode from 'react-native-qrcode-svg';
@@ -117,11 +117,18 @@ export function CardView({
     onPress: () => Linking.openURL(linkedinSocial.url).catch(() => {}),
   });
 
-  // QR size: page width minus padding both sides.
-  const qrSize = Math.floor(pageWidth - PAGE_PADDING * 2);
+  // QR size: cap to a reasonable max so on tall phones the QR doesn't
+  // expand past the visible viewport. The carousel page itself is
+  // ScrollView-wrapped, so even small phones can reach the chip & hint
+  // by flicking up.
+  const qrSize = Math.min(Math.floor(pageWidth - PAGE_PADDING * 2), 320);
 
   return (
-    <View style={[styles.page, { width: pageWidth }]}>
+    <ScrollView
+      style={{ width: pageWidth }}
+      contentContainerStyle={styles.page}
+      showsVerticalScrollIndicator={false}
+    >
       {/* Centered medallion: photo dead center on brand color */}
       <View style={[styles.hero, { backgroundColor: accent }]}>
         {card.photoUrl ? (
@@ -189,26 +196,26 @@ export function CardView({
           ? 'Recipient online → contact saves with your photo.'
           : 'Saves instantly, no network. No photo on saved contact.'}
       </Text>
-    </View>
+    </ScrollView>
   );
 }
 
 const PAGE_PADDING = 20;
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 12, alignItems: 'center', gap: 14 },
-  hero: { width: '100%', borderRadius: 24, paddingVertical: 28, alignItems: 'center', justifyContent: 'center' },
-  photo: { width: 140, height: 140, borderRadius: 70, borderWidth: 4, borderColor: '#fff' },
+  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 8, paddingBottom: 24, alignItems: 'center', gap: 10 },
+  hero: { width: '100%', borderRadius: 22, paddingVertical: 20, alignItems: 'center', justifyContent: 'center' },
+  photo: { width: 112, height: 112, borderRadius: 56, borderWidth: 4, borderColor: '#fff' },
   photoFallback: { backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-  photoInitial: { color: '#fff', fontSize: 56, fontWeight: '700' },
-  name: { fontSize: 24, fontWeight: '600', textAlign: 'center', letterSpacing: -0.3 },
-  sub: { fontSize: 15, color: 'rgba(60,60,67,0.7)', textAlign: 'center' },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch' },
-  actionItem: { alignItems: 'center', gap: 6, flexShrink: 1 },
-  actionCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  actionSymbol: { width: 22, height: 22 },
+  photoInitial: { color: '#fff', fontSize: 44, fontWeight: '700' },
+  name: { fontSize: 22, fontWeight: '600', textAlign: 'center', letterSpacing: -0.3 },
+  sub: { fontSize: 14, color: 'rgba(60,60,67,0.7)', textAlign: 'center' },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginTop: 2 },
+  actionItem: { alignItems: 'center', gap: 4, flexShrink: 1 },
+  actionCircle: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  actionSymbol: { width: 20, height: 20 },
   actionLabel: { fontSize: 11, fontWeight: '500', color: 'rgba(60,60,67,0.85)', textTransform: 'lowercase' },
-  qrFrame: { backgroundColor: '#fff', borderRadius: 16, padding: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(127,127,127,0.15)' },
+  qrFrame: { backgroundColor: '#fff', borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(127,127,127,0.15)' },
   modeRow: { flexDirection: 'row', gap: 6, alignSelf: 'center', backgroundColor: 'rgba(127,127,127,0.10)', borderRadius: 12, padding: 4 },
   modeChip: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 9 },
   modeChipActive: { backgroundColor: '#fff' },

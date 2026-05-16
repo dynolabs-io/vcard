@@ -41,6 +41,9 @@ export default function RootLayout() {
           <Stack.Screen name="card/new" options={{ headerShown: true, presentation: 'modal', title: 'New Card' }} />
           <Stack.Screen name="card/edit/[id]" options={{ headerShown: true, presentation: 'modal', title: 'Edit Card' }} />
           <Stack.Screen name="merge" options={{ headerShown: true, presentation: 'modal', title: 'Sync your cards' }} />
+          <Stack.Screen name="scan" options={{ headerShown: true, presentation: 'modal', title: 'Scan card' }} />
+          <Stack.Screen name="scan/save" options={{ headerShown: true, presentation: 'modal', title: 'Save contact' }} />
+          <Stack.Screen name="scan/[id]" options={{ headerShown: true, title: 'Contact' }} />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>

@@ -76,6 +76,27 @@ export type ClaimResponse = {
   userCards: Card[];
 };
 
+export type ServerScan = {
+  id: string;
+  targetSlug: string;
+  notes?: string;
+  tags: string[];
+  lat?: number;
+  lon?: number;
+  placeName?: string;
+  eventName?: string;
+  scannedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type InboxSummary = {
+  totalScans: number;
+  last7Days: number;
+  last30Days: number;
+  uniqueUsers: number;
+};
+
 export const api = {
   healthz: () => request<{ status: string; service: string; version: string; time: string }>('/healthz'),
   createCard: (card: Partial<Card> & { name: string; deviceId: string }) =>
@@ -84,6 +105,10 @@ export const api = {
     request<Card[]>(`/v1/cards?device_id=${encodeURIComponent(deviceId)}`),
   getCard: (id: string) =>
     request<Card>(`/v1/cards/${encodeURIComponent(id)}`),
+  /** Public lookup by slug — no auth, used by the Scanned tab to
+   *  refresh saved snapshots with the card owner's latest data. */
+  publicCard: (slug: string) =>
+    request<Card>(`/v1/c/${encodeURIComponent(slug)}`),
   updateCard: (id: string, patch: Partial<Card>) =>
     request<Card>(`/v1/cards/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   deleteCard: (id: string) =>
@@ -106,6 +131,16 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ deviceId, conflicts: conflicts ?? [] }),
     }, 15_000),
+
+  // Rolodex (scans) — all require signed-in auth, used by lib/scans.ts.
+  scansCreate: (s: Partial<ServerScan> & { targetSlug: string }) =>
+    request<ServerScan>('/v1/scans', { method: 'POST', body: JSON.stringify(s) }),
+  scansList: () => request<ServerScan[]>('/v1/scans'),
+  scansUpdate: (id: string, patch: Partial<ServerScan>) =>
+    request<ServerScan>(`/v1/scans/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(patch) }),
+  scansDelete: (id: string) =>
+    request<null>(`/v1/scans/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  scansInbox: () => request<InboxSummary>('/v1/scans/inbox'),
 
   /** URL the app opens to download a signed .pkpass for a slug.
    *  iOS sees the application/vnd.apple.pkpass content-type and shows

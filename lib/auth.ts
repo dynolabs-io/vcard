@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { api, setAuthTokenProvider, type ConflictResolution, type User } from './api';
 import { getDeviceId } from './device';
+import { pullServerScans, pushLocalScans } from './scans';
 import { listCards as listLocal, saveCard as saveLocal } from './storage';
 import type { Card } from './types';
 
@@ -166,6 +167,11 @@ export async function signInWithApple(): Promise<SignInResult | null> {
   }
 
   for (const d of downloads) await saveLocal(d);
+
+  // Migrate any anonymous-mode rolodex entries to the user's account,
+  // then pull anything else the user had stored from other devices.
+  try { await pushLocalScans(); } catch {}
+  try { await pullServerScans(); } catch {}
 
   return {
     user: auth.user,
