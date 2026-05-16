@@ -166,17 +166,22 @@ jobs:
           with open(os.environ['API_JSON'], 'w') as f:
             json.dump(obj, f)
           PY
-          # --force regenerates the profile if it doesn't include all
-          # the entitlements the App ID currently has.
-          fastlane sigh renew \
+          # Download the EXISTING App Store profile fresh from Apple.
+          # We don't --force regenerate (that requires a distribution
+          # cert registered in Apple's portal that matches our local
+          # .p12 — fragile). The current profile already has SIWA from
+          # the founder's earlier Developer Portal update; the perms
+          # added in Build 127 (Contacts/Location/Calendar) are pure
+          # Info.plist usage strings and don't require App ID entitlements.
+          # If a future build adds an App ID entitlement, flip
+          # --readonly false (and ensure the dist cert is reachable).
+          fastlane sigh download \
             --api_key_path "$API_JSON" \
             --app_identifier io.dynolabs.vcard \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
             --provisioning_name "Dynolabs vCard App Store" \
             --output_path $RUNNER_TEMP \
-            --filename dist.mobileprovision \
-            --force \
-            --include_all_certificates false
+            --filename dist.mobileprovision
           # Install the just-downloaded profile where Xcode reads it
           UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<<"$(security cms -D -i $RUNNER_TEMP/dist.mobileprovision)")
           echo "Fresh profile UUID: $UUID"
