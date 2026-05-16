@@ -149,7 +149,7 @@ jobs:
           # Build the fastlane api-key JSON. `key` carries the P8 PEM
           # body inline (raw multi-line PEM, not base64) — fastlane
           # parses this format directly.
-          export KEY_FILE=$RUNNER_TEMP/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          export KEY_FILE=$HOME/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
           export API_JSON=$RUNNER_TEMP/asc_api_key.json
           export ASC_KEY_ID="${{ secrets.APP_STORE_CONNECT_KEY_ID }}"
           export ASC_ISSUER_ID="${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
