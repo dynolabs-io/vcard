@@ -115,7 +115,7 @@ export default function ScanScreen() {
             resizeMode="scaleAspectFit" style={{ width: 64, height: 64 }} />
           <Text style={styles.permTitle}>Camera access required</Text>
           <Text style={styles.permBody}>
-            Allow camera to scan others' Dynolabs cards into your rolodex.
+            Allow camera to scan Dynolabs cards into your rolodex.
           </Text>
           <Pressable onPress={requestPermission} style={styles.cta}>
             <Text style={styles.ctaText}>Allow camera</Text>

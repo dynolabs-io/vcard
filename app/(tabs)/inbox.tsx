@@ -123,7 +123,7 @@ export default function InboxScreen() {
                 {leads.length === 0 && (
                   <Text style={styles.smallHint}>
                     No callback requests yet. Share your dynolabs.io/c/{'<slug>'}
-                    link — visitors can use the "request callback" form there.
+                    link — visitors can use the {'"request callback"'} form there.
                   </Text>
                 )}
               </View>

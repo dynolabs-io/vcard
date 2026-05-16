@@ -163,8 +163,8 @@ export default function ScannedScreen() {
             resizeMode="scaleAspectFit" style={{ width: 64, height: 64 }} />
           <Text style={styles.emptyTitle}>No scanned cards yet</Text>
           <Text style={styles.emptyBody}>
-            Tap the scan icon to capture someone's Dynolabs QR. Notes,
-            tags, location and event are saved automatically.
+            Tap the scan icon to capture a Dynolabs QR. Notes, tags,
+            location and event are saved automatically.
           </Text>
           <Pressable onPress={() => router.push('/scan')} style={styles.cta}>
             <Text style={styles.ctaText}>Scan a card</Text>
