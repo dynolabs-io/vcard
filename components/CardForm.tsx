@@ -13,6 +13,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate } from '@/lib/types';
 import { CropScreen } from '@/components/CropScreen';
+import { connectLinkedIn } from '@/lib/linkedin';
+import { SymbolView } from 'expo-symbols';
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
 
@@ -201,6 +203,31 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
           contentInsetAdjustmentBehavior="automatic"
           automaticallyAdjustKeyboardInsets
         >
+          {/* Import from LinkedIn — opens an in-app Safari sheet, signs
+              the user into LinkedIn, returns name/email/photo, prefills
+              the card fields without typing. Available regardless of
+              whether the user is signed into Dynolabs (Apple/anonymous). */}
+          <Pressable
+            onPress={async () => {
+              const r = await connectLinkedIn();
+              if (!r.ok) return;
+              const p = r.profile;
+              setDraft(d => ({
+                ...d,
+                name: d.name || p.name || '',
+                emails: d.emails && d.emails.length > 0 ? d.emails : (p.email ? [p.email] : []),
+                photoUrl: d.photoUrl || p.picture || undefined,
+              }));
+            }}
+            style={styles.linkedInBtn}
+            accessibilityLabel="Import from LinkedIn"
+            testID="card-import-linkedin"
+          >
+            <SymbolView name="link" tintColor="#fff" resizeMode="scaleAspectFit"
+              style={{ width: 16, height: 16, marginRight: 8 }} weight="semibold" />
+            <Text style={styles.linkedInBtnText}>Import from LinkedIn</Text>
+          </Pressable>
+
           {/* Photo picker — Pressable wraps ONLY the avatar circle.
               Earlier the Pressable spanned the full row width, so any tap
               in the upper band of the form opened the photo dialog. */}
@@ -390,6 +417,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { padding: 20, gap: 16, paddingBottom: 40 },
+  linkedInBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, backgroundColor: '#0A66C2' },
+  linkedInBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
   field: { gap: 6 },
   fieldLabel: { fontSize: 13, fontWeight: '600', opacity: 0.6 },
   input: { padding: 14, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.08)', fontSize: 16, color: '#000' },

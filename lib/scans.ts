@@ -31,6 +31,9 @@ export type ScanRecord = {
   lon?: number;
   placeName?: string;
   eventName?: string;
+  /** Opt-in: when true, owner of the scanned card can see WHO scanned
+   *  them in their Inbox. Defaults to false (anonymous). */
+  reveal?: boolean;
   scannedAt: string;     // ISO
   createdAt: string;
   updatedAt: string;
@@ -95,6 +98,7 @@ export async function createScan(
         lon: rec.lon,
         placeName: rec.placeName,
         eventName: rec.eventName,
+        reveal: rec.reveal,
         scannedAt: rec.scannedAt,
       });
       rec.serverId = remote.id;

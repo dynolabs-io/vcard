@@ -37,6 +37,7 @@ export default function ScanSaveScreen() {
   const [lon, setLon] = useState<number | undefined>();
   const [eventName, setEventName] = useState<string>('');
   const [saveToContacts, setSaveToContacts] = useState(false);
+  const [reveal, setReveal] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -130,6 +131,7 @@ export default function ScanSaveScreen() {
         lon,
         placeName,
         eventName,
+        reveal,
         scannedAt: new Date().toISOString(),
       });
       if (saveToContacts) {
@@ -254,6 +256,15 @@ export default function ScanSaveScreen() {
               <Text style={styles.rowLabel}>Save to iPhone Contacts</Text>
               <Switch value={saveToContacts} onValueChange={setSaveToContacts} />
             </View>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowLabel}>Reveal me to {params.name || 'this contact'}</Text>
+                <Text style={styles.rowHint}>
+                  Default: anonymous. Turn on so they see you in their Inbox.
+                </Text>
+              </View>
+              <Switch value={reveal} onValueChange={setReveal} />
+            </View>
           </View>
 
           <Pressable onPress={onSave} disabled={saving} style={[styles.saveBtn, saving && styles.saveBtnDisabled]}>
@@ -286,8 +297,9 @@ const styles = StyleSheet.create({
   suggestedText: { fontSize: 12, color: 'rgba(60,60,67,0.8)' },
   captureRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   captureText: { fontSize: 14, color: 'rgba(60,60,67,0.85)' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, gap: 12 },
   rowLabel: { fontSize: 15 },
+  rowHint: { fontSize: 12, opacity: 0.6, marginTop: 2 },
   saveBtn: { padding: 16, borderRadius: 999, backgroundColor: '#0A66C2', alignItems: 'center', marginTop: 8 },
   saveBtnDisabled: { opacity: 0.5 },
   saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },

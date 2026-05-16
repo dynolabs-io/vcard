@@ -16,6 +16,7 @@ import {
   getAuthSnapshot, isAppleSignInAvailable, signInWithApple, signOut, subscribe,
   type AuthState,
 } from '@/lib/auth';
+import { connectLinkedIn, type LinkedInProfile } from '@/lib/linkedin';
 
 export default function AccountScreen() {
   const [state, setState] = useState<AuthState>(getAuthSnapshot());
@@ -54,10 +55,36 @@ export default function AccountScreen() {
     }
   };
 
-  const onSignInLinkedIn = () => {
-    // Build 128: ASWebAuth flow → dynolabs.io/connect-linkedin
-    // → LinkedIn AutoFill plugin → deep-link callback into card editor.
-    Alert.alert('LinkedIn', 'LinkedIn auto-fill ships in Build 128.', [{ text: 'OK' }]);
+  const onSignInLinkedIn = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const r = await connectLinkedIn();
+      if (!r.ok) {
+        if (r.reason === 'cancel') return;
+        Alert.alert('LinkedIn', r.message || 'Sign in failed');
+        return;
+      }
+      summariseLinkedInResult(r.profile);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Show a friendly summary of what got imported. Today we don't issue
+  // a session token from LinkedIn sign-in (server only does that for
+  // Apple); a follow-up build can unify identity. For now, the profile
+  // info is the value-add — pre-fills cards, no card editing needed.
+  const summariseLinkedInResult = (p: LinkedInProfile) => {
+    Alert.alert(
+      `LinkedIn linked${p.name ? ` — ${p.name}` : ''}`,
+      [
+        p.name && `Name: ${p.name}`,
+        p.email && `Email: ${p.email}`,
+        p.picture && 'Photo: imported',
+      ].filter(Boolean).join('\n') || 'Connected.',
+      [{ text: 'OK' }],
+    );
   };
 
   return (

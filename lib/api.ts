@@ -85,6 +85,7 @@ export type ServerScan = {
   lon?: number;
   placeName?: string;
   eventName?: string;
+  reveal?: boolean;
   scannedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -95,6 +96,26 @@ export type InboxSummary = {
   last7Days: number;
   last30Days: number;
   uniqueUsers: number;
+};
+
+export type Lead = {
+  id: string;
+  targetSlug: string;
+  fromName?: string;
+  fromEmail?: string;
+  fromPhone?: string;
+  message?: string;
+  createdAt: string;
+};
+
+export type RevealedScanner = {
+  userId: string;
+  name?: string;
+  email?: string;
+  targetSlug: string;
+  placeName?: string;
+  eventName?: string;
+  scannedAt: string;
 };
 
 export const api = {
@@ -141,6 +162,20 @@ export const api = {
   scansDelete: (id: string) =>
     request<null>(`/v1/scans/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   scansInbox: () => request<InboxSummary>('/v1/scans/inbox'),
+
+  // Leads — visitors who used the "request callback" form on a card
+  // owner's public web profile (dynolabs.io/c/<slug>).
+  leadsList: () => request<Lead[]>('/v1/leads'),
+
+  // Connections — scanners who scanned my cards AND opted in to reveal.
+  connectionsList: () => request<RevealedScanner[]>('/v1/scans/connections'),
+
+  // Block list — owner-side privacy control.
+  blocksList: () => request<{ blocked: string[] }>('/v1/blocks'),
+  blockUser: (userId: string) =>
+    request<null>('/v1/blocks', { method: 'POST', body: JSON.stringify({ userId }) }),
+  unblockUser: (userId: string) =>
+    request<null>(`/v1/blocks/${encodeURIComponent(userId)}`, { method: 'DELETE' }),
 
   /** URL the app opens to download a signed .pkpass for a slug.
    *  iOS sees the application/vnd.apple.pkpass content-type and shows
