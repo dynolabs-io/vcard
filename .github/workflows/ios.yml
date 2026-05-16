@@ -107,15 +107,12 @@ jobs:
             | base64 -d > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
           chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
 
-      - name: Install distribution cert + prepare keychain (automatic signing)
-        # We still need the distribution .p12 in a keychain so codesign can
-        # sign with the right identity. The PROVISIONING PROFILE, however,
-        # is no longer baked into a secret — xcodebuild downloads/regenerates
-        # it from Apple via -allowProvisioningUpdates + the App Store
-        # Connect API key. That way enabling a new capability on the App ID
-        # (e.g. Sign In with Apple) doesn't require re-uploading a static
-        # .mobileprovision to GitHub secrets — Apple just rebuilds it on
-        # demand at archive time.
+      - name: Install distribution cert into temp keychain
+        # codesign needs the Apple Distribution .p12 in a keychain it can
+        # read. The provisioning profile is fetched fresh from Apple in the
+        # next step using fastlane sigh — we DON'T bake one into a secret
+        # any more (that broke every time a new capability got enabled on
+        # the App ID).
         run: |
           set -euo pipefail
           echo "${{ secrets.IOS_DIST_CERT_P12 }}" | base64 -d > $RUNNER_TEMP/dist.p12
@@ -130,6 +127,42 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed s/\"//g)
           security default-keychain -s "$KEYCHAIN_PATH"
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+      - name: Fetch fresh App Store provisioning profile via fastlane sigh
+        # fastlane sigh hits Apple Developer Portal via the ASC API key,
+        # regenerates the App Store profile for io.dynolabs.vcard with
+        # whatever capabilities are CURRENTLY enabled on the App ID
+        # (so SIWA / push / associated-domains / anything added later
+        # just works), downloads the fresh .mobileprovision, and installs
+        # it into ~/Library/MobileDevice/Provisioning\ Profiles/.
+        # Manual signing in the archive step picks it up by specifier name.
+        env:
+          APP_STORE_CONNECT_API_KEY_KEY_ID:      ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_API_KEY_ISSUER_ID:   ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_API_KEY_KEY:         ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          APP_STORE_CONNECT_API_KEY_IS_KEY_CONTENT_BASE64: "true"
+          APP_STORE_CONNECT_API_KEY_DURATION:    "1200"
+          APP_STORE_CONNECT_API_KEY_IN_HOUSE:    "false"
+          FASTLANE_HIDE_CHANGELOG: "1"
+          FASTLANE_SKIP_UPDATE_CHECK: "1"
+        run: |
+          set -euo pipefail
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          # --force regenerates the profile if it doesn't include all the
+          # entitlements the App ID currently has. --readonly false (default)
+          # allows that regeneration.
+          fastlane sigh renew \
+            --app_identifier io.dynolabs.vcard \
+            --team_id ${{ secrets.APPLE_TEAM_ID }} \
+            --provisioning_name "Dynolabs vCard App Store" \
+            --output_path $RUNNER_TEMP \
+            --filename dist.mobileprovision \
+            --force \
+            --include_all_certificates false
+          # Install the just-downloaded profile where Xcode reads it
+          UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<<"$(security cms -D -i $RUNNER_TEMP/dist.mobileprovision)")
+          echo "Fresh profile UUID: $UUID"
+          cp $RUNNER_TEMP/dist.mobileprovision ~/Library/MobileDevice/Provisioning\ Profiles/$UUID.mobileprovision
 
       - name: Discover scheme
         id: scheme
@@ -352,34 +385,26 @@ jobs:
       # END E2E GATE — anything below only runs on Maestro success.
       # ───────────────────────────────────────────────────────────
 
-      - name: Build and archive (automatic signing via ASC API)
-        # AUTOMATIC signing. xcodebuild contacts Apple via the App Store
-        # Connect API key we already wrote to ~/private_keys earlier and:
-        #   • picks the App Store distribution profile by App ID
-        #   • REGENERATES it on the fly if it's stale relative to current
-        #     App ID capabilities (e.g. SIWA was just enabled)
-        #   • downloads + installs it locally for this build
-        # No static .mobileprovision secret to maintain — adding a new
-        # capability on the App ID just works on the next CI run.
+      - name: Build and archive (manual signing, fresh profile)
+        # MANUAL signing using the just-refreshed App Store profile that
+        # fastlane sigh installed. We avoid CODE_SIGN_STYLE=Automatic
+        # because it requires Apple to ALSO issue an Apple Development
+        # certificate for the build phase, and our dev account is already
+        # at the cert limit. Manual + fresh-profile-via-sigh gives us the
+        # best of both: no static secret to maintain, no automatic-signing
+        # certificate inflation.
         run: |
           cd ios
-          # With CODE_SIGN_STYLE=Automatic xcodebuild auto-picks the right
-          # identity per action (Distribution for archive, Development for
-          # other actions). Specifying CODE_SIGN_IDENTITY here triggers
-          # "conflicting provisioning settings" since Xcode 26 treats it
-          # as a manual override. Pass only the team + style.
           xcodebuild archive \
             -workspace *.xcworkspace \
             -scheme "${{ steps.scheme.outputs.scheme }}" \
             -configuration Release \
             -destination "generic/platform=iOS" \
             -archivePath $RUNNER_TEMP/app.xcarchive \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="Dynolabs vCard App Store"
 
       - name: Export IPA (manual zip from archive)
         # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
