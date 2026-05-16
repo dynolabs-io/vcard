@@ -39,17 +39,6 @@ export default function RootLayout() {
         >
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="card/new" options={{ headerShown: true, presentation: 'modal', title: 'New Card' }} />
-          <Stack.Screen
-            name="card/[id]"
-            options={{
-              headerShown: true,
-              // Title is set dynamically per card from the detail screen
-              // via <Stack.Screen options={{ title: card.name }} />.
-              headerBackButtonDisplayMode: 'minimal',
-              headerBackTitle: 'Cards',
-              headerBackButtonMenuEnabled: false,
-            }}
-          />
           <Stack.Screen name="card/edit/[id]" options={{ headerShown: true, presentation: 'modal', title: 'Edit Card' }} />
           <Stack.Screen name="merge" options={{ headerShown: true, presentation: 'modal', title: 'Sync your cards' }} />
         </Stack>

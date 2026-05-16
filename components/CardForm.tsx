@@ -12,8 +12,17 @@ import type { TextInput as TextInputType } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate } from '@/lib/types';
+import { CropScreen } from '@/components/CropScreen';
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
+
+type CropTarget = 'photo' | 'logo';
+type CropTask = {
+  target: CropTarget;
+  uri: string;
+  width: number;
+  height: number;
+};
 
 type Props = {
   initial: Card;
@@ -37,6 +46,7 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [logoBusy, setLogoBusy] = useState(false);
+  const [cropTask, setCropTask] = useState<CropTask | null>(null);
 
   // Refs for sequential next-field focus on Return.
   const titleRef   = useRef<TextInputType>(null);
@@ -66,9 +76,10 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
     }
   };
 
-  // Photo picker — every step traced. Each phase POSTs to /v1/crash so
-  // we can see exactly where it dies on the user's phone (lazy-require,
-  // permission request, picker launch, normalize, upload).
+  // Photo picker — picker launches, returns asset URI, we probe its
+  // dimensions and open the in-app CropScreen overlay. The actual
+  // pixel-level crop + resize + upload runs in onCropDone after the user
+  // confirms in the crop UI.
   const onPickPhoto = (source: 'camera' | 'library') => async () => {
     if (photoBusy) return;
     setPhotoBusy(true);
@@ -78,13 +89,8 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
         const photoMod = require('@/lib/photo');
         const uri = await trace(`photo-${source}-pick`, {}, () => photoMod.pickPhoto(source));
         if (!uri) return;
-        const normalized = await trace(`photo-${source}-normalize`, {}, () => photoMod.normalize(uri));
-        setDraft(d => ({ ...d, photoUrl: normalized }));
-        if (draft.slug) {
-          const url = await trace(`photo-${source}-upload`, { slug: draft.slug },
-            () => photoMod.uploadPhoto(draft.slug, normalized));
-          setDraft(d => ({ ...d, photoUrl: url }));
-        }
+        const probed = await trace(`photo-${source}-probe`, {}, () => photoMod.probeImage(uri));
+        setCropTask({ target: 'photo', uri: probed.uri, width: probed.width, height: probed.height });
       });
     } catch (e: unknown) {
       Alert.alert('Photo failed', (e as { message?: string })?.message || String(e));
@@ -114,19 +120,45 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
         const photoMod = require('@/lib/photo');
         const uri = await trace(`logo-${source}-pick`, {}, () => photoMod.pickPhoto(source));
         if (!uri) return;
-        const normalized = await trace(`logo-${source}-normalize`, {}, () => photoMod.normalize(uri));
-        setDraft(d => ({ ...d, brandLogoUrl: normalized }));
-        if (draft.slug) {
-          const uploadSlug = `${draft.slug}-brand`;
-          const url = await trace(`logo-${source}-upload`, { slug: uploadSlug },
-            () => photoMod.uploadPhoto(uploadSlug, normalized));
-          setDraft(d => ({ ...d, brandLogoUrl: url }));
-        }
+        const probed = await trace(`logo-${source}-probe`, {}, () => photoMod.probeImage(uri));
+        setCropTask({ target: 'logo', uri: probed.uri, width: probed.width, height: probed.height });
       });
     } catch (e: unknown) {
       Alert.alert('Logo failed', (e as { message?: string })?.message || String(e));
     } finally {
       setLogoBusy(false);
+    }
+  };
+
+  const onCropDone = async (crop: { originX: number; originY: number; width: number; height: number }) => {
+    if (!cropTask) return;
+    const target = cropTask.target;
+    const sourceUri = cropTask.uri;
+    setCropTask(null);
+    const { trace } = require('@/lib/telemetry');
+    const photoMod = require('@/lib/photo');
+    try {
+      const normalized = await trace(`${target}-crop-normalize`, {},
+        () => photoMod.normalize(sourceUri, crop));
+      if (target === 'photo') {
+        setDraft(d => ({ ...d, photoUrl: normalized }));
+        if (draft.slug) {
+          const url = await trace('photo-crop-upload', { slug: draft.slug },
+            () => photoMod.uploadPhoto(draft.slug, normalized));
+          setDraft(d => ({ ...d, photoUrl: url }));
+        }
+      } else {
+        setDraft(d => ({ ...d, brandLogoUrl: normalized }));
+        if (draft.slug) {
+          const uploadSlug = `${draft.slug}-brand`;
+          const url = await trace('logo-crop-upload', { slug: uploadSlug },
+            () => photoMod.uploadPhoto(uploadSlug, normalized));
+          setDraft(d => ({ ...d, brandLogoUrl: url }));
+        }
+      }
+    } catch (e: unknown) {
+      Alert.alert(`${target === 'photo' ? 'Photo' : 'Logo'} failed`,
+        (e as { message?: string })?.message || String(e));
     }
   };
   const onChooseLogo = () => {
@@ -138,6 +170,20 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
   };
 
   const tmpl = templateStyle(draft.template, draft.customColor);
+
+  // Crop overlay takes over the whole form area when active — full-screen
+  // black surface, Apple-Contacts-style "Move and Scale" header.
+  if (cropTask) {
+    return (
+      <CropScreen
+        uri={cropTask.uri}
+        width={cropTask.width}
+        height={cropTask.height}
+        onCancel={() => setCropTask(null)}
+        onDone={onCropDone}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>

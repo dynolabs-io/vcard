@@ -53,13 +53,10 @@ export default function NewCard() {
         }
       } catch {/* picker upload failed — keep card without photo/logo */}
     }
-    // Land on the new card's detail page (NOT the list) so Add to Wallet
-    // is one tap away. replace() so Back doesn't bounce to the form.
-    if (saved.id) {
-      router.replace(`/card/${saved.id}`);
-    } else {
-      router.back();
-    }
+    // After save, return to the Cards carousel — the new card is now in
+    // the list. The carousel doesn't auto-scroll to the newest card today
+    // (Build 127 follow-up: auto-scroll to it).
+    router.back();
   };
 
   return <CardForm initial={emptyCard()} onSubmit={onSubmit} submitLabel="Save card" />;

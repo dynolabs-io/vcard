@@ -86,21 +86,42 @@ export async function pickPhoto(source: Source): Promise<string | null> {
   return result.assets[0].uri;
 }
 
-// Resize + square center-crop to 512×512 JPEG. Replaces the system
-// editing screen we used to invoke via allowsEditing: true.
-export async function normalize(uri: string): Promise<string> {
+// probeImage returns the source-image dimensions without any
+// transform. Used by the in-app CropScreen to lay out the gesture
+// surface.
+export async function probeImage(uri: string): Promise<{ uri: string; width: number; height: number }> {
   const ImageManipulator = require('expo-image-manipulator');
-  // First inspect dimensions so we can compute the center-crop square.
-  // manipulateAsync with [{}] (no ops) returns width/height in result.
+  const probe = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
+  return { uri, width: probe.width as number, height: probe.height as number };
+}
+
+/**
+ * Apply a square crop rect and resize to 512×512 JPEG. The crop rect
+ * is computed by the in-app CropScreen from user pan/zoom; this fn
+ * just performs the actual pixel work. If no rect is provided, falls
+ * back to a center-square crop (used when crop UI is skipped).
+ */
+export async function normalize(
+  uri: string,
+  crop?: { originX: number; originY: number; width: number; height: number },
+): Promise<string> {
+  const ImageManipulator = require('expo-image-manipulator');
   const probe = await ImageManipulator.manipulateAsync(uri, [], { base64: false });
   const w = probe.width as number, h = probe.height as number;
-  const sz = Math.min(w, h);
-  const ox = Math.max(0, Math.floor((w - sz) / 2));
-  const oy = Math.max(0, Math.floor((h - sz) / 2));
+  let rect = crop;
+  if (!rect) {
+    const sz = Math.min(w, h);
+    rect = {
+      originX: Math.max(0, Math.floor((w - sz) / 2)),
+      originY: Math.max(0, Math.floor((h - sz) / 2)),
+      width: sz,
+      height: sz,
+    };
+  }
   const out = await ImageManipulator.manipulateAsync(
     uri,
     [
-      { crop: { originX: ox, originY: oy, width: sz, height: sz } },
+      { crop: rect },
       { resize: { width: 512, height: 512 } },
     ],
     { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG },
