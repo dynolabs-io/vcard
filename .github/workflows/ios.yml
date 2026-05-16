@@ -363,6 +363,11 @@ jobs:
         # capability on the App ID just works on the next CI run.
         run: |
           cd ios
+          # With CODE_SIGN_STYLE=Automatic xcodebuild auto-picks the right
+          # identity per action (Distribution for archive, Development for
+          # other actions). Specifying CODE_SIGN_IDENTITY here triggers
+          # "conflicting provisioning settings" since Xcode 26 treats it
+          # as a manual override. Pass only the team + style.
           xcodebuild archive \
             -workspace *.xcworkspace \
             -scheme "${{ steps.scheme.outputs.scheme }}" \
@@ -374,8 +379,7 @@ jobs:
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution"
+            CODE_SIGN_STYLE=Automatic
 
       - name: Export IPA (manual zip from archive)
         # Xcode 26 on macos-latest broke `xcodebuild -exportArchive`.
