@@ -166,22 +166,28 @@ jobs:
           with open(os.environ['API_JSON'], 'w') as f:
             json.dump(obj, f)
           PY
-          # Download the EXISTING App Store profile fresh from Apple.
-          # We don't --force regenerate (that requires a distribution
-          # cert registered in Apple's portal that matches our local
-          # .p12 — fragile). The current profile already has SIWA from
-          # the founder's earlier Developer Portal update; the perms
-          # added in Build 127 (Contacts/Location/Calendar) are pure
-          # Info.plist usage strings and don't require App ID entitlements.
-          # If a future build adds an App ID entitlement, flip
-          # --readonly false (and ensure the dist cert is reachable).
-          fastlane sigh download \
+          # Download whatever App Store profile Apple has for our App ID.
+          # --readonly  → never regenerate (preserves whatever Apple's
+          #                cert state currently is; avoids "no matching
+          #                cert for AppStore" when our local .p12 was
+          #                superseded by a portal regen at some point)
+          # --skip_certificate_verification → don't try to match the
+          #                profile's allowed signing certs against the
+          #                local keychain; trust Apple's profile as-is
+          #                and let xcodebuild figure out signing during
+          #                archive (CODE_SIGN_IDENTITY="Apple Distribution"
+          #                resolves to whatever distribution cert is in
+          #                the temp keychain)
+          fastlane sigh renew \
             --api_key_path "$API_JSON" \
             --app_identifier io.dynolabs.vcard \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
             --provisioning_name "Dynolabs vCard App Store" \
             --output_path $RUNNER_TEMP \
-            --filename dist.mobileprovision
+            --filename dist.mobileprovision \
+            --readonly true \
+            --skip_certificate_verification true \
+            --include_all_certificates true
           # Install the just-downloaded profile where Xcode reads it
           UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<<"$(security cms -D -i $RUNNER_TEMP/dist.mobileprovision)")
           echo "Fresh profile UUID: $UUID"
