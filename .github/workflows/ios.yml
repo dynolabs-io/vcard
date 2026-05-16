@@ -177,13 +177,17 @@ jobs:
           # writes the .cer/.p12 into the keychain we already created.
           # Then `sigh --force` regenerates the App Store profile to
           # include the just-registered cert.
+          # fastlane cert: default behavior creates an iOS DISTRIBUTION
+          # certificate. --type only accepts mac_installer/developer_id
+          # variants and would fail for iOS dist. The temp keychain we
+          # built earlier is already the default keychain (set via
+          # `security default-keychain -s $KEYCHAIN_PATH`), so fastlane
+          # writes the new cert there without us specifying --keychain*.
           fastlane cert \
             --api_key_path "$API_JSON" \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
-            --keychain_path "$KEYCHAIN_PATH" \
-            --keychain_password "$KEYCHAIN_PASSWORD" \
             --output_path $RUNNER_TEMP \
-            --type distribution || true
+            --skip_set_partition_list false || true
           fastlane sigh renew \
             --api_key_path "$API_JSON" \
             --app_identifier io.dynolabs.vcard \
