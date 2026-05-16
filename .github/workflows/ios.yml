@@ -127,6 +127,9 @@ jobs:
           security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed s/\"//g)
           security default-keychain -s "$KEYCHAIN_PATH"
           security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+          # Persist for fastlane cert / sigh in the next step.
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> $GITHUB_ENV
 
       - name: Fetch fresh App Store provisioning profile via fastlane sigh
         # fastlane sigh hits Apple Developer Portal via the ASC API key,
@@ -166,18 +169,21 @@ jobs:
           with open(os.environ['API_JSON'], 'w') as f:
             json.dump(obj, f)
           PY
-          # Download whatever App Store profile Apple has for our App ID.
-          # --readonly  → never regenerate (preserves whatever Apple's
-          #                cert state currently is; avoids "no matching
-          #                cert for AppStore" when our local .p12 was
-          #                superseded by a portal regen at some point)
-          # --skip_certificate_verification → don't try to match the
-          #                profile's allowed signing certs against the
-          #                local keychain; trust Apple's profile as-is
-          #                and let xcodebuild figure out signing during
-          #                archive (CODE_SIGN_IDENTITY="Apple Distribution"
-          #                resolves to whatever distribution cert is in
-          #                the temp keychain)
+          # The IOS_DIST_CERT_P12 secret's cert is no longer in Apple's
+          # allowed-cert list for the App Store profile (a previous
+          # `sigh --force` cycle on Apple's side desynced them). Rather
+          # than re-uploading the secret, generate a fresh Distribution
+          # cert + key via `fastlane cert` — it registers with Apple and
+          # writes the .cer/.p12 into the keychain we already created.
+          # Then `sigh --force` regenerates the App Store profile to
+          # include the just-registered cert.
+          fastlane cert \
+            --api_key_path "$API_JSON" \
+            --team_id ${{ secrets.APPLE_TEAM_ID }} \
+            --keychain_path "$KEYCHAIN_PATH" \
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            --output_path $RUNNER_TEMP \
+            --type distribution || true
           fastlane sigh renew \
             --api_key_path "$API_JSON" \
             --app_identifier io.dynolabs.vcard \
@@ -185,8 +191,7 @@ jobs:
             --provisioning_name "Dynolabs vCard App Store" \
             --output_path $RUNNER_TEMP \
             --filename dist.mobileprovision \
-            --readonly true \
-            --skip_certificate_verification true \
+            --force \
             --include_all_certificates true
           # Install the just-downloaded profile where Xcode reads it
           UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<<"$(security cms -D -i $RUNNER_TEMP/dist.mobileprovision)")
