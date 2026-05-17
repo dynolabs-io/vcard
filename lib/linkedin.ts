@@ -72,7 +72,15 @@ export async function connectLinkedIn(): Promise<LinkedInOutcome> {
   }
 
   // Open in-app Safari sheet; auto-closes on deep-link match.
-  const result = await WebBrowser.openAuthSessionAsync(authorizeURL, DEEPLINK_PREFIX);
+  // prefersEphemeralWebBrowserSession=true → no shared cookies with
+  // Safari, and the iOS consent prompt text is slightly less alarming
+  // ("sign you in" still appears — Apple-mandated for ASWebAuth, can't
+  // be suppressed without giving up the auto-return-on-deep-link).
+  const result = await WebBrowser.openAuthSessionAsync(
+    authorizeURL,
+    DEEPLINK_PREFIX,
+    { preferEphemeralSession: true },
+  );
   if (result.type !== 'success') {
     return { ok: false, reason: 'cancel' };
   }

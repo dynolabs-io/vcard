@@ -126,41 +126,25 @@ export async function signInWithApple(): Promise<SignInResult | null> {
   // Run claim + merge.
   const local = await listLocal();
   const did = await getDeviceId();
-  // First call to /v1/cards/claim with NO conflict resolutions —
-  // server will silently claim cards whose slug isn't already owned by
-  // this user and return BOTH the user's existing cards AND the freshly
-  // attached ones. We then compute conflicts client-side by comparing
-  // local vs userCards on slug+updatedAt.
   const r = await api.claim(did, []);
-  const remoteBySlug = new Map<string, Card>();
-  for (const c of r.userCards) if (c.slug) remoteBySlug.set(c.slug, c);
+  const userCards = r.userCards || [];
+  const claimed = r.claimed || [];
 
   const conflicts: MergeConflict[] = [];
   const downloads: Card[] = [];
 
-  // Conflicts: local card has a slug that ALSO appears on the user's
-  // account, AND the contents diverge. The freshly claimed ones don't
-  // count — the server already attached them; their `id` matches the
-  // local id, so we treat those as no-op merges.
-  const localById = new Map(local.map(c => [c.id, c]));
-  for (const remote of r.userCards) {
+  for (const remote of userCards) {
     if (!remote.slug) continue;
     const matchingLocal = local.find(l => l.slug === remote.slug);
     if (!matchingLocal) {
-      // Remote-only card → just download.
       downloads.push(remote);
       continue;
     }
     if (matchingLocal.id === remote.id) {
-      // Same record on both sides; remote wins (server is canonical
-      // post-claim).
       await saveLocal(remote);
       continue;
     }
-    // Different IDs but same slug = conflict. User picks which content
-    // wins. (See claim flow docstring in api.ts.)
     if (cardsEqual(matchingLocal, remote)) {
-      // Identical content under different IDs — silently take remote.
       await saveLocal(remote);
       continue;
     }
@@ -169,14 +153,12 @@ export async function signInWithApple(): Promise<SignInResult | null> {
 
   for (const d of downloads) await saveLocal(d);
 
-  // Migrate any anonymous-mode rolodex entries to the user's account,
-  // then pull anything else the user had stored from other devices.
   try { await pushLocalScans(); } catch {}
   try { await pullServerScans(); } catch {}
 
   return {
     user: auth.user,
-    attachedCount: r.claimed.length,
+    attachedCount: claimed.length,
     downloadedCount: downloads.length,
     conflicts,
   };
@@ -186,8 +168,7 @@ export async function signInWithApple(): Promise<SignInResult | null> {
 export async function applyMergeResolutions(resolutions: ConflictResolution[]): Promise<void> {
   const did = await getDeviceId();
   const r = await api.claim(did, resolutions);
-  // Replace local copies with server's resolved state.
-  for (const c of r.userCards) await saveLocal(c);
+  for (const c of (r.userCards || [])) await saveLocal(c);
   // For "both" winners the server has a NEW slug; the old local card
   // (still in storage) is left alone — it stays as an anonymous backup.
   // The new slugged card from r.resolved is already in r.userCards.
@@ -212,13 +193,17 @@ export async function signInWithLinkedIn(): Promise<SignInResult | null> {
   cachedUser = auth.user;
   notify();
 
-  // Claim + merge — same flow as Apple.
+  // Claim + merge — same flow as Apple. Note: server may return nil
+  // slices as JSON null when claimed/resolved/userCards are empty —
+  // coalesce defensively or `.length` blows up.
   const local = await listLocal();
   const did = await getDeviceId();
   const r = await api.claim(did, []);
+  const userCards = r.userCards || [];
+  const claimed = r.claimed || [];
   const conflicts: MergeConflict[] = [];
   const downloads: Card[] = [];
-  for (const remote of r.userCards) {
+  for (const remote of userCards) {
     if (!remote.slug) continue;
     const matchingLocal = local.find(l => l.slug === remote.slug);
     if (!matchingLocal) { downloads.push(remote); continue; }
@@ -232,7 +217,7 @@ export async function signInWithLinkedIn(): Promise<SignInResult | null> {
 
   return {
     user: auth.user,
-    attachedCount: r.claimed.length,
+    attachedCount: claimed.length,
     downloadedCount: downloads.length,
     conflicts,
   };

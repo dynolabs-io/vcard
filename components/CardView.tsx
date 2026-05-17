@@ -7,7 +7,7 @@ import * as Linking from 'expo-linking';
 import { useRouter } from 'expo-router';
 import { useRef } from 'react';
 import {
-  Alert, Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions,
+  Alert, Image, Pressable, StyleSheet, Text, View, useWindowDimensions,
 } from 'react-native';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import QRCode from 'react-native-qrcode-svg';
@@ -117,12 +117,19 @@ export function CardView({
     onPress: () => Linking.openURL(linkedinSocial.url).catch(() => {}),
   });
 
-  // QR size relative to the inner card width — capped so on tall phones
-  // the QR doesn't expand past the visible viewport (ScrollView still
-  // allows scroll if it overflows).
+  // Fit the entire card surface inside one screen — no vertical scroll.
+  // We compute available height from window dims and a rough header+tab
+  // chrome reservation, then allocate components proportionally.
+  const { height: screenHeight } = useWindowDimensions();
   const cardWidth = pageWidth - PAGE_PADDING * 2;
-  const qrInsetWidth = cardWidth - INSET_PAD * 2;
-  const qrSize = Math.min(qrInsetWidth, 280);
+  // Reserve ~190px for: status bar + tab nav header + bottom tabs + safe
+  // area + page paddings. Remainder is the card surface height we must
+  // fit into.
+  const cardAvailHeight = Math.max(520, screenHeight - 190);
+  // Inside the card, after gap+padding budget (~360 for medallion+name+
+  // actions+mode chip+hint), the QR can take the rest.
+  const innerBudget = cardAvailHeight - 360;
+  const qrSize = Math.max(140, Math.min(innerBudget, cardWidth - INSET_PAD * 2 - 28, 240));
 
   // Choose readable foreground for the brand color. Light backgrounds
   // need dark text; dark backgrounds need white. Simple luminance check.
@@ -130,15 +137,11 @@ export function CardView({
   const fgOnBrandSoft = isLight(accent) ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.80)';
 
   return (
-    <ScrollView
-      style={{ width: pageWidth }}
-      contentContainerStyle={styles.page}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ONE unified branded card surface — the whole carousel page is
-          this single card (Apple Wallet inspired). Company logo top-left
-          badge, photo medallion centered, name/title in brand-color text
-          area, action row + QR + mode chip all live inside the card. */}
+    <View style={[styles.page, { width: pageWidth }]}>
+      {/* ONE unified branded card surface — fits in a single screen, no
+          scroll. Apple Wallet inspired: square frame (NOT rounded), big
+          company logo badge top-left, photo medallion centered, name/
+          title, action row, QR, mode chip all stack inside. */}
       <View style={[styles.cardSurface, { backgroundColor: accent, width: cardWidth }]}>
         {/* Top row — company logo badge (only when uploaded) */}
         <View style={styles.topRow}>
@@ -198,7 +201,7 @@ export function CardView({
         )}
 
         {/* QR inset — white panel sits inside the brand card */}
-        <View ref={qrRef} collapsable={false} style={[styles.qrInset, { width: qrSize + 28, height: qrSize + 28 }]}>
+        <View ref={qrRef} collapsable={false} style={[styles.qrInset, { width: qrSize + 20, height: qrSize + 20 }]}>
           <QRCode value={qrPayload} size={qrSize} backgroundColor="#fff" />
         </View>
 
@@ -233,7 +236,7 @@ export function CardView({
             : 'Saves instantly, no network. No photo on saved contact.'}
         </Text>
       </View>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -249,62 +252,65 @@ function isLight(hex: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) > 160;
 }
 
-const PAGE_PADDING = 16;
-const INSET_PAD = 18;
+const PAGE_PADDING = 14;
+const INSET_PAD = 16;
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 8, paddingBottom: 24, alignItems: 'center' },
+  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 4, paddingBottom: 8, alignItems: 'center' },
 
-  // The single unified card surface (Apple-Wallet-like)
+  // The single unified card surface — Apple-Wallet-like, SQUARE frame
+  // (no rounded corners per founder), fits one screen.
   cardSurface: {
-    borderRadius: 28,
-    paddingTop: 14,
+    borderRadius: 0,
+    paddingTop: 10,
     paddingHorizontal: INSET_PAD,
-    paddingBottom: 16,
+    paddingBottom: 12,
     alignItems: 'center',
-    gap: 10,
-    // Subtle outer shadow for depth
+    gap: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 12,
+    elevation: 5,
   },
-  topRow: { width: '100%', flexDirection: 'row', alignItems: 'center', minHeight: 36 },
+  // 44×44 = 36×36 × 1.44 (founder: +20% h × +20% w → 1.44 area).
+  // Square frame, no rounding.
+  topRow: { width: '100%', flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   logoBadge: {
-    width: 36, height: 36, borderRadius: 10,
+    width: 44, height: 44, borderRadius: 0,
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center', justifyContent: 'center',
-    padding: 5,
+    padding: 4,
   },
-  logoBadgeImg: { width: 28, height: 28 },
+  logoBadgeImg: { width: 36, height: 36 },
 
-  medallionWrap: { marginTop: 4, marginBottom: 4 },
-  medallion: { width: 124, height: 124, borderRadius: 62, borderWidth: 4, borderColor: '#fff' },
+  // Medallion raised: zero top margin so it sits right under the logo row.
+  medallionWrap: { marginTop: -6, marginBottom: 2 },
+  medallion: { width: 112, height: 112, borderRadius: 56, borderWidth: 4, borderColor: '#fff' },
   medallionFallback: { backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-  medallionInitial: { color: '#fff', fontSize: 48, fontWeight: '700' },
+  medallionInitial: { color: '#fff', fontSize: 44, fontWeight: '700' },
 
-  brandName: { fontSize: 22, fontWeight: '700', textAlign: 'center', letterSpacing: -0.3 },
-  brandSub:  { fontSize: 14, textAlign: 'center', marginTop: -2 },
+  brandName: { fontSize: 21, fontWeight: '700', textAlign: 'center', letterSpacing: -0.3 },
+  brandSub:  { fontSize: 13, textAlign: 'center', marginTop: -2 },
 
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginTop: 6 },
-  actionItem: { alignItems: 'center', gap: 4, flexShrink: 1 },
-  actionCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  actionSymbol: { width: 20, height: 20 },
-  actionLabel: { fontSize: 11, fontWeight: '500', textTransform: 'lowercase' },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginTop: 2 },
+  actionItem: { alignItems: 'center', gap: 3, flexShrink: 1 },
+  actionCircle: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
+  actionSymbol: { width: 18, height: 18 },
+  actionLabel: { fontSize: 10, fontWeight: '500', textTransform: 'lowercase' },
 
   qrInset: {
     backgroundColor: '#fff',
-    borderRadius: 18,
-    padding: 14,
+    borderRadius: 14,
+    padding: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 4,
   },
 
-  modeRow: { flexDirection: 'row', gap: 6, alignSelf: 'center', borderRadius: 12, padding: 4, marginTop: 4 },
-  modeChip: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 9 },
-  modeLabel: { fontSize: 13, fontWeight: '600' },
+  modeRow: { flexDirection: 'row', gap: 4, alignSelf: 'center', borderRadius: 10, padding: 3, marginTop: 2 },
+  modeChip: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 8 },
+  modeLabel: { fontSize: 12, fontWeight: '600' },
 
-  brandHint: { fontSize: 11, textAlign: 'center', marginTop: 2, paddingHorizontal: 6 },
+  brandHint: { fontSize: 10, textAlign: 'center', marginTop: 1, paddingHorizontal: 6, opacity: 0.9 },
 });

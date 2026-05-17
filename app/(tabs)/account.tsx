@@ -35,16 +35,13 @@ export default function AccountScreen() {
     try {
       const r = await signInWithApple();
       if (!r) return;
+      // Silent on success — Account tab flips to SIGNED IN state.
+      // Conflicts still need user intervention.
       if (r.conflicts.length > 0) {
         Alert.alert(
           'Resolve sync conflicts',
           `${r.conflicts.length} cards exist both on this device and your account. Pick which to keep.`,
           [{ text: 'OK' }],
-        );
-      } else if (r.attachedCount > 0 || r.downloadedCount > 0) {
-        Alert.alert(
-          `Welcome${r.user.name ? ', ' + r.user.name.split(' ')[0] : ''}`,
-          `${r.attachedCount} card(s) attached to your account. ${r.downloadedCount} downloaded from your other devices.`,
         );
       }
     } catch (e) {
@@ -58,14 +55,8 @@ export default function AccountScreen() {
     if (busy) return;
     setBusy(true);
     try {
-      const r = await signInWithLinkedIn();
-      if (!r) return; // user cancelled
-      if (r.attachedCount > 0 || r.downloadedCount > 0) {
-        Alert.alert(
-          `Welcome${r.user.name ? ', ' + r.user.name.split(' ')[0] : ''}`,
-          `${r.attachedCount} card(s) attached to your account. ${r.downloadedCount} downloaded from your other devices.`,
-        );
-      }
+      await signInWithLinkedIn();
+      // Silent on success.
     } catch (e) {
       Alert.alert('LinkedIn sign in failed', String(e));
     } finally {

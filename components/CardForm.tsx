@@ -210,13 +210,20 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
           <Pressable
             onPress={async () => {
               const r = await connectLinkedIn();
-              if (!r.ok) return;
+              if (!r.ok) {
+                if (r.reason === 'error') {
+                  Alert.alert('Import from LinkedIn failed', r.message || 'unknown error');
+                }
+                return;
+              }
+              // User explicitly chose Import → overwrite name/email/photo
+              // with LinkedIn data. They can edit afterwards.
               const p = r.profile;
               setDraft(d => ({
                 ...d,
-                name: d.name || p.name || '',
-                emails: d.emails && d.emails.length > 0 ? d.emails : (p.email ? [p.email] : []),
-                photoUrl: d.photoUrl || p.picture || undefined,
+                name: p.name || d.name || '',
+                emails: p.email ? [p.email, ...(d.emails || []).filter(e => e !== p.email)] : (d.emails || []),
+                photoUrl: p.picture || d.photoUrl || undefined,
               }));
             }}
             style={styles.linkedInBtn}
