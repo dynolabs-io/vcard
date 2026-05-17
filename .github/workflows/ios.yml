@@ -169,19 +169,22 @@ jobs:
           with open(os.environ['API_JSON'], 'w') as f:
             json.dump(obj, f)
           PY
-          # fastlane cert manages distribution certs end-to-end.
-          # Default behavior: find existing cert that matches the local
-          # keychain, or download a cert it knows about. If neither
-          # works, create a new one and persist the .p12 to output_path.
-          # The freshly-created .p12 needs to be imported into the
-          # keychain so codesign can find it during archive — fastlane
-          # cert does NOT auto-import to the keychain we configured.
+          # Apple's cert limit (2 per account) is full. Both existing
+          # certs were generated on a previous machine and we don't have
+          # their private keys. --force tells fastlane to REVOKE one of
+          # the existing dist certs and then create a fresh cert (with
+          # private key on this runner) in its place. This is the
+          # canonical fastlane recovery when at the cert limit.
+          #
+          # The revoked cert becomes unusable for anyone else who held
+          # its .p12. Acceptable trade — we control the signing here.
           fastlane cert \
             --api_key_path "$API_JSON" \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
             --output_path $RUNNER_TEMP \
             --keychain_path "$KEYCHAIN_PATH" \
-            --keychain_password "$KEYCHAIN_PASSWORD" || true
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            --force || true
           # Import any .p12 fastlane cert wrote (idempotent — if it found
           # an existing cert, it skipped writing a new .p12).
           for p12 in "$RUNNER_TEMP"/*.p12; do
