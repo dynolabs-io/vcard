@@ -14,6 +14,7 @@ import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate } from '@/lib/types';
 import { CropScreen } from '@/components/CropScreen';
 import { connectLinkedIn } from '@/lib/linkedin';
+import { api } from '@/lib/api';
 import { SymbolView } from 'expo-symbols';
 
 const PHONE_ACCESSORY = 'phone-keyboard-accessory';
@@ -216,15 +217,41 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
                 }
                 return;
               }
-              // User explicitly chose Import → overwrite name/email/photo
-              // with LinkedIn data. They can edit afterwards.
               const p = r.profile;
+              // First pass: fill what LinkedIn directly gives us (name,
+              // email, photo). LinkedIn's OIDC scope doesn't return
+              // title/company — those come from server-side Apollo
+              // enrichment in the next step.
               setDraft(d => ({
                 ...d,
                 name: p.name || d.name || '',
                 emails: p.email ? [p.email, ...(d.emails || []).filter(e => e !== p.email)] : (d.emails || []),
                 photoUrl: p.picture || d.photoUrl || undefined,
               }));
+              // Second pass: server-side Apollo enrichment by email →
+              // fills title + company + LinkedIn URL when available.
+              // Silent failures: enrichment is best-effort, never blocks
+              // the import. Empty fields when Apollo can't match.
+              if (p.email) {
+                try {
+                  const e = await api.enrichEmail(p.email);
+                  setDraft(d => {
+                    const next = { ...d };
+                    if (e.title && !d.title) next.title = e.title;
+                    if (e.company && !d.company) next.company = e.company;
+                    if (e.linkedinUrl) {
+                      const socials = [...(d.socials || [])];
+                      const i = socials.findIndex(s => s.kind === 'linkedin');
+                      const entry = { kind: 'linkedin' as const, url: e.linkedinUrl };
+                      if (i >= 0) socials[i] = entry; else socials.push(entry);
+                      next.socials = socials;
+                    }
+                    return next;
+                  });
+                } catch {
+                  // Enrichment failed — keep what we already have.
+                }
+              }
             }}
             style={styles.linkedInBtn}
             accessibilityLabel="Import from LinkedIn"

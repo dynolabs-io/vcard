@@ -148,6 +148,21 @@ export const api = {
     }, 10_000),
   me: () => request<User>('/v1/users/me'),
 
+  // Email → person+company enrichment via Apollo (server-side).
+  // Returns empty fields when the backend can't enrich (no key set,
+  // Apollo 4xx, etc) — caller must handle empty values gracefully.
+  enrichEmail: (email: string) =>
+    request<{
+      title?: string;
+      company?: string;
+      companyDomain?: string;
+      linkedinUrl?: string;
+      photoUrl?: string;
+    }>('/v1/enrich/email', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }, 10_000),
+
   // Claim / merge — attach the given device_id's anonymous cards to
   // the signed-in user, apply per-conflict resolutions, return final
   // user-owned list. Caller must already be signed in (Authorization
