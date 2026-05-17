@@ -196,17 +196,24 @@ jobs:
           if isinstance(tok, bytes):
               tok = tok.decode()
           hdrs = {'Authorization': f'Bearer {tok}', 'Accept': 'application/json'}
+          # Apple's certificate types relevant for iOS distribution:
+          #   DISTRIBUTION         — unified Apple Distribution (iOS+tvOS+watchOS+macOS)
+          #   IOS_DISTRIBUTION     — legacy iOS-only
+          #   MAC_APP_DISTRIBUTION — mac-only
+          # Filter for both flavors that count against the iOS dist limit.
           req = urllib.request.Request(
-              'https://api.appstoreconnect.apple.com/v1/certificates?filter[certificateType]=IOS_DISTRIBUTION&limit=200',
+              'https://api.appstoreconnect.apple.com/v1/certificates?limit=200',
               headers=hdrs,
           )
           with urllib.request.urlopen(req) as r:
               data = json.load(r)
-          certs = data.get('data', [])
-          print(f"existing iOS Distribution certs: {len(certs)}")
+          all_certs = data.get('data', [])
+          dist_types = {'DISTRIBUTION', 'IOS_DISTRIBUTION'}
+          certs = [c for c in all_certs if c['attributes'].get('certificateType') in dist_types]
+          print(f"existing distribution certs: {len(certs)} (of {len(all_certs)} total)")
           for c in certs:
               a = c.get('attributes', {})
-              print(f"  - id={c['id']} name={a.get('name')} expires={a.get('expirationDate')}")
+              print(f"  - id={c['id']} type={a.get('certificateType')} name={a.get('name')} expires={a.get('expirationDate')}")
           if len(certs) >= 2:
               # Revoke the oldest one (lowest expirationDate) — frees a slot.
               certs.sort(key=lambda c: c['attributes'].get('expirationDate') or '')
