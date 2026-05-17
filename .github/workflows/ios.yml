@@ -179,7 +179,7 @@ jobs:
           # to user site so the inline script can import.
           pip3 install --quiet --break-system-packages --user pyjwt cryptography 2>&1 | tail -2 || true
           python3 - <<'PY'
-          import json, os, sys, time, base64, urllib.request, urllib.error
+          import json, os, sys, time, base64, urllib.request, urllib.error, urllib.parse
           # Look in user site-packages.
           import site
           for p in site.getusersitepackages() if isinstance(site.getusersitepackages(), list) else [site.getusersitepackages()]:
@@ -228,6 +228,37 @@ jobs:
                   print('revoked OK')
               except urllib.error.HTTPError as e:
                   print(f'revoke HTTP {e.code}: {e.read().decode()[:200]}')
+
+          # ALSO purge ALL existing provisioning profiles named
+          # "Dynolabs vCard App Store" — they're bound to certs we may
+          # have just revoked or that aren't in the runner's keychain.
+          # If we don't, sigh sees a name collision and creates a
+          # suffixed profile ("Dynolabs vCard App Store 1779030247"),
+          # but the archive step references the canonical name.
+          PROFILE_NAME = "Dynolabs vCard App Store"
+          preq = urllib.request.Request(
+              f'https://api.appstoreconnect.apple.com/v1/profiles?filter[name]={urllib.parse.quote(PROFILE_NAME)}&limit=200',
+              headers=hdrs,
+          )
+          try:
+              with urllib.request.urlopen(preq) as r:
+                  pdata = json.load(r)
+          except urllib.error.HTTPError as e:
+              print(f'profiles list HTTP {e.code}: {e.read().decode()[:200]}')
+              pdata = {'data': []}
+          for p in pdata.get('data', []):
+              pid = p['id']
+              pname = p.get('attributes', {}).get('name', '')
+              print(f'deleting profile {pid} ({pname})')
+              dreq = urllib.request.Request(
+                  f'https://api.appstoreconnect.apple.com/v1/profiles/{pid}',
+                  headers=hdrs, method='DELETE',
+              )
+              try:
+                  urllib.request.urlopen(dreq).read()
+                  print('  deleted OK')
+              except urllib.error.HTTPError as e:
+                  print(f'  delete HTTP {e.code}: {e.read().decode()[:200]}')
           PY
           # fastlane cert creates a fresh DISTRIBUTION cert AND captures
           # the cert ID to a file. We MUST pin sigh to this exact cert
