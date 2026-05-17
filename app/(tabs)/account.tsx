@@ -13,10 +13,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import {
-  getAuthSnapshot, isAppleSignInAvailable, signInWithApple, signOut, subscribe,
-  type AuthState,
+  getAuthSnapshot, isAppleSignInAvailable, signInWithApple, signInWithLinkedIn,
+  signOut, subscribe, type AuthState,
 } from '@/lib/auth';
-import { connectLinkedIn, type LinkedInProfile } from '@/lib/linkedin';
 
 export default function AccountScreen() {
   const [state, setState] = useState<AuthState>(getAuthSnapshot());
@@ -59,32 +58,19 @@ export default function AccountScreen() {
     if (busy) return;
     setBusy(true);
     try {
-      const r = await connectLinkedIn();
-      if (!r.ok) {
-        if (r.reason === 'cancel') return;
-        Alert.alert('LinkedIn', r.message || 'Sign in failed');
-        return;
+      const r = await signInWithLinkedIn();
+      if (!r) return; // user cancelled
+      if (r.attachedCount > 0 || r.downloadedCount > 0) {
+        Alert.alert(
+          `Welcome${r.user.name ? ', ' + r.user.name.split(' ')[0] : ''}`,
+          `${r.attachedCount} card(s) attached to your account. ${r.downloadedCount} downloaded from your other devices.`,
+        );
       }
-      summariseLinkedInResult(r.profile);
+    } catch (e) {
+      Alert.alert('LinkedIn sign in failed', String(e));
     } finally {
       setBusy(false);
     }
-  };
-
-  // Show a friendly summary of what got imported. Today we don't issue
-  // a session token from LinkedIn sign-in (server only does that for
-  // Apple); a follow-up build can unify identity. For now, the profile
-  // info is the value-add — pre-fills cards, no card editing needed.
-  const summariseLinkedInResult = (p: LinkedInProfile) => {
-    Alert.alert(
-      `LinkedIn linked${p.name ? ` — ${p.name}` : ''}`,
-      [
-        p.name && `Name: ${p.name}`,
-        p.email && `Email: ${p.email}`,
-        p.picture && 'Photo: imported',
-      ].filter(Boolean).join('\n') || 'Connected.',
-      [{ text: 'OK' }],
-    );
   };
 
   return (

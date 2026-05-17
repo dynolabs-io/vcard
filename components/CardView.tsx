@@ -117,11 +117,17 @@ export function CardView({
     onPress: () => Linking.openURL(linkedinSocial.url).catch(() => {}),
   });
 
-  // QR size: cap to a reasonable max so on tall phones the QR doesn't
-  // expand past the visible viewport. The carousel page itself is
-  // ScrollView-wrapped, so even small phones can reach the chip & hint
-  // by flicking up.
-  const qrSize = Math.min(Math.floor(pageWidth - PAGE_PADDING * 2), 320);
+  // QR size relative to the inner card width — capped so on tall phones
+  // the QR doesn't expand past the visible viewport (ScrollView still
+  // allows scroll if it overflows).
+  const cardWidth = pageWidth - PAGE_PADDING * 2;
+  const qrInsetWidth = cardWidth - INSET_PAD * 2;
+  const qrSize = Math.min(qrInsetWidth, 280);
+
+  // Choose readable foreground for the brand color. Light backgrounds
+  // need dark text; dark backgrounds need white. Simple luminance check.
+  const fgOnBrand = isLight(accent) ? '#0B0B0F' : '#FFFFFF';
+  const fgOnBrandSoft = isLight(accent) ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.80)';
 
   return (
     <ScrollView
@@ -129,97 +135,176 @@ export function CardView({
       contentContainerStyle={styles.page}
       showsVerticalScrollIndicator={false}
     >
-      {/* Centered medallion: photo dead center on brand color */}
-      <View style={[styles.hero, { backgroundColor: accent }]}>
-        {card.photoUrl ? (
-          <Image source={{ uri: card.photoUrl }} style={styles.photo} />
-        ) : (
-          <View style={[styles.photo, styles.photoFallback]}>
-            <Text style={styles.photoInitial}>{(card.name || '?').slice(0, 1).toUpperCase()}</Text>
+      {/* ONE unified branded card surface — the whole carousel page is
+          this single card (Apple Wallet inspired). Company logo top-left
+          badge, photo medallion centered, name/title in brand-color text
+          area, action row + QR + mode chip all live inside the card. */}
+      <View style={[styles.cardSurface, { backgroundColor: accent, width: cardWidth }]}>
+        {/* Top row — company logo badge (only when uploaded) */}
+        <View style={styles.topRow}>
+          {card.brandLogoUrl ? (
+            <View style={styles.logoBadge}>
+              <Image source={{ uri: card.brandLogoUrl }} style={styles.logoBadgeImg} resizeMode="contain" />
+            </View>
+          ) : null}
+        </View>
+
+        {/* Photo medallion */}
+        <View style={styles.medallionWrap}>
+          {card.photoUrl ? (
+            <Image source={{ uri: card.photoUrl }} style={styles.medallion} />
+          ) : (
+            <View style={[styles.medallion, styles.medallionFallback]}>
+              <Text style={styles.medallionInitial}>{(card.name || '?').slice(0, 1).toUpperCase()}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Name + title on brand background */}
+        <Text style={[styles.brandName, { color: fgOnBrand }]} numberOfLines={1}>
+          {card.name || '(no name)'}
+        </Text>
+        {(card.title || card.company) && (
+          <Text style={[styles.brandSub, { color: fgOnBrandSoft }]} numberOfLines={1}>
+            {[card.title, card.company].filter(Boolean).join(' · ')}
+          </Text>
+        )}
+
+        {/* Action row — translucent pills on brand color */}
+        {actions.length > 0 && (
+          <View style={styles.actionsRow}>
+            {actions.map(a => (
+              <Pressable
+                key={a.id}
+                onPress={a.onPress}
+                disabled={a.disabled}
+                accessibilityLabel={a.a11y}
+                accessibilityRole="button"
+                testID={`card-action-${a.id}`}
+                style={({ pressed }) => [styles.actionItem, { opacity: pressed ? 0.6 : 1 }]}
+              >
+                <View style={[
+                  styles.actionCircle,
+                  { backgroundColor: isLight(accent) ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.18)',
+                    opacity: a.disabled ? 0.4 : 1 },
+                ]}>
+                  <SymbolView name={a.symbol} tintColor={fgOnBrand} resizeMode="scaleAspectFit"
+                    weight="semibold" style={styles.actionSymbol} />
+                </View>
+                <Text style={[styles.actionLabel, { color: fgOnBrandSoft }]}>{a.label}</Text>
+              </Pressable>
+            ))}
           </View>
         )}
-      </View>
 
-      <Text style={styles.name} numberOfLines={1}>{card.name || '(no name)'}</Text>
-      {(card.title || card.company) && (
-        <Text style={styles.sub} numberOfLines={1}>
-          {[card.title, card.company].filter(Boolean).join(' · ')}
-        </Text>
-      )}
+        {/* QR inset — white panel sits inside the brand card */}
+        <View ref={qrRef} collapsable={false} style={[styles.qrInset, { width: qrSize + 28, height: qrSize + 28 }]}>
+          <QRCode value={qrPayload} size={qrSize} backgroundColor="#fff" />
+        </View>
 
-      {actions.length > 0 && (
-        <View style={styles.actionsRow}>
-          {actions.map(a => (
+        {/* Mode chip — translucent on brand */}
+        {card.slug && (
+          <View style={[styles.modeRow, { backgroundColor: isLight(accent) ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.16)' }]}>
             <Pressable
-              key={a.id}
-              onPress={a.onPress}
-              disabled={a.disabled}
-              accessibilityLabel={a.a11y}
-              accessibilityRole="button"
-              testID={`card-action-${a.id}`}
-              style={({ pressed }) => [styles.actionItem, { opacity: pressed ? 0.6 : 1 }]}
+              onPress={() => onQrModeChange('offline')}
+              accessibilityLabel="Offline QR mode"
+              style={[styles.modeChip, effectiveMode === 'offline' && { backgroundColor: '#fff' }]}
             >
-              <View style={[styles.actionCircle, { backgroundColor: accent, opacity: a.disabled ? 0.4 : 1 }]}>
-                <SymbolView name={a.symbol} tintColor="#fff" resizeMode="scaleAspectFit"
-                  weight="semibold" style={styles.actionSymbol} />
-              </View>
-              <Text style={styles.actionLabel}>{a.label}</Text>
+              <Text style={[
+                styles.modeLabel,
+                { color: effectiveMode === 'offline' ? accent : fgOnBrandSoft },
+              ]}>Offline</Text>
             </Pressable>
-          ))}
-        </View>
-      )}
-
-      <View ref={qrRef} collapsable={false} style={[styles.qrFrame, { width: qrSize, height: qrSize }]}>
-        <QRCode value={qrPayload} size={qrSize - 28} backgroundColor="#fff" />
+            <Pressable
+              onPress={() => onQrModeChange('online')}
+              accessibilityLabel="Online QR mode"
+              style={[styles.modeChip, effectiveMode === 'online' && { backgroundColor: '#fff' }]}
+            >
+              <Text style={[
+                styles.modeLabel,
+                { color: effectiveMode === 'online' ? accent : fgOnBrandSoft },
+              ]}>Online</Text>
+            </Pressable>
+          </View>
+        )}
+        <Text style={[styles.brandHint, { color: fgOnBrandSoft }]}>
+          {effectiveMode === 'online'
+            ? 'Recipient online → contact saves with your photo.'
+            : 'Saves instantly, no network. No photo on saved contact.'}
+        </Text>
       </View>
-
-      {card.slug && (
-        <View style={styles.modeRow}>
-          <Pressable
-            onPress={() => onQrModeChange('offline')}
-            accessibilityLabel="Offline QR mode"
-            style={[styles.modeChip, effectiveMode === 'offline' && styles.modeChipActive]}
-          >
-            <Text style={[styles.modeLabel, effectiveMode === 'offline' && styles.modeLabelActive]}>Offline</Text>
-          </Pressable>
-          <Pressable
-            onPress={() => onQrModeChange('online')}
-            accessibilityLabel="Online QR mode"
-            style={[styles.modeChip, effectiveMode === 'online' && styles.modeChipActive]}
-          >
-            <Text style={[styles.modeLabel, effectiveMode === 'online' && styles.modeLabelActive]}>Online</Text>
-          </Pressable>
-        </View>
-      )}
-      <Text style={styles.hint}>
-        {effectiveMode === 'online'
-          ? 'Recipient online → contact saves with your photo.'
-          : 'Saves instantly, no network. No photo on saved contact.'}
-      </Text>
     </ScrollView>
   );
 }
 
-const PAGE_PADDING = 20;
+/** Quick luminance check for picking dark vs light foreground on
+ *  arbitrary brand background colors. Accepts #rrggbb. */
+function isLight(hex: string): boolean {
+  const s = hex.replace('#', '');
+  if (s.length !== 6) return false;
+  const r = parseInt(s.slice(0, 2), 16);
+  const g = parseInt(s.slice(2, 4), 16);
+  const b = parseInt(s.slice(4, 6), 16);
+  // Rec. 709 luma
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) > 160;
+}
+
+const PAGE_PADDING = 16;
+const INSET_PAD = 18;
 
 const styles = StyleSheet.create({
-  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 8, paddingBottom: 24, alignItems: 'center', gap: 10 },
-  hero: { width: '100%', borderRadius: 22, paddingVertical: 20, alignItems: 'center', justifyContent: 'center' },
-  photo: { width: 112, height: 112, borderRadius: 56, borderWidth: 4, borderColor: '#fff' },
-  photoFallback: { backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
-  photoInitial: { color: '#fff', fontSize: 44, fontWeight: '700' },
-  name: { fontSize: 22, fontWeight: '600', textAlign: 'center', letterSpacing: -0.3 },
-  sub: { fontSize: 14, color: 'rgba(60,60,67,0.7)', textAlign: 'center' },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginTop: 2 },
+  page: { paddingHorizontal: PAGE_PADDING, paddingTop: 8, paddingBottom: 24, alignItems: 'center' },
+
+  // The single unified card surface (Apple-Wallet-like)
+  cardSurface: {
+    borderRadius: 28,
+    paddingTop: 14,
+    paddingHorizontal: INSET_PAD,
+    paddingBottom: 16,
+    alignItems: 'center',
+    gap: 10,
+    // Subtle outer shadow for depth
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
+    elevation: 6,
+  },
+  topRow: { width: '100%', flexDirection: 'row', alignItems: 'center', minHeight: 36 },
+  logoBadge: {
+    width: 36, height: 36, borderRadius: 10,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    alignItems: 'center', justifyContent: 'center',
+    padding: 5,
+  },
+  logoBadgeImg: { width: 28, height: 28 },
+
+  medallionWrap: { marginTop: 4, marginBottom: 4 },
+  medallion: { width: 124, height: 124, borderRadius: 62, borderWidth: 4, borderColor: '#fff' },
+  medallionFallback: { backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' },
+  medallionInitial: { color: '#fff', fontSize: 48, fontWeight: '700' },
+
+  brandName: { fontSize: 22, fontWeight: '700', textAlign: 'center', letterSpacing: -0.3 },
+  brandSub:  { fontSize: 14, textAlign: 'center', marginTop: -2 },
+
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-evenly', alignSelf: 'stretch', marginTop: 6 },
   actionItem: { alignItems: 'center', gap: 4, flexShrink: 1 },
-  actionCircle: { width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center' },
+  actionCircle: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   actionSymbol: { width: 20, height: 20 },
-  actionLabel: { fontSize: 11, fontWeight: '500', color: 'rgba(60,60,67,0.85)', textTransform: 'lowercase' },
-  qrFrame: { backgroundColor: '#fff', borderRadius: 16, padding: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: 'rgba(127,127,127,0.15)' },
-  modeRow: { flexDirection: 'row', gap: 6, alignSelf: 'center', backgroundColor: 'rgba(127,127,127,0.10)', borderRadius: 12, padding: 4 },
+  actionLabel: { fontSize: 11, fontWeight: '500', textTransform: 'lowercase' },
+
+  qrInset: {
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+
+  modeRow: { flexDirection: 'row', gap: 6, alignSelf: 'center', borderRadius: 12, padding: 4, marginTop: 4 },
   modeChip: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 9 },
-  modeChipActive: { backgroundColor: '#fff' },
-  modeLabel: { fontSize: 14, fontWeight: '500', color: 'rgba(60,60,67,0.85)' },
-  modeLabelActive: { color: '#0A66C2', fontWeight: '600' },
-  hint: { fontSize: 12, opacity: 0.5, textAlign: 'center' },
+  modeLabel: { fontSize: 13, fontWeight: '600' },
+
+  brandHint: { fontSize: 11, textAlign: 'center', marginTop: 2, paddingHorizontal: 6 },
 });

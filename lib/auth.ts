@@ -8,6 +8,7 @@ import * as SecureStore from 'expo-secure-store';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { api, setAuthTokenProvider, type ConflictResolution, type User } from './api';
 import { getDeviceId } from './device';
+import { connectLinkedIn } from './linkedin';
 import { pullServerScans, pushLocalScans } from './scans';
 import { listCards as listLocal, saveCard as saveLocal } from './storage';
 import type { Card } from './types';
@@ -191,6 +192,50 @@ export async function applyMergeResolutions(resolutions: ConflictResolution[]): 
   // (still in storage) is left alone — it stays as an anonymous backup.
   // The new slugged card from r.resolved is already in r.userCards.
   notify();
+}
+
+/** Sign in via LinkedIn — mirrors signInWithApple. Runs the OAuth flow,
+ *  posts the profile to /v1/auth/linkedin to obtain a session token,
+ *  persists token + user, runs claim/merge like Apple flow. */
+export async function signInWithLinkedIn(): Promise<SignInResult | null> {
+  const li = await connectLinkedIn();
+  if (!li.ok) {
+    if (li.reason === 'cancel') return null;
+    throw new Error(li.message || 'LinkedIn sign in failed');
+  }
+  const p = li.profile;
+  const auth = await api.linkedInSignIn(p.sub, p.name, p.email, p.picture);
+
+  await SecureStore.setItemAsync(TOKEN_KEY, auth.token);
+  await SecureStore.setItemAsync(USER_KEY, JSON.stringify(auth.user));
+  cachedToken = auth.token;
+  cachedUser = auth.user;
+  notify();
+
+  // Claim + merge — same flow as Apple.
+  const local = await listLocal();
+  const did = await getDeviceId();
+  const r = await api.claim(did, []);
+  const conflicts: MergeConflict[] = [];
+  const downloads: Card[] = [];
+  for (const remote of r.userCards) {
+    if (!remote.slug) continue;
+    const matchingLocal = local.find(l => l.slug === remote.slug);
+    if (!matchingLocal) { downloads.push(remote); continue; }
+    if (matchingLocal.id === remote.id) { await saveLocal(remote); continue; }
+    if (cardsEqual(matchingLocal, remote)) { await saveLocal(remote); continue; }
+    conflicts.push({ slug: remote.slug, local: matchingLocal, remote });
+  }
+  for (const d of downloads) await saveLocal(d);
+  try { await pushLocalScans(); } catch {}
+  try { await pullServerScans(); } catch {}
+
+  return {
+    user: auth.user,
+    attachedCount: r.claimed.length,
+    downloadedCount: downloads.length,
+    conflicts,
+  };
 }
 
 export async function signOut(): Promise<void> {
