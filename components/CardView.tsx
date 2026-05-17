@@ -258,10 +258,11 @@ const INSET_PAD = 16;
 const styles = StyleSheet.create({
   page: { paddingHorizontal: PAGE_PADDING, paddingTop: 4, paddingBottom: 8, alignItems: 'center' },
 
-  // The single unified card surface — Apple-Wallet-like, SQUARE frame
-  // (no rounded corners per founder), fits one screen.
+  // The single unified card surface — Apple-Wallet-like with rounded
+  // corners. Founder note: the SQUARE frame is the LOGO BADGE below,
+  // not the card itself. The card keeps Wallet's rounded corners.
   cardSurface: {
-    borderRadius: 0,
+    borderRadius: 24,
     paddingTop: 10,
     paddingHorizontal: INSET_PAD,
     paddingBottom: 12,

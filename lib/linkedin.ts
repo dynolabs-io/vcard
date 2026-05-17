@@ -72,14 +72,15 @@ export async function connectLinkedIn(): Promise<LinkedInOutcome> {
   }
 
   // Open in-app Safari sheet; auto-closes on deep-link match.
-  // prefersEphemeralWebBrowserSession=true → no shared cookies with
-  // Safari, and the iOS consent prompt text is slightly less alarming
-  // ("sign you in" still appears — Apple-mandated for ASWebAuth, can't
-  // be suppressed without giving up the auto-return-on-deep-link).
+  // preferEphemeralSession=FALSE on purpose: we WANT the LinkedIn
+  // cookie to persist across sign-ins so the user doesn't have to
+  // re-enter their password every time. The iOS "wants to use
+  // linkedin.com to sign you in" consent prompt is Apple-mandated
+  // and can't be suppressed — but with cookie sharing, the LinkedIn
+  // password page itself is skipped after the first sign-in.
   const result = await WebBrowser.openAuthSessionAsync(
     authorizeURL,
     DEEPLINK_PREFIX,
-    { preferEphemeralSession: true },
   );
   if (result.type !== 'success') {
     return { ok: false, reason: 'cancel' };
