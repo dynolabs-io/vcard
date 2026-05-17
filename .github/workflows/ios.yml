@@ -169,25 +169,31 @@ jobs:
           with open(os.environ['API_JSON'], 'w') as f:
             json.dump(obj, f)
           PY
-          # The IOS_DIST_CERT_P12 secret's cert is no longer in Apple's
-          # allowed-cert list for the App Store profile (a previous
-          # `sigh --force` cycle on Apple's side desynced them). Rather
-          # than re-uploading the secret, generate a fresh Distribution
-          # cert + key via `fastlane cert` — it registers with Apple and
-          # writes the .cer/.p12 into the keychain we already created.
-          # Then `sigh --force` regenerates the App Store profile to
-          # include the just-registered cert.
-          # fastlane cert: default behavior creates an iOS DISTRIBUTION
-          # certificate. --type only accepts mac_installer/developer_id
-          # variants and would fail for iOS dist. The temp keychain we
-          # built earlier is already the default keychain (set via
-          # `security default-keychain -s $KEYCHAIN_PATH`), so fastlane
-          # writes the new cert there without us specifying --keychain*.
+          # fastlane cert manages distribution certs end-to-end.
+          # Default behavior: find existing cert that matches the local
+          # keychain, or download a cert it knows about. If neither
+          # works, create a new one and persist the .p12 to output_path.
+          # The freshly-created .p12 needs to be imported into the
+          # keychain so codesign can find it during archive — fastlane
+          # cert does NOT auto-import to the keychain we configured.
           fastlane cert \
             --api_key_path "$API_JSON" \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
             --output_path $RUNNER_TEMP \
-            --skip_set_partition_list false || true
+            --keychain_path "$KEYCHAIN_PATH" \
+            --keychain_password "$KEYCHAIN_PASSWORD" || true
+          # Import any .p12 fastlane cert wrote (idempotent — if it found
+          # an existing cert, it skipped writing a new .p12).
+          for p12 in "$RUNNER_TEMP"/*.p12; do
+            [ -f "$p12" ] || continue
+            echo "Importing fastlane-generated .p12: $p12"
+            security import "$p12" -P "" \
+              -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH" || true
+          done
+          security set-key-partition-list -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" >/dev/null 2>&1 || true
+          echo "=== identities in keychain ==="
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
           fastlane sigh renew \
             --api_key_path "$API_JSON" \
             --app_identifier io.dynolabs.vcard \
