@@ -174,13 +174,18 @@ jobs:
           # same limit, errors). Pre-revoke ONE cert via the ASC API
           # directly using a freshly-minted JWT so fastlane cert has
           # room to create a new one with a private key here.
+          # macOS-runner system Python rejects pip install without
+          # --break-system-packages (PEP 668). Install pyjwt + cryptography
+          # to user site so the inline script can import.
+          pip3 install --quiet --break-system-packages --user pyjwt cryptography 2>&1 | tail -2 || true
           python3 - <<'PY'
-          import json, os, sys, time, base64, hashlib, hmac, urllib.request, urllib.error
-          try:
-              import jwt as pyjwt
-          except ImportError:
-              os.system('pip3 install --quiet pyjwt cryptography >/dev/null 2>&1')
-              import jwt as pyjwt
+          import json, os, sys, time, base64, urllib.request, urllib.error
+          # Look in user site-packages.
+          import site
+          for p in site.getusersitepackages() if isinstance(site.getusersitepackages(), list) else [site.getusersitepackages()]:
+              if p not in sys.path:
+                  sys.path.insert(0, p)
+          import jwt as pyjwt
           key_id    = os.environ['ASC_KEY_ID']
           issuer_id = os.environ['ASC_ISSUER_ID']
           pem       = open(os.environ['KEY_FILE']).read()
