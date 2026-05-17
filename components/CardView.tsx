@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   // not the card itself. The card keeps Wallet's rounded corners.
   cardSurface: {
     borderRadius: 24,
-    paddingTop: 10,
+    paddingTop: 18,
     paddingHorizontal: INSET_PAD,
     paddingBottom: 12,
     alignItems: 'center',
@@ -274,14 +274,18 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  // 44×44 = 36×36 × 1.44 (founder: +20% h × +20% w → 1.44 area).
-  // Square frame, no rounding.
+  // 44×44 logo badge. Square frame stays. Shifted slightly right +
+  // down with a small margin so the visual distance from the badge's
+  // top edge to the card top equals the distance from the badge's
+  // left edge to the card left (founder: 'equal distance').
   topRow: { width: '100%', flexDirection: 'row', alignItems: 'center', minHeight: 44 },
   logoBadge: {
     width: 44, height: 44, borderRadius: 0,
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center', justifyContent: 'center',
     padding: 4,
+    marginLeft: 4,
+    marginTop: 4,
   },
   logoBadgeImg: { width: 36, height: 36 },
 
