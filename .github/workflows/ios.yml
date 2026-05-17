@@ -229,14 +229,31 @@ jobs:
               except urllib.error.HTTPError as e:
                   print(f'revoke HTTP {e.code}: {e.read().decode()[:200]}')
           PY
-          # Now fastlane cert can create one without --force (no need to
-          # nuke certs we don't own).
+          # fastlane cert creates a fresh DISTRIBUTION cert AND captures
+          # the cert ID to a file. We MUST pin sigh to this exact cert
+          # ID — if there are multiple dist certs on the account (likely,
+          # given Apple's 2-cert limit per type), sigh otherwise picks
+          # the first one alphabetically and binds the profile to it,
+          # but the keychain only has the cert we just generated. Result:
+          # provisioning profile cert mismatch at archive time.
           fastlane cert \
             --api_key_path "$API_JSON" \
             --team_id ${{ secrets.APPLE_TEAM_ID }} \
             --output_path $RUNNER_TEMP \
             --keychain_path "$KEYCHAIN_PATH" \
-            --keychain_password "$KEYCHAIN_PASSWORD" || true
+            --keychain_password "$KEYCHAIN_PASSWORD" \
+            2>&1 | tee "$RUNNER_TEMP/cert.log"
+          # Parse the cert ID fastlane just generated/found. Two cases:
+          #   "Successfully generated <ID> which was imported..."  (new)
+          #   "Found the certificate <ID> ..."                     (reuse)
+          NEW_CERT_ID=$(grep -oE 'Successfully generated [A-Z0-9]{10}|Found the certificate [A-Z0-9]{10}' "$RUNNER_TEMP/cert.log" \
+            | head -1 | awk '{print $NF}')
+          if [ -z "$NEW_CERT_ID" ]; then
+            echo "::error::Could not parse cert ID from fastlane cert output"
+            cat "$RUNNER_TEMP/cert.log"
+            exit 1
+          fi
+          echo "Pinning sigh to cert ID: $NEW_CERT_ID"
           # Import any .p12 fastlane cert wrote (idempotent — if it found
           # an existing cert, it skipped writing a new .p12).
           for p12 in "$RUNNER_TEMP"/*.p12; do
@@ -256,8 +273,8 @@ jobs:
             --provisioning_name "Dynolabs vCard App Store" \
             --output_path $RUNNER_TEMP \
             --filename dist.mobileprovision \
-            --force \
-            --include_all_certificates true
+            --cert_id "$NEW_CERT_ID" \
+            --force
           # Install the just-downloaded profile where Xcode reads it
           UUID=$(/usr/libexec/PlistBuddy -c 'Print :UUID' /dev/stdin <<<"$(security cms -D -i $RUNNER_TEMP/dist.mobileprovision)")
           echo "Fresh profile UUID: $UUID"
