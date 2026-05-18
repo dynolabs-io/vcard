@@ -222,14 +222,30 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
               // email, photo). LinkedIn's OIDC scope doesn't return
               // title/company — those come from server-side Apollo
               // enrichment in the next step.
+              // Also: derive company brand logo from the email's domain
+              // via Clearbit's free Logo API. Apollo will override with
+              // a more accurate companyDomain if it finds the person,
+              // but the email-domain fallback works zero-config and
+              // covers the common case of work-email = company-domain.
+              const emailDomain = p.email && p.email.includes('@')
+                ? p.email.split('@')[1].toLowerCase()
+                : '';
               setDraft(d => ({
                 ...d,
                 name: p.name || d.name || '',
                 emails: p.email ? [p.email, ...(d.emails || []).filter(e => e !== p.email)] : (d.emails || []),
                 photoUrl: p.picture || d.photoUrl || undefined,
+                brandLogoUrl: d.brandLogoUrl || (emailDomain
+                  ? `https://logo.clearbit.com/${encodeURIComponent(emailDomain)}`
+                  : undefined),
               }));
               // Second pass: server-side Apollo enrichment by email →
               // fills title + company + LinkedIn URL when available.
+              // Plus: if Apollo returns a companyDomain and the user
+              // hasn't already uploaded a brand logo, auto-set it to
+              // Clearbit's free logo CDN (https://logo.clearbit.com/
+              // <domain>) — no key required, returns the company logo
+              // as a PNG for any registered domain.
               // Silent failures: enrichment is best-effort, never blocks
               // the import. Empty fields when Apollo can't match.
               if (p.email) {
@@ -239,6 +255,9 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
                     const next = { ...d };
                     if (e.title && !d.title) next.title = e.title;
                     if (e.company && !d.company) next.company = e.company;
+                    if (e.companyDomain && !d.brandLogoUrl) {
+                      next.brandLogoUrl = `https://logo.clearbit.com/${encodeURIComponent(e.companyDomain)}`;
+                    }
                     if (e.linkedinUrl) {
                       const socials = [...(d.socials || [])];
                       const i = socials.findIndex(s => s.kind === 'linkedin');
