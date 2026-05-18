@@ -239,6 +239,18 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
                   ? `https://logo.clearbit.com/${encodeURIComponent(emailDomain)}`
                   : undefined),
               }));
+              // CRITICAL: the email input field is controlled by a
+              // SEPARATE state var (emailsInput, a comma-joined string).
+              // setDraft updates draft.emails but the form input still
+              // reads emailsInput — which then OVERWRITES draft.emails
+              // back to [] at save time. Must sync both.
+              if (p.email) {
+                setEmailsInput(prev => {
+                  const cur = prev.split(',').map(s => s.trim()).filter(Boolean);
+                  if (cur.includes(p.email!)) return prev;
+                  return [p.email!, ...cur].join(', ');
+                });
+              }
               // Second pass: server-side Apollo enrichment by email →
               // fills title + company + LinkedIn URL when available.
               // Plus: if Apollo returns a companyDomain and the user
