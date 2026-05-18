@@ -230,12 +230,22 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
               const emailDomain = p.email && p.email.includes('@')
                 ? p.email.split('@')[1].toLowerCase()
                 : '';
+              // Consumer email domains aren't company domains — skip
+              // the brand-logo fallback for them (otherwise gmail.com
+                // would resolve to Google's logo, etc).
+              const CONSUMER_DOMAINS = new Set([
+                'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com',
+                'icloud.com', 'me.com', 'live.com', 'aol.com', 'msn.com',
+                'protonmail.com', 'pm.me', 'mail.com', 'yandex.com',
+                'gmx.com', 'gmx.net', 'fastmail.com', 'zoho.com',
+              ]);
+              const isConsumerDomain = CONSUMER_DOMAINS.has(emailDomain);
               setDraft(d => ({
                 ...d,
                 name: p.name || d.name || '',
                 emails: p.email ? [p.email, ...(d.emails || []).filter(e => e !== p.email)] : (d.emails || []),
                 photoUrl: p.picture || d.photoUrl || undefined,
-                brandLogoUrl: d.brandLogoUrl || (emailDomain
+                brandLogoUrl: d.brandLogoUrl || (emailDomain && !isConsumerDomain
                   ? `https://logo.clearbit.com/${encodeURIComponent(emailDomain)}`
                   : undefined),
               }));
