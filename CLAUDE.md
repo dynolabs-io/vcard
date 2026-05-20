@@ -58,8 +58,8 @@ Umbrella issue: [`dynolabs-io/vcard#1`](https://github.com/dynolabs-io/vcard/iss
 ## Known issues
 
 - Operator actions still required (block Phase 6/7): Apple Pass Type ID `.p12`, LinkedIn OAuth app credentials, Google Wallet issuer + service-account JSON.
-- iOS 26 + new-arch-off + GestureHandlerRootView + Stack modals silently dismisses modals — use pure RN `Animated.View` + `PanResponder` for swipe (per `feedback_rn_swipe_no_gesture_handler_with_modals.md`).
-- Wallet strip MUST always pack BOTH photo + logo + brand color on full 1125×432 canvas — never gate on style picker (per `feedback_dynolabs_wallet_always_pack_both.md`).
+- iOS 26 + new-arch-off + GestureHandlerRootView + Stack modals silently dismisses modals — use pure RN `Animated.View` + `PanResponder` for swipe (per `~/.claude/projects/-home-openova-repos-openova-private/memory/feedback_rn_swipe_no_gesture_handler_with_modals.md`).
+- Wallet strip MUST always pack BOTH photo + logo + brand color on full 1125×432 canvas — never gate on style picker (per `~/.claude/projects/-home-openova-repos-openova-private/memory/feedback_dynolabs_wallet_always_pack_both.md`).
 
 ## Sub-agent cap for this project
 
