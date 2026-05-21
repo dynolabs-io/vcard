@@ -13,12 +13,13 @@ import (
 var ErrNotFound = errors.New("user not found")
 
 type User struct {
-	ID          string `json:"id"`
-	AppleSub    string `json:"-"` // never returned to clients
-	LinkedInSub string `json:"-"` // never returned to clients
-	Name        string `json:"name,omitempty"`
-	Email       string `json:"email,omitempty"`
-	PhotoURL    string `json:"photoUrl,omitempty"`
+	ID             string `json:"id"`
+	AppleSub       string `json:"-"` // never returned to clients
+	LinkedInSub    string `json:"-"` // never returned to clients
+	Name           string `json:"name,omitempty"`
+	Email          string `json:"email,omitempty"`
+	PhotoURL       string `json:"photoUrl,omitempty"`
+	LinkedInVanity string `json:"linkedinVanity,omitempty"`
 }
 
 type Repo struct{ db *sql.DB }
@@ -68,9 +69,9 @@ func (r *Repo) Upsert(ctx context.Context, appleSub, name, email string) (*User,
 
 // GetByID returns a single user by primary key.
 func (r *Repo) GetByID(ctx context.Context, id string) (*User, error) {
-	const q = `SELECT id, COALESCE(apple_sub, ''), COALESCE(linkedin_sub, ''), COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, '') FROM users WHERE id = $1`
+	const q = `SELECT id, COALESCE(apple_sub, ''), COALESCE(linkedin_sub, ''), COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, ''), COALESCE(linkedin_vanity, '') FROM users WHERE id = $1`
 	var u User
-	if err := r.db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.AppleSub, &u.LinkedInSub, &u.Name, &u.Email, &u.PhotoURL); err != nil {
+	if err := r.db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.AppleSub, &u.LinkedInSub, &u.Name, &u.Email, &u.PhotoURL, &u.LinkedInVanity); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrNotFound
 		}
@@ -80,16 +81,24 @@ func (r *Repo) GetByID(ctx context.Context, id string) (*User, error) {
 }
 
 // UpsertLinkedIn — find or create a user keyed by LinkedIn's sub claim.
-// If both name/email are blank, the existing row is preserved as-is.
-func (r *Repo) UpsertLinkedIn(ctx context.Context, linkedInSub, name, email, photoURL string) (*User, error) {
-	const selQ = `SELECT id, COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, '') FROM users WHERE linkedin_sub = $1`
+// Blank fields are left untouched on update so we never overwrite a
+// previously-captured value with an empty one (relevant because LinkedIn
+// ships `vanityName` only for some apps' OIDC scopes — a later sign-in
+// without it must not erase what we already stored).
+func (r *Repo) UpsertLinkedIn(ctx context.Context, linkedInSub, name, email, photoURL, vanity string) (*User, error) {
+	const selQ = `SELECT id, COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, ''), COALESCE(linkedin_vanity, '') FROM users WHERE linkedin_sub = $1`
 	var u User
 	u.LinkedInSub = linkedInSub
-	if err := r.db.QueryRowContext(ctx, selQ, linkedInSub).Scan(&u.ID, &u.Name, &u.Email, &u.PhotoURL); err == nil {
-		if (u.Name == "" && name != "") || (u.Email == "" && email != "") || (u.PhotoURL == "" && photoURL != "") {
+	if err := r.db.QueryRowContext(ctx, selQ, linkedInSub).Scan(&u.ID, &u.Name, &u.Email, &u.PhotoURL, &u.LinkedInVanity); err == nil {
+		if (u.Name == "" && name != "") || (u.Email == "" && email != "") || (u.PhotoURL == "" && photoURL != "") || (u.LinkedInVanity == "" && vanity != "") {
 			_, _ = r.db.ExecContext(ctx,
-				`UPDATE users SET name = COALESCE(NULLIF($1, ''), name), email = COALESCE(NULLIF($2, ''), email), photo_url = COALESCE(NULLIF($3, ''), photo_url) WHERE id = $4`,
-				name, email, photoURL, u.ID)
+				`UPDATE users SET
+				    name            = COALESCE(NULLIF($1, ''), name),
+				    email           = COALESCE(NULLIF($2, ''), email),
+				    photo_url       = COALESCE(NULLIF($3, ''), photo_url),
+				    linkedin_vanity = COALESCE(NULLIF($4, ''), linkedin_vanity)
+				 WHERE id = $5`,
+				name, email, photoURL, vanity, u.ID)
 			if name != "" {
 				u.Name = name
 			}
@@ -99,6 +108,9 @@ func (r *Repo) UpsertLinkedIn(ctx context.Context, linkedInSub, name, email, pho
 			if photoURL != "" {
 				u.PhotoURL = photoURL
 			}
+			if vanity != "" {
+				u.LinkedInVanity = vanity
+			}
 		}
 		return &u, nil
 	} else if !errors.Is(err, sql.ErrNoRows) {
@@ -106,10 +118,10 @@ func (r *Repo) UpsertLinkedIn(ctx context.Context, linkedInSub, name, email, pho
 	}
 
 	const insQ = `
-		INSERT INTO users (linkedin_sub, name, email, photo_url)
-		VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''))
-		RETURNING id, COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, '')`
-	if err := r.db.QueryRowContext(ctx, insQ, linkedInSub, name, email, photoURL).Scan(&u.ID, &u.Name, &u.Email, &u.PhotoURL); err != nil {
+		INSERT INTO users (linkedin_sub, name, email, photo_url, linkedin_vanity)
+		VALUES ($1, NULLIF($2, ''), NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))
+		RETURNING id, COALESCE(name, ''), COALESCE(email, ''), COALESCE(photo_url, ''), COALESCE(linkedin_vanity, '')`
+	if err := r.db.QueryRowContext(ctx, insQ, linkedInSub, name, email, photoURL, vanity).Scan(&u.ID, &u.Name, &u.Email, &u.PhotoURL, &u.LinkedInVanity); err != nil {
 		return nil, fmt.Errorf("user upsert linkedin: %w", err)
 	}
 	return &u, nil

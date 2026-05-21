@@ -109,6 +109,17 @@ func main() {
 			Client:     apolloClient,
 			LinkedIn:   linkedInClient,
 			AuthVerify: verifier.UserIDFromBearer,
+			// UserLookup powers the self-only LinkedIn fallback in
+			// /v1/enrich/email — only the authed user's own email
+			// can trigger an iogrid LinkedIn-vanity fetch using
+			// their stored slug. Other emails fall back to empty.
+			UserLookup: func(ctx context.Context, userID string) (string, string, error) {
+				u, err := usersRepo.GetByID(ctx, userID)
+				if err != nil {
+					return "", "", err
+				}
+				return u.Email, u.LinkedInVanity, nil
+			},
 		}).Mount(mux)
 		slog.Info("postgres + cards + auth + scans + leads + wallet + enrich mounted", "bundle", bundleID)
 	} else {

@@ -124,6 +124,13 @@ func Migrate(ctx context.Context, db *sql.DB) error {
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_sub TEXT`,
 		`CREATE UNIQUE INDEX IF NOT EXISTS users_linkedin_sub_uniq ON users(linkedin_sub) WHERE linkedin_sub IS NOT NULL`,
 		`ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url TEXT`,
+		// LinkedIn URL slug (the "satyanadella" in linkedin.com/in/satyanadella).
+		// Captured by linkedin-oauth's OIDC userinfo / profile-URL parse and
+		// persisted here so vcard-api can fall back to LinkedIn-via-iogrid
+		// enrichment when Apollo returns empty title/company for the user's
+		// own email. Optional — many LinkedIn apps' OIDC payloads omit the
+		// slug; downstream enrichment no-ops gracefully when empty.
+		`ALTER TABLE users ADD COLUMN IF NOT EXISTS linkedin_vanity TEXT`,
 	}
 	for _, s := range stmts {
 		if _, err := db.ExecContext(ctx, s); err != nil {

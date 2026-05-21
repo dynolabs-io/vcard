@@ -49,10 +49,15 @@ func (h *Handlers) Mount(mux *http.ServeMux) {
 // accepts a sub + profile and trusts it (LinkedIn OAuth itself is the
 // gate). Mobile clients never see another user's profile this way.
 type linkedInSignInReq struct {
-	Sub      string `json:"sub"`
-	Name     string `json:"name,omitempty"`
-	Email    string `json:"email,omitempty"`
-	Picture  string `json:"picture,omitempty"`
+	Sub     string `json:"sub"`
+	Name    string `json:"name,omitempty"`
+	Email   string `json:"email,omitempty"`
+	Picture string `json:"picture,omitempty"`
+	// Vanity is the linkedin.com/in/<slug> handle the mobile app receives
+	// from linkedin-oauth's /oauth/linkedin/result. Optional. Persisted to
+	// users.linkedin_vanity so /v1/enrich/email can fall back to
+	// LinkedIn-via-iogrid when Apollo returns empty for the user's own email.
+	Vanity string `json:"vanity,omitempty"`
 }
 
 func (h *Handlers) linkedInSignIn(w http.ResponseWriter, r *http.Request) {
@@ -65,7 +70,7 @@ func (h *Handlers) linkedInSignIn(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "sub required")
 		return
 	}
-	u, err := h.Users.UpsertLinkedIn(r.Context(), req.Sub, req.Name, req.Email, req.Picture)
+	u, err := h.Users.UpsertLinkedIn(r.Context(), req.Sub, req.Name, req.Email, req.Picture, req.Vanity)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
@@ -75,7 +80,7 @@ func (h *Handlers) linkedInSignIn(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	slog.Info("linkedin sign-in ok", "user_id", u.ID, "sub", req.Sub)
+	slog.Info("linkedin sign-in ok", "user_id", u.ID, "sub", req.Sub, "hasVanity", req.Vanity != "")
 	writeJSON(w, http.StatusOK, appleSignInResp{Token: tok, User: u})
 }
 

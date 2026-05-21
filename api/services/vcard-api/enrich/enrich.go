@@ -153,12 +153,17 @@ func (c *Client) Enrich(ctx context.Context, email string) (Result, error) {
 }
 
 // Handlers wires the email + LinkedIn enrichment endpoints into the
-// http.ServeMux. Either field may be a no-op client (empty config) —
-// the endpoints still respond 200 with zero Result.
+// http.ServeMux. Client / LinkedIn may each be a no-op (empty config);
+// the endpoints still respond 200 with zero Result. UserLookup is
+// optional — when set AND the authed caller is asking for their own
+// email AND Apollo returned empty title/company AND the caller has a
+// stored LinkedIn vanity, /v1/enrich/email transparently chains the
+// LinkedIn-via-iogrid path to fill the gaps.
 type Handlers struct {
 	Client     *Client
 	LinkedIn   *LinkedInClient
-	AuthVerify func(r *http.Request) string // returns "" if unauthenticated
+	AuthVerify func(r *http.Request) string                                                     // returns "" if unauthenticated
+	UserLookup func(ctx context.Context, userID string) (email, vanity string, err error)        // optional: powers self-only LinkedIn fallback
 }
 
 func (h *Handlers) Mount(mux *http.ServeMux) {
@@ -177,9 +182,13 @@ type enrichLinkedInReq struct {
 func (h *Handlers) enrichEmail(w http.ResponseWriter, r *http.Request) {
 	// Auth required — enrichment burns a finite Apollo quota; we
 	// don't want anonymous callers grinding it down.
-	if h.AuthVerify != nil && h.AuthVerify(r) == "" {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "auth required"})
-		return
+	userID := ""
+	if h.AuthVerify != nil {
+		userID = h.AuthVerify(r)
+		if userID == "" {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "auth required"})
+			return
+		}
 	}
 	var req enrichReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -191,7 +200,75 @@ func (h *Handlers) enrichEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out, _ := h.Client.Enrich(r.Context(), req.Email)
+
+	// Fallback chain: if Apollo couldn't fill title or company AND the
+	// caller is asking for their own email AND we have a stored
+	// LinkedIn vanity for them, run the iogrid LinkedIn-vanity fetch
+	// and merge results. The privacy guard (email-must-match-caller)
+	// keeps us from leaking vanity-derived data for unrelated emails.
+	if h.shouldChainLinkedIn(out, userID, req.Email) {
+		vanity := h.vanityForSelf(r.Context(), userID, req.Email)
+		if vanity != "" {
+			li, _ := h.LinkedIn.EnrichByVanity(r.Context(), vanity)
+			out = mergeEnrich(out, li)
+		}
+	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// shouldChainLinkedIn gates whether we attempt the iogrid fallback.
+// Apollo wins when it filled BOTH title and company; otherwise we'll
+// try LinkedIn to fill the gaps. The userID and UserLookup nil-checks
+// are policy guards — without them we can't establish that the caller
+// is the email owner.
+func (h *Handlers) shouldChainLinkedIn(apollo Result, userID, email string) bool {
+	if h.LinkedIn == nil || !h.LinkedIn.Enabled() {
+		return false
+	}
+	if h.UserLookup == nil || userID == "" {
+		return false
+	}
+	if strings.TrimSpace(email) == "" {
+		return false
+	}
+	return apollo.Title == "" || apollo.Company == ""
+}
+
+// vanityForSelf returns the stored LinkedIn vanity ONLY when the
+// authed user's email matches the requested email (case-insensitive).
+// Otherwise returns "" — we never reveal another user's stored slug.
+func (h *Handlers) vanityForSelf(ctx context.Context, userID, reqEmail string) string {
+	userEmail, vanity, err := h.UserLookup(ctx, userID)
+	if err != nil || vanity == "" || userEmail == "" {
+		return ""
+	}
+	if !strings.EqualFold(strings.TrimSpace(userEmail), strings.TrimSpace(reqEmail)) {
+		return ""
+	}
+	return vanity
+}
+
+// mergeEnrich keeps every non-empty field from `primary` and fills the
+// gaps from `fallback`. Used to merge Apollo (primary) with LinkedIn
+// (fallback) so we never lose Apollo data — we only ADD on top of it.
+func mergeEnrich(primary, fallback Result) Result {
+	out := primary
+	if out.Title == "" {
+		out.Title = fallback.Title
+	}
+	if out.Company == "" {
+		out.Company = fallback.Company
+	}
+	if out.CompanyDomain == "" {
+		out.CompanyDomain = fallback.CompanyDomain
+	}
+	if out.LinkedInURL == "" {
+		out.LinkedInURL = fallback.LinkedInURL
+	}
+	if out.PhotoURL == "" {
+		out.PhotoURL = fallback.PhotoURL
+	}
+	return out
 }
 
 func (h *Handlers) enrichLinkedIn(w http.ResponseWriter, r *http.Request) {

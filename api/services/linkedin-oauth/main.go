@@ -102,6 +102,26 @@ type linkedInProfile struct {
 	Picture    string `json:"picture,omitempty"`
 	GivenName  string `json:"given_name,omitempty"`
 	FamilyName string `json:"family_name,omitempty"`
+	// Vanity is the LinkedIn URL slug ("satyanadella" from
+	// linkedin.com/in/satyanadella). Best-effort: we try the `vanityName`
+	// claim if LinkedIn returns it, else parse `/in/<slug>` from the
+	// `profile` URL claim. Empty when LinkedIn ships neither — the
+	// downstream iogrid LinkedIn-vanity enrichment then no-ops gracefully.
+	Vanity string `json:"vanity,omitempty"`
+}
+
+// userinfoRaw mirrors every claim we care about from LinkedIn's
+// /v2/userinfo response. We decode into this and then derive linkedInProfile.
+type userinfoRaw struct {
+	Sub        string `json:"sub"`
+	Email      string `json:"email"`
+	Name       string `json:"name"`
+	Picture    string `json:"picture,omitempty"`
+	GivenName  string `json:"given_name,omitempty"`
+	FamilyName string `json:"family_name,omitempty"`
+	// LinkedIn-specific extensions present on some apps' OIDC responses:
+	VanityName string `json:"vanityName,omitempty"` // direct slug, when present
+	Profile    string `json:"profile,omitempty"`    // public URL form, e.g. https://www.linkedin.com/in/<slug>
 }
 
 func main() {
@@ -209,6 +229,7 @@ func main() {
 			"hasName", profile.Name != "",
 			"hasEmail", profile.Email != "",
 			"hasPicture", profile.Picture != "",
+			"hasVanity", profile.Vanity != "",
 		)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(profile)
@@ -278,9 +299,18 @@ func exchangeAndFetch(ctx context.Context, clientID, clientSecret, callbackURL, 
 	if pres.StatusCode != 200 {
 		return nil, fmt.Errorf("userinfo %d: %s", pres.StatusCode, string(pbody))
 	}
-	var p linkedInProfile
-	if err := json.Unmarshal(pbody, &p); err != nil {
+	var ui userinfoRaw
+	if err := json.Unmarshal(pbody, &ui); err != nil {
 		return nil, fmt.Errorf("userinfo decode: %w", err)
+	}
+	p := linkedInProfile{
+		Sub:        ui.Sub,
+		Email:      ui.Email,
+		Name:       ui.Name,
+		Picture:    ui.Picture,
+		GivenName:  ui.GivenName,
+		FamilyName: ui.FamilyName,
+		Vanity:     deriveVanity(ui.VanityName, ui.Profile),
 	}
 	// Field-presence logging (no PII) so we can diagnose missing-email
 	// reports. Also captures the raw key list LinkedIn returned in case
@@ -296,9 +326,59 @@ func exchangeAndFetch(ctx context.Context, clientID, clientSecret, callbackURL, 
 		"hasName", p.Name != "",
 		"hasEmail", p.Email != "",
 		"hasPicture", p.Picture != "",
+		"hasVanity", p.Vanity != "",
+		"vanitySource", vanitySource(ui.VanityName, ui.Profile),
 		"rawKeys", keys,
 	)
 	return &p, nil
+}
+
+// deriveVanity tries the direct `vanityName` claim first, then parses
+// `/in/<slug>` out of the `profile` URL claim. Returns "" when neither
+// is usable — downstream iogrid enrichment then no-ops by design.
+func deriveVanity(vanityName, profileURL string) string {
+	if v := strings.TrimSpace(vanityName); v != "" {
+		return v
+	}
+	u := strings.TrimSpace(profileURL)
+	if u == "" {
+		return ""
+	}
+	// We accept either fully-qualified URLs or paths. Strip scheme/host.
+	if i := strings.Index(u, "://"); i >= 0 {
+		u = u[i+3:]
+	}
+	if i := strings.Index(u, "/"); i >= 0 {
+		u = u[i:]
+	}
+	const marker = "/in/"
+	i := strings.Index(u, marker)
+	if i < 0 {
+		return ""
+	}
+	rest := u[i+len(marker):]
+	// Slug ends at the first '/', '?', '#', or end-of-string.
+	end := len(rest)
+	for j, c := range rest {
+		if c == '/' || c == '?' || c == '#' {
+			end = j
+			break
+		}
+	}
+	return strings.TrimSpace(rest[:end])
+}
+
+// vanitySource is a log-only tag so we can tell whether the slug came
+// from a direct claim or from URL parsing without re-shipping the
+// underlying values.
+func vanitySource(vanityName, profileURL string) string {
+	if strings.TrimSpace(vanityName) != "" {
+		return "vanityName"
+	}
+	if strings.TrimSpace(profileURL) != "" {
+		return "profileURL"
+	}
+	return "none"
 }
 
 func getenv(k, def string) string {
