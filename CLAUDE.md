@@ -56,20 +56,21 @@ npm run lint
 
 ## Build / release
 
-```bash
-# Mobile app (TestFlight / Play internal)
-npm i -g eas-cli
-eas login
-eas build --platform ios
-eas build --platform android
+**All builds run in GitHub Actions** — never run `eas build` locally. The workflows fire automatically on push to `main` with paths filters.
 
-# Backend (CI auto-builds on push to main when api/** changes)
-cd api && go build ./...        # local sanity
-cd api && go test ./...         # workspace tests
-# CI publishes ghcr.io/dynolabs-io/vcard/api/<svc>:<short-sha>
-# Bump image SHA in openova-private/clusters/contabo-mkt/apps/dynolabs/<svc>.yaml
-# (auto-bump workflow not yet filed — manual until then)
+| Workflow | File | Triggers on |
+|---|---|---|
+| iOS → TestFlight (auto-signing via ASC API + Maestro E2E gate) | `.github/workflows/ios.yml` | `app/**`, `lib/**`, `components/**`, `hooks/**`, `constants/**`, `assets/**`, `app.json`, `package*.json`, `.maestro/**`, workflow itself |
+| Backend image matrix → GHCR | `.github/workflows/api-build.yml` | `api/**`, workflow itself |
+| Assign TestFlight build to Founders group (manual) | `.github/workflows/asc-assign-build.yml` | `workflow_dispatch` |
+
+Local sanity only (don't ship from these):
+```bash
+npm run typecheck && npm run lint               # mobile
+cd api && go build ./... && go test ./...        # backend
 ```
+
+Backend images publish to `ghcr.io/dynolabs-io/vcard/api/<svc>:<short-sha>` + `:latest`. The image SHA bump in `openova-private/clusters/contabo-mkt/apps/dynolabs/<svc>.yaml` is currently manual — auto-bump workflow not yet filed (see `dynolabs-io/vcard#2` cleanup list).
 
 ## Tracking
 
