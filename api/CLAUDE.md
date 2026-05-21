@@ -1,6 +1,8 @@
-# dynolabs-io/api — Repo-specific Notes
+# dynolabs-io/vcard `api/` — Repo-specific Notes
 
-> This is a product repo (Dynolabs backend for the vCard mobile app and adjacent surfaces). Generic OpenOva platform working principles live in `~/.claude/CLAUDE.md` (user-global).
+> Backend microservices for the Dynolabs vCard mobile app, living under `api/` of `dynolabs-io/vcard`. The parent repo's `CLAUDE.md` is one level up; generic OpenOva platform working principles live in `~/.claude/CLAUDE.md` (user-global).
+>
+> **History:** until 2026-05-21 these services were their own repo at `dynolabs-io/api` — subtree-merged into `dynolabs-io/vcard:main` (commit `29b944d`) and archived. References to "the api repo" in older docs / commits / memory point here.
 
 ## What this is
 
@@ -17,7 +19,7 @@ Go microservices backend serving the Dynolabs vCard mobile app (`io.dynolabs.vca
 | SSR public profile page | `services/web-profile/` |
 | Shared code | `shared/` |
 | Go workspace pin | `go.work` |
-| CI matrix build | `.github/workflows/build.yml` |
+| CI matrix build | `../.github/workflows/api-build.yml` (paths-filtered to `api/**`) |
 
 ## Tech stack
 
@@ -25,7 +27,7 @@ Go microservices backend serving the Dynolabs vCard mobile app (`io.dynolabs.vca
 - HTTP `:8080` per service, `/healthz` + `/readyz` on every service
 - PostgreSQL source-of-truth + NATS for replication (CAP-AP, eventual consistency)
 - Stub-mode flags allow deployment before external creds (Apple Pass cert, LinkedIn OAuth, Google Wallet issuer) are provisioned
-- Container registry: `ghcr.io/dynolabs-io/api/<service>:<sha>`
+- Container registry: `ghcr.io/dynolabs-io/vcard/api/<service>:<sha>` (was `.../api/<svc>` pre-merge)
 - Deploy: Flux on contabo-mkt under `openova-private/clusters/contabo-mkt/apps/dynolabs/`
 
 ## Development workflow
@@ -45,7 +47,7 @@ go test ./...
 
 ## CI/CD
 
-Push to `main` → matrix build of all 5 services → push SHA-tagged images to GHCR → trigger SHA bump in `openova-private/clusters/contabo-mkt/apps/dynolabs/` → Flux reconciles.
+Push to `dynolabs-io/vcard:main` touching `api/**` → `.github/workflows/api-build.yml` runs a matrix build of all 5 services → SHA-tagged images land at `ghcr.io/dynolabs-io/vcard/api/<svc>:<short-sha>` + `:latest` → manual bump of the SHA in `openova-private/clusters/contabo-mkt/apps/dynolabs/<svc>.yaml` → Flux reconciles. (The pre-merge auto-bump workflow `dynolabs-bump-sha.yml` never landed on openova-private — see `dynolabs-io/vcard#2` for follow-ups.)
 
 ## Tracking
 
