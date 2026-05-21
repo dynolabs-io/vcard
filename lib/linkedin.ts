@@ -29,6 +29,11 @@ export type LinkedInProfile = {
   picture?: string;
   given_name?: string;
   family_name?: string;
+  // The linkedin.com/in/<slug> handle. Best-effort — present when
+  // LinkedIn returns either a `vanityName` claim or a parseable
+  // `profile` URL in /v2/userinfo. Powers vcard-api's LinkedIn-via-iogrid
+  // enrichment fallback for the user's own email.
+  vanity?: string;
 };
 
 const DEEPLINK_PREFIX = 'dynolabs-vcard://oauth/linkedin';

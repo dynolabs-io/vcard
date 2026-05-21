@@ -141,10 +141,10 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ identityToken, name, email }),
     }, 10_000),
-  linkedInSignIn: (sub: string, name?: string, email?: string, picture?: string) =>
+  linkedInSignIn: (sub: string, name?: string, email?: string, picture?: string, vanity?: string) =>
     request<AuthResponse>('/v1/auth/linkedin', {
       method: 'POST',
-      body: JSON.stringify({ sub, name, email, picture }),
+      body: JSON.stringify({ sub, name, email, picture, vanity }),
     }, 10_000),
   me: () => request<User>('/v1/users/me'),
 

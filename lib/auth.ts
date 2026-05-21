@@ -185,7 +185,7 @@ export async function signInWithLinkedIn(): Promise<SignInResult | null> {
     throw new Error(li.message || 'LinkedIn sign in failed');
   }
   const p = li.profile;
-  const auth = await api.linkedInSignIn(p.sub, p.name, p.email, p.picture);
+  const auth = await api.linkedInSignIn(p.sub, p.name, p.email, p.picture, p.vanity);
 
   await SecureStore.setItemAsync(TOKEN_KEY, auth.token);
   await SecureStore.setItemAsync(USER_KEY, JSON.stringify(auth.user));
