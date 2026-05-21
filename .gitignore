@@ -41,3 +41,12 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Stray Go build binaries inside service dirs (CI builds inside Docker;
+# local `go build` from a service dir leaves a binary named after the
+# module's last path segment).
+/api/services/*/vcard-api
+/api/services/*/linkedin-oauth
+/api/services/*/pass-signer
+/api/services/*/photo-cdn
+/api/services/*/web-profile
