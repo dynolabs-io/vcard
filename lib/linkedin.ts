@@ -52,6 +52,37 @@ export type LinkedInOutcome =
   | { ok: true; profile: LinkedInProfile }
   | { ok: false; reason: 'cancel' | 'error'; message?: string };
 
+/** Pull the URL slug out of a LinkedIn profile URL the user pastes.
+ *  Accepts forms like:
+ *
+ *    https://www.linkedin.com/in/satyanadella
+ *    https://linkedin.com/in/satyanadella/
+ *    linkedin.com/in/satyanadella?utm=x
+ *    /in/satyanadella
+ *    satyanadella                              (already just the slug)
+ *
+ *  Returns null when the input doesn't yield a usable slug.
+ */
+export function extractLinkedInVanity(input: string): string | null {
+  let s = input.trim();
+  if (!s) return null;
+  // Strip scheme if present.
+  const scheme = s.indexOf('://');
+  if (scheme >= 0) s = s.slice(scheme + 3);
+  // If there's a path, jump to /in/. If not, treat the whole thing as a slug.
+  const marker = '/in/';
+  const i = s.indexOf(marker);
+  let slug = i >= 0 ? s.slice(i + marker.length) : s;
+  // Trim trailing /?#.
+  const end = slug.search(/[/?#]/);
+  if (end >= 0) slug = slug.slice(0, end);
+  slug = slug.trim();
+  if (!slug) return null;
+  // Reject obvious non-slug inputs (e.g., the user just pasted "https://www.linkedin.com").
+  if (slug.includes(' ') || slug.includes('.')) return null;
+  return slug;
+}
+
 /** Drive the full OAuth flow. Caller decides what to do with the
  *  returned profile (sign in to Dynolabs, prefill card, both). */
 export async function connectLinkedIn(): Promise<LinkedInOutcome> {

@@ -1,49 +1,31 @@
-// Package enrich — firmographic enrichment of a person's email
-// address into title + company + LinkedIn URL + photo URL.
+// Package enrich — fetches title/company/photo for a LinkedIn vanity slug
+// by tunnelling the GET https://www.linkedin.com/in/<vanity> through
+// iogrid's residential SOCKS5+TLS proxy and parsing og:title / og:image
+// out of LinkedIn's public-profile SSR markup.
 //
 // Endpoint:
 //
-//	POST /v1/enrich/email   body {"email": "x@y.com"}
-//	                        resp {"title", "company", "companyDomain",
-//	                              "linkedinUrl", "photoUrl"}
+//	POST /v1/enrich/linkedin   body {"vanity": "satyanadella"}
+//	                           resp {"title", "company", "companyDomain",
+//	                                 "linkedinUrl", "photoUrl"}
 //
-// Why: LinkedIn's OIDC scope returns only name+email+picture. To match
-// what Blinq/HiHello/Popl do (auto-fill title+company on the first
-// card after LinkedIn sign-in) we call Apollo.io's People-Match API
-// AFTER LinkedIn returns. This package is a thin, stdlib-only client.
-//
-// Provider: Apollo.io free tier (50 lookups/month).
-//
-//	POST https://api.apollo.io/v1/people/match
-//	header X-Api-Key: <APOLLO_API_KEY>
-//	body   {"email": "..."}
-//
-// Apollo's `person` object exposes (among many) .title,
-// .organization.name, .organization.website_url, .photo_url,
-// .linkedin_url. We map only those five.
-//
-// Graceful-skip contract: if APOLLO_API_KEY is unset the endpoint
-// still returns 200 with all-empty fields. Apollo 4xx is also folded
-// into empty-fields + an info log — the caller (mobile app) should
-// treat enrichment as best-effort, never a blocking error.
+// Apollo.io was the previous primary enrichment path and has been
+// removed (founder rule 2026-05-21: free tier returns empty payloads,
+// not worth carrying the code). LinkedIn-via-iogrid is now the only
+// enrichment provider — graceful-skip contract preserved (returns 200
+// with empty fields when IOGRID_* env unset, when the iogrid mesh has
+// no eligible provider online, or when LinkedIn returns non-200).
 package enrich
 
 import (
-	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
-	"io"
-	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 )
 
-// apolloEndpoint is package-level so tests can override it.
-var apolloEndpoint = "https://api.apollo.io/v1/people/match"
-
-// Result is the public response shape. Empty fields = unknown.
+// Result is the public response shape. Empty fields = unknown — the
+// mobile caller treats enrichment as best-effort and falls back to
+// whatever the user already typed.
 type Result struct {
 	Title         string `json:"title"`
 	Company       string `json:"company"`
@@ -52,223 +34,20 @@ type Result struct {
 	PhotoURL      string `json:"photoUrl"`
 }
 
-// Client is a thin Apollo.io People-Match wrapper.
-type Client struct {
-	APIKey string
-	HTTP   *http.Client
-}
-
-// NewClient returns a client. apiKey may be empty — Enrich() will
-// then return an empty Result without contacting Apollo.
-func NewClient(apiKey string) *Client {
-	return &Client{
-		APIKey: apiKey,
-		HTTP:   &http.Client{Timeout: 8 * time.Second},
-	}
-}
-
-// apolloReq mirrors the People-Match request body.
-type apolloReq struct {
-	Email string `json:"email"`
-}
-
-// apolloResp is the slice of Apollo's response we actually consume.
-// Apollo returns many more fields; everything else is dropped on
-// decode.
-type apolloResp struct {
-	Person *struct {
-		Title        string `json:"title"`
-		PhotoURL     string `json:"photo_url"`
-		LinkedInURL  string `json:"linkedin_url"`
-		Organization *struct {
-			Name       string `json:"name"`
-			WebsiteURL string `json:"website_url"`
-		} `json:"organization"`
-	} `json:"person"`
-}
-
-// Enrich calls Apollo's People-Match. On any error or missing key,
-// it returns the zero Result and a nil error — enrichment is
-// best-effort by design. The caller never needs to branch on err.
-func (c *Client) Enrich(ctx context.Context, email string) (Result, error) {
-	email = strings.TrimSpace(email)
-	if email == "" {
-		return Result{}, errors.New("email required")
-	}
-	if c == nil || c.APIKey == "" {
-		slog.Info("enrich skipped: APOLLO_API_KEY not set", "email_domain", domainOf(email))
-		return Result{}, nil
-	}
-
-	body, _ := json.Marshal(apolloReq{Email: email})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apolloEndpoint, bytes.NewReader(body))
-	if err != nil {
-		slog.Warn("enrich: build request failed", "err", err)
-		return Result{}, nil
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-Api-Key", c.APIKey)
-	req.Header.Set("Cache-Control", "no-cache")
-
-	resp, err := c.HTTP.Do(req)
-	if err != nil {
-		slog.Warn("enrich: apollo request failed", "err", err)
-		return Result{}, nil
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		// 401/402/403/429 etc — treat as empty-fields. Log enough
-		// to debug, never enough to leak the key.
-		snippet, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		slog.Info("enrich: apollo non-2xx, returning empty fields",
-			"status", resp.StatusCode,
-			"email_domain", domainOf(email),
-			"body_snippet", string(snippet))
-		return Result{}, nil
-	}
-
-	var ar apolloResp
-	if err := json.NewDecoder(resp.Body).Decode(&ar); err != nil {
-		slog.Warn("enrich: apollo decode failed", "err", err)
-		return Result{}, nil
-	}
-	out := Result{}
-	if ar.Person != nil {
-		out.Title = ar.Person.Title
-		out.LinkedInURL = ar.Person.LinkedInURL
-		out.PhotoURL = ar.Person.PhotoURL
-		if ar.Person.Organization != nil {
-			out.Company = ar.Person.Organization.Name
-			out.CompanyDomain = hostOf(ar.Person.Organization.WebsiteURL)
-		}
-	}
-	slog.Info("enrich ok",
-		"email_domain", domainOf(email),
-		"has_title", out.Title != "",
-		"has_company", out.Company != "",
-		"has_linkedin", out.LinkedInURL != "")
-	return out, nil
-}
-
-// Handlers wires the email + LinkedIn enrichment endpoints into the
-// http.ServeMux. Client / LinkedIn may each be a no-op (empty config);
-// the endpoints still respond 200 with zero Result. UserLookup is
-// optional — when set AND the authed caller is asking for their own
-// email AND Apollo returned empty title/company AND the caller has a
-// stored LinkedIn vanity, /v1/enrich/email transparently chains the
-// LinkedIn-via-iogrid path to fill the gaps.
+// Handlers wires the LinkedIn-via-iogrid enrichment endpoint into the
+// http.ServeMux. LinkedIn may be a no-op client (empty config) — the
+// endpoint still responds 200 with an empty Result.
 type Handlers struct {
-	Client     *Client
 	LinkedIn   *LinkedInClient
-	AuthVerify func(r *http.Request) string                                                     // returns "" if unauthenticated
-	UserLookup func(ctx context.Context, userID string) (email, vanity string, err error)        // optional: powers self-only LinkedIn fallback
+	AuthVerify func(r *http.Request) string // returns "" if unauthenticated
 }
 
 func (h *Handlers) Mount(mux *http.ServeMux) {
-	mux.HandleFunc("POST /v1/enrich/email", h.enrichEmail)
 	mux.HandleFunc("POST /v1/enrich/linkedin", h.enrichLinkedIn)
-}
-
-type enrichReq struct {
-	Email string `json:"email"`
 }
 
 type enrichLinkedInReq struct {
 	Vanity string `json:"vanity"`
-}
-
-func (h *Handlers) enrichEmail(w http.ResponseWriter, r *http.Request) {
-	// Auth required — enrichment burns a finite Apollo quota; we
-	// don't want anonymous callers grinding it down.
-	userID := ""
-	if h.AuthVerify != nil {
-		userID = h.AuthVerify(r)
-		if userID == "" {
-			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "auth required"})
-			return
-		}
-	}
-	var req enrichReq
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid json"})
-		return
-	}
-	if strings.TrimSpace(req.Email) == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "email required"})
-		return
-	}
-	out, _ := h.Client.Enrich(r.Context(), req.Email)
-
-	// Fallback chain: if Apollo couldn't fill title or company AND the
-	// caller is asking for their own email AND we have a stored
-	// LinkedIn vanity for them, run the iogrid LinkedIn-vanity fetch
-	// and merge results. The privacy guard (email-must-match-caller)
-	// keeps us from leaking vanity-derived data for unrelated emails.
-	if h.shouldChainLinkedIn(out, userID, req.Email) {
-		vanity := h.vanityForSelf(r.Context(), userID, req.Email)
-		if vanity != "" {
-			li, _ := h.LinkedIn.EnrichByVanity(r.Context(), vanity)
-			out = mergeEnrich(out, li)
-		}
-	}
-	writeJSON(w, http.StatusOK, out)
-}
-
-// shouldChainLinkedIn gates whether we attempt the iogrid fallback.
-// Apollo wins when it filled BOTH title and company; otherwise we'll
-// try LinkedIn to fill the gaps. The userID and UserLookup nil-checks
-// are policy guards — without them we can't establish that the caller
-// is the email owner.
-func (h *Handlers) shouldChainLinkedIn(apollo Result, userID, email string) bool {
-	if h.LinkedIn == nil || !h.LinkedIn.Enabled() {
-		return false
-	}
-	if h.UserLookup == nil || userID == "" {
-		return false
-	}
-	if strings.TrimSpace(email) == "" {
-		return false
-	}
-	return apollo.Title == "" || apollo.Company == ""
-}
-
-// vanityForSelf returns the stored LinkedIn vanity ONLY when the
-// authed user's email matches the requested email (case-insensitive).
-// Otherwise returns "" — we never reveal another user's stored slug.
-func (h *Handlers) vanityForSelf(ctx context.Context, userID, reqEmail string) string {
-	userEmail, vanity, err := h.UserLookup(ctx, userID)
-	if err != nil || vanity == "" || userEmail == "" {
-		return ""
-	}
-	if !strings.EqualFold(strings.TrimSpace(userEmail), strings.TrimSpace(reqEmail)) {
-		return ""
-	}
-	return vanity
-}
-
-// mergeEnrich keeps every non-empty field from `primary` and fills the
-// gaps from `fallback`. Used to merge Apollo (primary) with LinkedIn
-// (fallback) so we never lose Apollo data — we only ADD on top of it.
-func mergeEnrich(primary, fallback Result) Result {
-	out := primary
-	if out.Title == "" {
-		out.Title = fallback.Title
-	}
-	if out.Company == "" {
-		out.Company = fallback.Company
-	}
-	if out.CompanyDomain == "" {
-		out.CompanyDomain = fallback.CompanyDomain
-	}
-	if out.LinkedInURL == "" {
-		out.LinkedInURL = fallback.LinkedInURL
-	}
-	if out.PhotoURL == "" {
-		out.PhotoURL = fallback.PhotoURL
-	}
-	return out
 }
 
 func (h *Handlers) enrichLinkedIn(w http.ResponseWriter, r *http.Request) {
@@ -286,42 +65,39 @@ func (h *Handlers) enrichLinkedIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out, _ := h.LinkedIn.EnrichByVanity(r.Context(), req.Vanity)
+	if out.LinkedInURL != "" && out.Company != "" && out.CompanyDomain == "" {
+		// Derive a company-domain heuristic from the LinkedIn-extracted
+		// company name when the response didn't include one. Used by the
+		// mobile client to fetch a Clearbit-style brand logo.
+		out.CompanyDomain = guessDomain(out.Company)
+	}
 	writeJSON(w, http.StatusOK, out)
+}
+
+// guessDomain turns a company display name into a likely public domain
+// (e.g., "Microsoft" → "microsoft.com"). Best-effort — empty when the
+// name contains characters that don't survive the DNS-safe normalisation.
+func guessDomain(company string) string {
+	s := strings.ToLower(strings.TrimSpace(company))
+	if s == "" {
+		return ""
+	}
+	out := make([]byte, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+		switch {
+		case c >= 'a' && c <= 'z', c >= '0' && c <= '9':
+			out = append(out, c)
+		}
+	}
+	if len(out) == 0 {
+		return ""
+	}
+	return string(out) + ".com"
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(body)
-}
-
-// domainOf returns the bit after '@', or "" on a malformed address.
-// Used in logs to avoid leaking the local-part.
-func domainOf(email string) string {
-	i := strings.LastIndex(email, "@")
-	if i < 0 || i == len(email)-1 {
-		return ""
-	}
-	return email[i+1:]
-}
-
-// hostOf strips scheme + path from a URL, returning just the host.
-// "" on parse failure; the caller falls back to empty.
-func hostOf(rawURL string) string {
-	rawURL = strings.TrimSpace(rawURL)
-	if rawURL == "" {
-		return ""
-	}
-	// Cheap manual parse — avoids the net/url cost and is robust to
-	// the half-formed strings Apollo occasionally returns
-	// ("example.com" without scheme).
-	s := rawURL
-	if i := strings.Index(s, "://"); i >= 0 {
-		s = s[i+3:]
-	}
-	if i := strings.IndexAny(s, "/?#"); i >= 0 {
-		s = s[:i]
-	}
-	s = strings.TrimPrefix(s, "www.")
-	return s
 }

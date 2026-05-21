@@ -97,29 +97,16 @@ func main() {
 			AuthToken:   walletToken,
 			PassBuilder: wallet.PassSignerBuilder(getenv("PASS_SIGNER_URL", "http://pass-signer.dynolabs.svc")),
 		}).Mount(mux)
-		// Apollo.io email-enrichment — fills title+company gap that
-		// LinkedIn OIDC leaves blank after sign-in. Graceful-skip
-		// when APOLLO_API_KEY is unset (returns empty fields).
-		apolloClient := enrich.NewClient(getenv("APOLLO_API_KEY", ""))
 		// LinkedIn vanity-page enrichment via the iogrid residential
-		// proxy (SOCKS5+TLS). Graceful-skip when any of
-		// IOGRID_API_KEY / IOGRID_WORKSPACE / IOGRID_PROXY_URL is unset.
-		linkedInClient := enrich.LinkedInFromEnv()
+		// SOCKS5+TLS proxy. The only enrichment path — Apollo was
+		// removed 2026-05-21 (free tier returns empty payloads, not
+		// worth the carry). Graceful-skip when any of IOGRID_API_KEY /
+		// IOGRID_WORKSPACE / IOGRID_PROXY_URL is unset, when iogrid
+		// has no eligible provider online, or when LinkedIn returns
+		// non-200 — endpoint still 200s with an empty Result.
 		(&enrich.Handlers{
-			Client:     apolloClient,
-			LinkedIn:   linkedInClient,
+			LinkedIn:   enrich.LinkedInFromEnv(),
 			AuthVerify: verifier.UserIDFromBearer,
-			// UserLookup powers the self-only LinkedIn fallback in
-			// /v1/enrich/email — only the authed user's own email
-			// can trigger an iogrid LinkedIn-vanity fetch using
-			// their stored slug. Other emails fall back to empty.
-			UserLookup: func(ctx context.Context, userID string) (string, string, error) {
-				u, err := usersRepo.GetByID(ctx, userID)
-				if err != nil {
-					return "", "", err
-				}
-				return u.Email, u.LinkedInVanity, nil
-			},
 		}).Mount(mux)
 		slog.Info("postgres + cards + auth + scans + leads + wallet + enrich mounted", "bundle", bundleID)
 	} else {

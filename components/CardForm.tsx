@@ -13,7 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { CUSTOM_COLORS, TEMPLATES, templateStyle } from '@/lib/templates';
 import { type Card, type CardTemplate } from '@/lib/types';
 import { CropScreen } from '@/components/CropScreen';
-import { connectLinkedIn } from '@/lib/linkedin';
+import { connectLinkedIn, extractLinkedInVanity } from '@/lib/linkedin';
 import { api } from '@/lib/api';
 import { SymbolView } from 'expo-symbols';
 
@@ -261,18 +261,43 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
                   return [p.email!, ...cur].join(', ');
                 });
               }
-              // Second pass: server-side Apollo enrichment by email →
-              // fills title + company + LinkedIn URL when available.
-              // Plus: if Apollo returns a companyDomain and the user
-              // hasn't already uploaded a brand logo, auto-set it to
-              // Clearbit's free logo CDN (https://logo.clearbit.com/
-              // <domain>) — no key required, returns the company logo
-              // as a PNG for any registered domain.
-              // Silent failures: enrichment is best-effort, never blocks
-              // the import. Empty fields when Apollo can't match.
-              if (p.email) {
+              // Second pass: LinkedIn-vanity enrichment via iogrid's
+              // residential proxy. LinkedIn's OIDC `openid profile email`
+              // scope EMPIRICALLY does NOT return the vanity slug (the
+              // `vanityName` and `profile` claims are gated behind
+              // r_basicprofile, which is restricted). So we prompt the
+              // user once for their LinkedIn URL — extract the slug
+              // client-side, hit /v1/enrich/linkedin, fill title +
+              // company + brand-logo + canonical linkedin URL.
+              //
+              // Silent failures: best-effort. Empty fields land softly
+              // (iogrid mesh may have no provider online — surface as
+              // "nothing changed" rather than blocking the import).
+              const vanity = await new Promise<string | null>((resolve) => {
+                if (Platform.OS !== 'ios') {
+                  // Android lacks Alert.prompt — user can paste the
+                  // LinkedIn URL into the socials field manually.
+                  resolve(null);
+                  return;
+                }
+                Alert.prompt(
+                  'Fill in title and company?',
+                  'Paste your LinkedIn URL — we’ll pull your title and company from your public profile.',
+                  [
+                    { text: 'Skip', style: 'cancel', onPress: () => resolve(null) },
+                    {
+                      text: 'Fetch',
+                      onPress: (text?: string) => resolve(extractLinkedInVanity(text || '')),
+                    },
+                  ],
+                  'plain-text',
+                  '',
+                  'url',
+                );
+              });
+              if (vanity) {
                 try {
-                  const e = await api.enrichEmail(p.email);
+                  const e = await api.enrichLinkedin(vanity);
                   setDraft(d => {
                     const next = { ...d };
                     if (e.title && !d.title) next.title = e.title;
@@ -280,13 +305,15 @@ export function CardForm({ initial, onSubmit, submitLabel, onDelete }: Props) {
                     if (e.companyDomain && !d.brandLogoUrl) {
                       next.brandLogoUrl = `https://logo.clearbit.com/${encodeURIComponent(e.companyDomain)}`;
                     }
-                    if (e.linkedinUrl) {
-                      const socials = [...(d.socials || [])];
-                      const i = socials.findIndex(s => s.kind === 'linkedin');
-                      const entry = { kind: 'linkedin' as const, url: e.linkedinUrl };
-                      if (i >= 0) socials[i] = entry; else socials.push(entry);
-                      next.socials = socials;
+                    if (e.photoUrl && !d.photoUrl) {
+                      next.photoUrl = e.photoUrl;
                     }
+                    const canonical = e.linkedinUrl || `https://www.linkedin.com/in/${vanity}`;
+                    const socials = [...(d.socials || [])];
+                    const i = socials.findIndex(s => s.kind === 'linkedin');
+                    const entry = { kind: 'linkedin' as const, url: canonical };
+                    if (i >= 0) socials[i] = entry; else socials.push(entry);
+                    next.socials = socials;
                     return next;
                   });
                 } catch {

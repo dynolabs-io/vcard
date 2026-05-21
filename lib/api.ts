@@ -148,20 +148,23 @@ export const api = {
     }, 10_000),
   me: () => request<User>('/v1/users/me'),
 
-  // Email → person+company enrichment via Apollo (server-side).
-  // Returns empty fields when the backend can't enrich (no key set,
-  // Apollo 4xx, etc) — caller must handle empty values gracefully.
-  enrichEmail: (email: string) =>
+  // LinkedIn-vanity → person+company enrichment via the iogrid
+  // residential SOCKS5+TLS proxy (server-side). Apollo path was
+  // removed 2026-05-21 — this is the only enrichment endpoint now.
+  // Returns empty fields when the backend can't enrich (iogrid env
+  // unset, no provider daemon online, LinkedIn non-200, etc) — caller
+  // must handle empty values gracefully.
+  enrichLinkedin: (vanity: string) =>
     request<{
       title?: string;
       company?: string;
       companyDomain?: string;
       linkedinUrl?: string;
       photoUrl?: string;
-    }>('/v1/enrich/email', {
+    }>('/v1/enrich/linkedin', {
       method: 'POST',
-      body: JSON.stringify({ email }),
-    }, 10_000),
+      body: JSON.stringify({ vanity }),
+    }, 20_000),
 
   // Claim / merge — attach the given device_id's anonymous cards to
   // the signed-in user, apply per-conflict resolutions, return final
