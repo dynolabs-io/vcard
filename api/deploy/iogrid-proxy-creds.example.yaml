@@ -1,0 +1,47 @@
+# iogrid residential-proxy credentials for vcard-api.
+#
+# This is a SKELETON — values intentionally empty. Operators populate it
+# OUT-OF-BAND (sealed-secret / external-secrets / kubectl-create) and apply
+# into the dynolabs namespace on contabo-mkt.
+#
+# Canonical home: openova-private/clusters/contabo-mkt/apps/dynolabs/.
+# The Deployment in vcard-api.yaml already wires these keys as env via
+# `valueFrom.secretKeyRef` with `optional: true`, so the pod boots cleanly
+# before this Secret lands — enrichment simply no-ops (graceful skip,
+# matching the LinkedInClient.Enabled() contract).
+#
+# Founder mints the workspace + API key in iogrid billing-svc:
+#   1. https://iogrid.org/admin/customers → "vcard" workspace
+#   2. Mint API key (prefix `iog_`)
+#   3. Populate the three fields below as base64 (`kubectl create secret
+#      generic ... --from-literal=...`) and apply.
+#
+# IOGRID_PROXY_URL host:port form (NOT a socks5h:// URL — the LinkedIn
+# client TLS-wraps the SOCKS5 stream itself because Traefik fronts the
+# iogrid gateway with TLS termination on :443).
+#
+# Status (2026-05-22): proxy.iogrid.org:443 smoke is still flapping — see
+# iogrid/iogrid#414 (Traefik vs IngressRouteTCP TLS-passthrough). Until
+# that resolves, this Secret stays unpopulated and enrich.LinkedInClient
+# stays disabled — no production impact (returns 200 with empty fields).
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iogrid-proxy-creds
+  namespace: dynolabs
+  labels:
+    app.kubernetes.io/part-of: vcard
+    app.kubernetes.io/component: enrich-proxy
+type: Opaque
+stringData:
+  # Workspace handle minted in iogrid billing-svc (e.g., "vcard").
+  IOGRID_WORKSPACE: ""
+
+  # API key for the workspace (prefix `iog_`). Treat as a password —
+  # NEVER commit a real value to git.
+  IOGRID_API_KEY: ""
+
+  # Proxy host:port. Default endpoint for the OpenOva-hosted iogrid
+  # gateway. host:port form, NOT a URL scheme (see comment block above).
+  IOGRID_PROXY_URL: "proxy.iogrid.org:443"
