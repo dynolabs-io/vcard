@@ -71,6 +71,84 @@ lib/
   types.ts                 Card / Social / template types
 ```
 
+## Proxy mode (iogrid residential SOCKS5+TLS)
+
+`vcard-api` is **iogrid's first paying customer**. LinkedIn vanity-page
+enrichment (`POST /v1/enrich/linkedin`) routes its outbound GET through
+iogrid's residential-IP mesh so LinkedIn doesn't datacenter-IP rate-limit
+us within minutes.
+
+### Wire shape
+
+LinkedIn enrichment dials `proxy.iogrid.org:443`, **TLS-wraps** the
+connection (Traefik fronts the iogrid gateway with TLS termination on
+:443 — speaking raw SOCKS5 to :443 hangs), then negotiates RFC 1928
+SOCKS5 + RFC 1929 USERPASS on top of the `*tls.Conn`. Username = iogrid
+**workspace handle**, password = iogrid **API key** (prefix `iog_`).
+The destination TLS handshake (vcard-api → linkedin.com) is end-to-end
+on the resulting byte stream — the proxy never sees plaintext.
+
+Implementation: [`api/services/vcard-api/enrich/linkedin.go`](api/services/vcard-api/enrich/linkedin.go).
+
+### Configuration (env vars)
+
+| Var | Required | Example |
+|---|---|---|
+| `IOGRID_WORKSPACE` | yes | `vcard` |
+| `IOGRID_API_KEY` | yes | `iog_…` |
+| `IOGRID_PROXY_URL` | yes (host:port, NOT a URL scheme) | `proxy.iogrid.org:443` |
+
+**Graceful-skip contract**: when ANY of the three is unset, the
+`LinkedInClient` becomes a no-op and the enrich endpoint still returns
+200 with empty fields. Same applies to transport failures / non-200 from
+LinkedIn. Mobile callers treat enrichment as best-effort.
+
+### Kubernetes wiring
+
+The Deployment under
+`openova-private/clusters/contabo-mkt/apps/dynolabs/vcard-api.yaml`
+already wires the three env vars from a Secret named `iogrid-proxy-creds`
+in the `dynolabs` namespace, with `optional: true` so the pod boots
+before the Secret lands.
+
+Skeleton (empty values — populate out-of-band):
+[`api/deploy/iogrid-proxy-creds.example.yaml`](api/deploy/iogrid-proxy-creds.example.yaml).
+
+Operator flow:
+1. Mint a workspace + API key in iogrid `billing-svc` (founder action).
+2. `kubectl -n dynolabs create secret generic iogrid-proxy-creds \
+   --from-literal=IOGRID_WORKSPACE=vcard \
+   --from-literal=IOGRID_API_KEY=iog_… \
+   --from-literal=IOGRID_PROXY_URL=proxy.iogrid.org:443`
+   (or land via sealed-secret / external-secrets — never commit the key).
+3. `kubectl -n dynolabs rollout restart deploy/vcard-api`.
+
+### Smoke test
+
+From inside `api/`:
+
+```bash
+IOGRID_WORKSPACE=vcard \
+IOGRID_API_KEY=iog_… \
+IOGRID_PROXY_URL=proxy.iogrid.org:443 \
+  make smoke-proxy
+```
+
+The probe GETs `https://api.ipify.org` through the iogrid client and
+fails LOUDLY if the returned IP equals the local egress IP (i.e. proxy
+not in path). Source:
+[`api/services/vcard-api/cmd/smoke-proxy/main.go`](api/services/vcard-api/cmd/smoke-proxy/main.go).
+
+### Known status (2026-05-22)
+
+The proxy chain is end-to-end **wired in code** but the gateway side is
+still flapping — see
+[`iogrid/iogrid#414`](https://github.com/iogrid/iogrid/issues/414) and
+[`#350`](https://github.com/iogrid/iogrid/issues/350) (Traefik
+intercepts TLS on `proxy.iogrid.org:443` before SOCKS5 can negotiate).
+Until those land + the Secret is populated, enrichment stays in the
+graceful-skip path — zero production impact.
+
 ## Tracking
 
 Umbrella issue: [#1](https://github.com/dynolabs-io/vcard/issues/1).
