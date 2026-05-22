@@ -1,87 +1,58 @@
-# dynolabs-io/vcard — Repo-specific Notes
+# dynolabs-io/vcard — Agent orientation
 
-> This is a product repo (Dynolabs vCard mobile app). Generic OpenOva platform working principles live in `~/.claude/CLAUDE.md` (user-global).
+> This is a product repo (kind C per user-global `~/.claude/CLAUDE.md` §0). Generic OpenOva platform working principles, anti-theater discipline, sub-agent dispatch rules, and the diversion catalog live in user-global — do not duplicate them here.
 
-## What this is
+## Read first (canon)
 
-Polyglot monorepo — the Expo/RN mobile app at the root + the Go backend microservices under `api/`. Mobile app: offline-first contact cards with QR rendering, QR scanning, and Apple Wallet / Google Wallet integration, built with Expo SDK 54 + React Native 0.81 + expo-router. Backend reachable at `api.dynolabs.io`; images at `ghcr.io/dynolabs-io/vcard/api/<svc>:<sha>`, deployed via Flux from `openova-private/clusters/contabo-mkt/apps/dynolabs/`. Aesthetic standard: Apple Contacts (SymbolView from expo-symbols only, no emoji icons, destructive actions only inside Edit forms — never on list rows).
+Start with [`README.md`](README.md), then `docs/` in this order: [GLOSSARY](docs/GLOSSARY.md) → [STATUS](docs/STATUS.md) → [ARCHITECTURE](docs/ARCHITECTURE.md) → [PRINCIPLES](docs/PRINCIPLES.md) → [DOD](docs/DOD.md). Operator how-tos live in [RUNBOOKS](docs/RUNBOOKS.md); secrets / identity / threat surface in [SECURITY](docs/SECURITY.md); historical decisions in [`docs/adr/`](docs/adr/); live state in [`docs/ledger/`](docs/ledger/).
 
-> **History:** `api/` was its own repo (`dynolabs-io/api`, archived 2026-05-21) until subtree-merged here. See vcard commit `29b944d` for the merge + `dynolabs-io/vcard#2` for the rationale.
+When something in this CLAUDE.md disagrees with one of the canon docs, the canon doc wins — fix this file.
 
-## What lives in this repo
+## File layout (in one screen)
 
-| Concern | Path |
+| Path | Role |
 |---|---|
-| **Mobile app (Expo/RN/TS)** | |
-| Expo Router screens | `app/` (`(tabs)/index.tsx` = cards, `(tabs)/scan.tsx` = QR scan, `(tabs)/me.tsx` = settings, `card/[id].tsx` = card detail, `card/new.tsx` = new card) |
-| Centralised URLs (DO NOT hardcode) | `lib/config.ts` |
-| MMKV-backed offline storage | `lib/storage.ts` |
-| vCard 3.0 serializer | `lib/vcard.ts` |
-| Typed API client | `lib/api.ts` |
-| Shared types | `lib/types.ts` |
-| Shared UI components | `components/` |
-| Maestro E2E flows | `.maestro/` |
-| EAS build config | `eas.json`, `app.json` |
-| **Backend (Go microservices)** | |
-| Cards CRUD + slug + LinkedIn-via-iogrid enrichment | `api/services/vcard-api/` |
-| Apple `.pkpass` + Google Wallet JWT signing | `api/services/pass-signer/` |
-| S3-backed avatar storage + serving | `api/services/photo-cdn/` |
-| LinkedIn OAuth callback + profile fetch | `api/services/linkedin-oauth/` |
-| SSR public profile pages | `api/services/web-profile/` |
-| Shared Go code | `api/shared/` |
-| Go workspace pin | `api/go.work` |
-| Per-service CI matrix build | `.github/workflows/api-build.yml` (paths-filtered to `api/**`) |
+| `app/` | Expo Router screens (`(tabs)/index`, `(tabs)/scan`, `(tabs)/me`, `card/[id]`, `card/new`, `_layout.tsx`) |
+| `lib/` | `config.ts` (URLs — **never hardcode in components**), `storage.ts` (MMKV), `vcard.ts` (vCard 3.0), `api.ts` (typed client), `linkedin.ts`, `auth.ts`, `types.ts` |
+| `components/` | Shared UI — `CardForm.tsx`, `SwipeRow` pattern, etc. |
+| `.maestro/` | Maestro E2E flows used by the iOS CI Simulator gate |
+| `api/services/<svc>/` | Five Go microservices — `vcard-api`, `pass-signer`, `photo-cdn`, `linkedin-oauth`, `web-profile` |
+| `api/shared/` | Cross-service Go code (health handler etc.) |
+| `api/go.work` | Go workspace pin |
+| `.github/workflows/` | `ios.yml` (TestFlight), `api-build.yml` (5-service GHCR matrix), `asc-assign-build.yml` (manual Founders-group reassign), `ci.yml` (mobile typecheck/lint) |
+| `docs/` | Canonical docs tree (see [README](README.md) for the index) |
 
-## Tech stack
+For end-to-end architecture: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). For the inheritance from the now-archived `dynolabs-io/api` repo: [ADR 0001](docs/adr/0001-subtree-merge-api.md).
 
-- Expo SDK 54 + React Native 0.81
-- TypeScript, expo-router (file-based, typed routes)
-- `react-native-mmkv` (offline storage)
-- `react-native-qrcode-svg` (QR rendering)
-- `expo-camera` (QR scanning)
-- iOS bundle ID: `io.dynolabs.vcard` · Android package: `io.dynolabs.vcard`
-- Apple Developer Team: `77GHJHUGD4` · ASC Apple ID: `hatyil@gmail.com`
-
-## Development workflow
+## Dev commands
 
 ```bash
+# Mobile
 npm install
-npx expo start          # dev tools
-npm run ios             # macOS only
-npm run android
-npm run web
-npm run typecheck
-npm run lint
+npx expo start
+npm run typecheck && npm run lint
+
+# Backend (Go workspace)
+cd api && go build ./... && go test ./...
 ```
 
-## Build / release
+**Builds run in GitHub Actions only — never `eas build` locally.** Full release path in [`docs/RUNBOOKS.md`](docs/RUNBOOKS.md).
 
-**All builds run in GitHub Actions** — never run `eas build` locally. The workflows fire automatically on push to `main` with paths filters.
+## Known issues / repo-specific gotchas
 
-| Workflow | File | Triggers on |
-|---|---|---|
-| iOS → TestFlight (auto-signing via ASC API + Maestro E2E gate) | `.github/workflows/ios.yml` | `app/**`, `lib/**`, `components/**`, `hooks/**`, `constants/**`, `assets/**`, `app.json`, `package*.json`, `.maestro/**`, workflow itself |
-| Backend image matrix → GHCR | `.github/workflows/api-build.yml` | `api/**`, workflow itself |
-| Assign TestFlight build to Founders group (manual) | `.github/workflows/asc-assign-build.yml` | `workflow_dispatch` |
+Three anti-patterns are now codified in [`docs/PRINCIPLES.md`](docs/PRINCIPLES.md). Highlights so you don't trip over them again:
 
-Local sanity only (don't ship from these):
-```bash
-npm run typecheck && npm run lint               # mobile
-cd api && go build ./... && go test ./...        # backend
-```
+- **iOS 26 + new-arch-off + Stack modals**: never wrap the root in `<GestureHandlerRootView>` — modals silently dismiss. Use `Animated.View` + `PanResponder` for swipe. See [PRINCIPLES §ios26-swipe](docs/PRINCIPLES.md).
+- **Apple Wallet strip**: ALWAYS pack photo + brand logo + brand color on the full 1125×432 canvas. No Photo-OR-Logo style picker. See [PRINCIPLES §wallet-strip](docs/PRINCIPLES.md).
+- **Apollo is banned**. iogrid LinkedIn-vanity is the sole enrichment provider. See [ADR 0002](docs/adr/0002-drop-apollo-iogrid-only.md) and [GLOSSARY banned-terms](docs/GLOSSARY.md).
+- **iogrid wire format**: outer TLS first, then RFC 1928 SOCKS5 inside the `*tls.Conn`. Don't use `golang.org/x/net/proxy`. See [PRINCIPLES §iogrid](docs/PRINCIPLES.md).
 
-Backend images publish to `ghcr.io/dynolabs-io/vcard/api/<svc>:<short-sha>` + `:latest`. The image SHA bump in `openova-private/clusters/contabo-mkt/apps/dynolabs/<svc>.yaml` is currently manual — auto-bump workflow not yet filed (see `dynolabs-io/vcard#2` cleanup list).
+Live operator-action blockers: [`docs/STATUS.md`](docs/STATUS.md).
 
 ## Tracking
 
-Umbrella issue: [`dynolabs-io/vcard#1`](https://github.com/dynolabs-io/vcard/issues/1).
-
-## Known issues
-
-- Operator actions still required (block Phase 6/7): Apple Pass Type ID `.p12`, LinkedIn OAuth app credentials, Google Wallet issuer + service-account JSON.
-- iOS 26 + new-arch-off + GestureHandlerRootView + Stack modals silently dismisses modals — use pure RN `Animated.View` + `PanResponder` for swipe (per `~/.claude/projects/-home-openova-repos-openova-private/memory/feedback_rn_swipe_no_gesture_handler_with_modals.md`).
-- Wallet strip MUST always pack BOTH photo + logo + brand color on full 1125×432 canvas — never gate on style picker (per `~/.claude/projects/-home-openova-repos-openova-private/memory/feedback_dynolabs_wallet_always_pack_both.md`).
+Umbrella issue: [#1](https://github.com/dynolabs-io/vcard/issues/1). Open work + DoD progress: [`docs/ledger/TRACKER.md`](docs/ledger/TRACKER.md).
 
 ## Sub-agent cap for this project
 
-Default (per user-global) unless project owner overrides here.
+Default (per user-global) unless changed here. The 3-keeper-3rd-slot-reserved rule still applies — don't burn the third slot on cleanup/docs while a 🔴 UNVERIFIED row in [`docs/ledger/TRUST.md`](docs/ledger/TRUST.md) is unwalked.
