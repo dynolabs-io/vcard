@@ -12,12 +12,19 @@ Last refresh: **2026-05-23**.
 | # | Title | Status |
 |---|---|---|
 | [#1](https://github.com/dynolabs-io/vcard/issues/1) | v1: Dynolabs vCard — end-to-end build & deploy | `status/in-progress`, `area/mobile` |
-| [#2](https://github.com/dynolabs-io/vcard/issues/2) | chore(repo): consider folding `dynolabs-io/api` into this repo as `./api/` | Delivered 2026-05-21 (commits `29b944d` + `e5a6fd5`) — awaiting founder close |
-| [#4](https://github.com/dynolabs-io/vcard/issues/4) | TBD-V01: scaffold canonical docs/ tree (user-global §11 shape) | PR [#5](https://github.com/dynolabs-io/vcard/pull/5) open + CI green; awaiting founder review |
-| [#6](https://github.com/dynolabs-io/vcard/issues/6) | TBD-V02: walk iOS Maestro CI with PNG screenshots | iOS CI run `26326818765` in flight on `2891338` — will land 3 PNGs |
-| [#7](https://github.com/dynolabs-io/vcard/issues/7) | TBD-V03: walk Wallet-barcode → /v/&lt;slug&gt; → vCard chain | ✅ Walked 2026-05-23 (comment 4524565522). Awaiting founder close |
-| [#8](https://github.com/dynolabs-io/vcard/issues/8) | TBD-V04: walk Account-tab sign-in CTAs via Maestro | In `2891338`; iOS CI run `26326818765` will walk it |
-| [#9](https://github.com/dynolabs-io/vcard/issues/9) | TBD-V05: scan_events emission not wired | Discovered during walk #1 + #3; backend handler missing |
+| [#2](https://github.com/dynolabs-io/vcard/issues/2) | chore(repo): fold `dynolabs-io/api` into this repo as `./api/` | ✅ Delivered 2026-05-21 (`29b944d` + `e5a6fd5`); awaiting founder close |
+| [#4](https://github.com/dynolabs-io/vcard/issues/4) | TBD-V01: scaffold canonical docs/ tree (user-global §11 shape) | ✅ PR [#5](https://github.com/dynolabs-io/vcard/pull/5) merged (`8af6976`); awaiting founder close |
+| [#6](https://github.com/dynolabs-io/vcard/issues/6) | TBD-V02: walk iOS Maestro CI with PNG screenshots | ✅ Walks #4 + #5 + #16 landed PNGs; iOS run `26332124528` archive in flight |
+| [#7](https://github.com/dynolabs-io/vcard/issues/7) | TBD-V03: walk Wallet-barcode → /v/&lt;slug&gt; → vCard chain | ✅ Walked 2026-05-23 (comment 4524565522); awaiting founder close |
+| [#8](https://github.com/dynolabs-io/vcard/issues/8) | TBD-V04: walk Account-tab sign-in CTAs via Maestro | ✅ Walked 2026-05-23 (Maestro flow `10-account-signin-ctas` green); awaiting founder close |
+| [#9](https://github.com/dynolabs-io/vcard/issues/9) | TBD-V05: scan_events emission not wired | ✅ Wired via PR [#12](https://github.com/dynolabs-io/vcard/pull/12), walk #11 evidence; awaiting founder close |
+| [#10](https://github.com/dynolabs-io/vcard/issues/10) | TBD-V06: PATCH silently zeroes fields not in request body | ✅ Fixed via PR [#11](https://github.com/dynolabs-io/vcard/pull/11), walk #10 evidence; awaiting founder close |
+| [#13](https://github.com/dynolabs-io/vcard/issues/13) | TBD-V07: emit kind='pkpass' scan_events from pass-signer | ✅ Wired via PR [#14](https://github.com/dynolabs-io/vcard/pull/14), walk #12 evidence; awaiting founder close |
+| [#15](https://github.com/dynolabs-io/vcard/issues/15) | TBD-V08: Inbox-reach SQL endpoint + mobile UI | ✅ Endpoint shipped via PR [#16](https://github.com/dynolabs-io/vcard/pull/16), walk #13 evidence; awaiting founder close |
+| [#17](https://github.com/dynolabs-io/vcard/issues/17) | TBD-V09: mobile Inbox UI consumes /v1/inbox/reach | ✅ Shipped via PR [#18](https://github.com/dynolabs-io/vcard/pull/18); iOS CI archive retry `26332124528` in flight |
+| [#19](https://github.com/dynolabs-io/vcard/issues/19) | TBD-V10: durable ghcr-pull rotation — Secret keeps 403'ing | ⏳ Filed; not yet implemented (needs GitHub App or external-secrets) |
+| [#20](https://github.com/dynolabs-io/vcard/issues/20) | TBD-V11: scan_events geoip resolution | ⏳ Filed; not yet implemented (geoip2-golang + GeoLite2 DB embed) |
+| [#21](https://github.com/dynolabs-io/vcard/issues/21) | TBD-V12: PATCH null-clear for explicit field zeroing | ✅ Fixed via PR [#22](https://github.com/dynolabs-io/vcard/pull/22), walk #15 evidence; awaiting founder close |
 
 ## Outstanding operator actions (blocking DoD per [STATUS.md](STATUS.md))
 
