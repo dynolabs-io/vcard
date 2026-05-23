@@ -25,7 +25,7 @@
 | Google Wallet pass — open pass in Google Wallet | 🔴 UNVERIFIED | — | Blocked on Google Wallet issuer ([STATUS.md](../STATUS.md) operator action #3) |
 | Public web profile at `dynolabs.io/c/<slug>` | 🟢 VERIFIED-PASS | 2026-05-23, autonomous Playwright walk from bastion | Slug `uk4kcdpm` (card created via `POST /v1/cards` in the same session), 390×844 mobile portrait viewport, full-page screenshot + DOM snapshot. Evidence: [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416). |
 | vCard 3.0 download at `/c/<slug>/save.vcf` | 🟢 VERIFIED-PASS | 2026-05-23 | HTTP 200, `content-type: text/vcard; charset=utf-8`, 257 B payload for slug `uk4kcdpm`. Every typed field (`FN/TITLE/ORG/EMAIL/TEL/URL/REV`) round-trips. Evidence: [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416). |
-| Lead form on public web profile | 🔴 UNVERIFIED | — | The widget renders (collapsed `<details>` group present in the 2026-05-23 walk DOM) but `POST` submission path not exercised yet |
+| Lead form on public web profile | 🟢 VERIFIED-PASS | 2026-05-23, autonomous Playwright walk | Lead-form widget expanded on `/c/uk4kcdpm`, 4 fields filled, `Send` clicked, redirected to `/c/uk4kcdpm/lead` with "Sent — They'll see your details in their Dynolabs inbox." confirmation. Row landed in `leads` table: `id=29e82180-5f28-435b-8123-3d23b77eee37`, all 4 fields (`from_name/from_email/from_phone/message`) persisted. Evidence: [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416). |
 | Reveal-mode scan landing in Inbox > Connections | 🔴 UNVERIFIED | — | — |
 
 ## Recording a walk
