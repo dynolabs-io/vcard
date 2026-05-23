@@ -20,7 +20,7 @@ Last refresh: **2026-05-23**.
 | Owner | Action | Blocks |
 |---|---|---|
 | Founder | Request Google Wallet API issuer at console.cloud.google.com/google/wallet → mount issuer + service-account JSON | Google Wallet pass walk row |
-| iogrid platform | Resolve workloads-svc Traefik route — `/iogrid.workloads.v1.*` returns HTTP 404 even with proper Connect-RPC content-type. workloads-svc Deployment stuck mid-rollout (`replicas=2/1`, ImagePullBackOff). Filed [iogrid/iogrid#456](https://github.com/iogrid/iogrid/issues/456) with 8-mechanism diagnosis | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
+| iogrid platform | Resolve workloads-svc Traefik route — `/iogrid.workloads.v1.*` returns HTTP 404 even with proper Connect-RPC content-type. workloads-svc Deployment stuck mid-rollout (`replicas=2/1`, ImagePullBackOff). Filed [iogrid/iogrid#456](https://github.com/iogrid/iogrid/issues/456) with 8-mechanism diagnosis. PR [iogrid/iogrid#458](https://github.com/iogrid/iogrid/pull/458) opened with the workloads-svc `imagePullSecrets` fix — **mergeable, CI green, awaiting iogrid maintainer review** | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
 
 Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the cluster — the previous incarnation of this table predated the actual provisioning. See updated [STATUS.md operator-actions table](../STATUS.md).
 
