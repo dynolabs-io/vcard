@@ -6,3 +6,6 @@ appId: io.dynolabs.vcard
 - assertVisible: "Your cards"
 - assertVisible: "No cards yet"
 - assertVisible: "Create card"
+# Walk evidence: snapshot the empty-state landing screen so CI
+# artifact-uploads carry PNGs that post directly to GitHub issues.
+- takeScreenshot: 01-launch-empty-state

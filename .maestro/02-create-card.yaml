@@ -25,3 +25,5 @@ appId: io.dynolabs.vcard
     direction: DOWN
 - tapOn: "Save card"
 - assertVisible: "Maestro Tester"
+# Walk evidence: snapshot the cards list with the just-created card.
+- takeScreenshot: 02-create-card-saved
