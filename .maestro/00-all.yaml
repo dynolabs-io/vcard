@@ -7,3 +7,4 @@ appId: io.dynolabs.vcard
 - runFlow: 01-launch.yaml
 - runFlow: 02-create-card.yaml
 - runFlow: 10-account-signin-ctas.yaml
+- runFlow: 11-inbox-signed-out.yaml
