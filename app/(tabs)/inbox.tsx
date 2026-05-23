@@ -19,7 +19,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { api, type InboxSummary, type Lead, type RevealedScanner, type ReachStats } from '@/lib/api';
 import { getAuthSnapshot } from '@/lib/auth';
-import { listLocal } from '@/lib/storage';
+import { listCards } from '@/lib/storage';
+import type { Card } from '@/lib/types';
 
 export default function InboxScreen() {
   const router = useRouter();
@@ -54,8 +55,8 @@ export default function InboxScreen() {
         // card. The new /v1/inbox/reach endpoint (TBD-V08) returns
         // profile/vcf/pkpass intent-level breakdown that the scansInbox
         // summary alone can't express.
-        const cards = await listLocal();
-        const primary = cards.find(c => c.slug);
+        const cards = await listCards();
+        const primary = cards.find((c: Card) => Boolean(c.slug));
         if (primary?.slug) {
           try {
             const r = await api.inboxReach(primary.slug);
