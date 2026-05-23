@@ -168,14 +168,14 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 		}
 		deviceID := r.URL.Query().Get("device_id")
 		if deviceID != "" {
-			dev, err := h.Repo.ListByDevice(r.Context(), deviceID)
+			dev, err := h.Repo.ListByDeviceUnclaimed(r.Context(), deviceID)
 			if err == nil {
 				seen := make(map[string]bool, len(out))
 				for _, c := range out {
 					seen[c.ID] = true
 				}
 				for _, c := range dev {
-					if !seen[c.ID] && c.UserID == "" {
+					if !seen[c.ID] {
 						out = append(out, c)
 					}
 				}
@@ -193,7 +193,11 @@ func (h *Handlers) list(w http.ResponseWriter, r *http.Request) {
 		writeErr(w, http.StatusBadRequest, "device_id required")
 		return
 	}
-	cards, err := h.Repo.ListByDevice(r.Context(), deviceID)
+	// Anonymous path: device-bound + UNCLAIMED only. Anyone holding the
+	// device_id (which may be logged by intermediate proxies / analytics)
+	// must not be able to enumerate cards that have been attached to a
+	// user account. See TBD-V13 (#23).
+	cards, err := h.Repo.ListByDeviceUnclaimed(r.Context(), deviceID)
 	if err != nil {
 		writeErr(w, http.StatusInternalServerError, err.Error())
 		return
