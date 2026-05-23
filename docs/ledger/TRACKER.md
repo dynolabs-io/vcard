@@ -35,7 +35,7 @@ Last refresh: **2026-05-23**.
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
 | Apple Wallet pass | ✓ | ✓ | ✗ (blocked on `.p12`) | ✗ |
 | Google Wallet pass | ✓ | ✓ | ✗ (blocked on issuer) | ✗ |
-| Web profile + leads | ✓ | ✓ | ✗ | ✗ |
+| Web profile + leads | ✓ | ✓ | 🟢 partial (web profile walked 2026-05-23; lead-form POST not yet exercised) | partial |
 | Reveal-mode → Inbox | ✓ | ✓ | ✗ | ✗ |
 
 Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficient — every `✗ Walked` blocks `✗ Done`.
@@ -44,6 +44,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #1 of the canonical 10 surfaces (`docs/ledger/TRUST.md`) verified end-to-end: **public web profile + vCard 3.0 download**, screenshot landed on issue #1 | [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416); slug `uk4kcdpm`; screenshot `walk-public-profile-emrah-2026-05-23.png` |
 | 2026-05-22 | `make smoke-proxy` operator probe + `api/Makefile` + `api/deploy/iogrid-proxy-creds.example.yaml` skeleton | vcard `a38edd6` (PR #3) |
 | 2026-05-21 | Apollo path deleted; iogrid-only enrichment | vcard `9eaf9a2`, openova-private `b2be7bdb` |
 | 2026-05-21 | iogrid SOCKS5+TLS LinkedIn-vanity fetch wired | vcard `e80cfcf` (pre-merge); now under `api/services/vcard-api/enrich/linkedin.go` |

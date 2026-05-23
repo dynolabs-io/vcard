@@ -23,8 +23,9 @@
 | QR scan → import scanned card | 🔴 UNVERIFIED | — | — |
 | Apple Wallet pass — open pass in Wallet app | 🔴 UNVERIFIED | — | Blocked on Apple Pass Type ID `.p12` ([STATUS.md](../STATUS.md) operator action #1) |
 | Google Wallet pass — open pass in Google Wallet | 🔴 UNVERIFIED | — | Blocked on Google Wallet issuer ([STATUS.md](../STATUS.md) operator action #3) |
-| Public web profile at `dynolabs.io/c/<slug>` | 🔴 UNVERIFIED | — | — |
-| Lead form on public web profile | 🔴 UNVERIFIED | — | — |
+| Public web profile at `dynolabs.io/c/<slug>` | 🟢 VERIFIED-PASS | 2026-05-23, autonomous Playwright walk from bastion | Slug `uk4kcdpm` (card created via `POST /v1/cards` in the same session), 390×844 mobile portrait viewport, full-page screenshot + DOM snapshot. Evidence: [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416). |
+| vCard 3.0 download at `/c/<slug>/save.vcf` | 🟢 VERIFIED-PASS | 2026-05-23 | HTTP 200, `content-type: text/vcard; charset=utf-8`, 257 B payload for slug `uk4kcdpm`. Every typed field (`FN/TITLE/ORG/EMAIL/TEL/URL/REV`) round-trips. Evidence: [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416). |
+| Lead form on public web profile | 🔴 UNVERIFIED | — | The widget renders (collapsed `<details>` group present in the 2026-05-23 walk DOM) but `POST` submission path not exercised yet |
 | Reveal-mode scan landing in Inbox > Connections | 🔴 UNVERIFIED | — | — |
 
 ## Recording a walk
