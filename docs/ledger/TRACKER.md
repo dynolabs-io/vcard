@@ -20,7 +20,7 @@ Last refresh: **2026-05-23**.
 | Owner | Action | Blocks |
 |---|---|---|
 | Founder | Request Google Wallet API issuer at console.cloud.google.com/google/wallet → mount issuer + service-account JSON | Google Wallet pass walk row |
-| Founder + iogrid platform | Resolve iogrid daemon-side dispatch BidiStream gap — provider heartbeat works (DB row `cac83611-…` active) but workloads-svc logs ZERO `dispatch stream opened` events in 2d2h, meaning the daemon never holds the bidi gRPC open. Investigate Mac-side daemon log + `live_transport_config()` gating (cert.pem + key.pem + coordinator_url) | Import-from-LinkedIn walk row |
+| iogrid platform | Resolve workloads-svc Traefik route — `/iogrid.workloads.v1.*` returns HTTP 404 even with proper Connect-RPC content-type. workloads-svc Deployment stuck mid-rollout (`replicas=2/1`, ImagePullBackOff). Filed [iogrid/iogrid#456](https://github.com/iogrid/iogrid/issues/456) with 8-mechanism diagnosis | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
 
 Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the cluster — the previous incarnation of this table predated the actual provisioning. See updated [STATUS.md operator-actions table](../STATUS.md).
 
@@ -44,6 +44,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #7: **Import-from-LinkedIn** ⛔ VERIFIED-FAIL with 8-mechanism diagnosis; iogrid issue [#456](https://github.com/iogrid/iogrid/issues/456) filed with concrete fix order | workloads-svc Traefik route HTTP 404 + stuck rollout proven |
 | 2026-05-23 | Walk #6: **LinkedIn OAuth wiring** end-to-end to LinkedIn's gate — valid client_id, LinkedIn app_id `230775252` accepts the auth request, sign-in page renders | screenshot `walk-linkedin-oauth-app-id-230775252-2026-05-23.png` |
 | 2026-05-23 | Walk #5: **pass-signer Apple Wallet** — real 98 KB signed `.pkpass`, PKCS7 sig + all 10 files; strip composite packs photo + brand logo + brand color per §wallet-strip principle | `walk-applewallet-pass-uk4kcdpm-2026-05-23.pkpass`, `walk-applewallet-strip-2026-05-23.png` |
 | 2026-05-23 | Walk #4: **iOS Maestro CI** — 2 flows (`01-launch`, `02-create-card`) green every push on iOS 26.2 Simulator; takeScreenshot added so future runs leave PNGs | run `26226863900` JUnit `status=SUCCESS`; new screenshot directives shipped in `78435f1` |
