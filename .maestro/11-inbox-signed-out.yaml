@@ -1,0 +1,29 @@
+appId: io.dynolabs.vcard
+---
+# Walk the Inbox tab in signed-out state — added 2026-05-23 alongside
+# the V09 mobile Inbox UI (TBD-V09 / #17). Verifies the anonymous
+# Inbox empty-state renders without crashing the new useFocusEffect
+# that calls /v1/inbox/reach when signed in.
+#
+# Coverage:
+#   - Tab is reachable from Cards (3rd tab from left, bottom bar)
+#   - "Inbox" header renders
+#   - The empty-state title "Sign in to see your inbox" is present
+#   - The "Sign in" CTA Pressable is visible
+#
+# Signed-in coverage would assert the new "BY INTENT (last 30 days)"
+# sub-section with Profile/Contact/Wallet tiles, but signed-in flows
+# need an iOS Simulator with a SIWA test account (deferred wave).
+#
+# Walk-evidence: takeScreenshot lands in maestro-results.zip.
+- launchApp:
+    stopApp: false
+- assertVisible: "Your cards"
+# iOS tab-bar labels aren't in Maestro's a11y tree (see 10-account flow).
+# Inbox is 3rd of 4 tabs → ~62.5% horizontal.
+- tapOn:
+    point: "62%, 95%"
+- assertVisible: "Inbox"
+- assertVisible: "Sign in to see your inbox"
+- assertVisible: "Sign in"
+- takeScreenshot: 11-inbox-signed-out
