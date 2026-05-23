@@ -47,7 +47,7 @@ Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the clust
 | Apple Wallet pass | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side mint + Maestro Wallet-add gate) | ✓ |
 | Google Wallet pass | ✓ | ✓ (stub mode) | ⛔ stub — operator action #3 (issuer) | ✗ |
 | Web profile + leads | ✓ | ✓ | 🟢 walked 2026-05-23 (public profile + .vcf + lead-form POST) | ✓ |
-| Reveal-mode → Inbox | ✓ | ✓ | ✗ | ✗ |
+| Reveal-mode → Inbox | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side end-to-end: scan + connections + block + unblock) | ✓ |
 
 Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficient — every `✗ Walked` blocks `✗ Done`.
 
@@ -55,6 +55,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #17: **Reveal-mode → Inbox > Connections** end-to-end server-side. Synthetic scanner user "Bob" + HS256 JWT minted from `vcard-hmac`. Bob POST `/v1/scans` with `reveal=true` → Emrah GET `/v1/scans/connections` returns Bob's name+email+placeName+eventName. Block hides Bob; unblock restores. Cleaned up after walk. | TRUST.md row flipped 🔴 → 🟢 |
 | 2026-05-23 | Walk #16 (TBD-V09/#17): **V09 Maestro PNGs land on `main`** — iOS run `26331837222` Maestro JUnit `00-all SUCCESS` in 68.0s (3 flows: 01-launch, 02-create-card, 10-account-signin-ctas) proves V09 mobile Inbox UI doesn't regress existing surfaces. Archive step failed on recurring Apple Distribution cert revoke (serial `158DD6F73B…`); re-fired workflow run `26332124528` for fresh cert via fastlane. | commit `30fd870`; 3 PNGs at repo root: `walk-maestro-v09-{launch,create,account}-2026-05-23.png` |
 | 2026-05-23 | Walk #15 (TBD-V12/#21): **PATCH null-clear** — `{"title": null}` now correctly clears the field (previously returned 400 "not a string"). Verified on card `f119b45c-…`: PATCH null → title=NULL, name+company preserved. | PR [#22](https://github.com/dynolabs-io/vcard/pull/22) merged (`2036126`); openova-private `6ed2d7be` bumps vcard-api |
 | 2026-05-23 | Walk #14 (TBD-V09/#17): **Mobile Inbox UI consumes /v1/inbox/reach** — closes the demo loop. Inbox tab now renders 3 intent levels separately (Profile views / Contact saves / Wallet adopts) under the existing REACH summary. iOS CI fires automatically — TestFlight will carry the build. | PR [#18](https://github.com/dynolabs-io/vcard/pull/18) merged (`b0a4fde`); iOS run [26331837222](https://github.com/dynolabs-io/vcard/actions/runs/26331837222) in flight |
