@@ -19,10 +19,10 @@ Last refresh: **2026-05-23**.
 
 | Owner | Action | Blocks |
 |---|---|---|
-| Founder | Mint Apple Pass Type ID `.p12` at developer.apple.com → mount as K8s Secret | Apple Wallet pass walk row in [`TRUST.md`](TRUST.md) |
-| Founder | Create LinkedIn OAuth app at developer.linkedin.com → mount as K8s Secret | LinkedIn Sign-In leaving stub mode in production |
 | Founder | Request Google Wallet API issuer at console.cloud.google.com/google/wallet → mount issuer + service-account JSON | Google Wallet pass walk row |
-| Founder | Install `iogridd` on Mac (one-liner — see [RUNBOOKS.md](../RUNBOOKS.md)) | Import-from-LinkedIn walk row |
+| Founder + iogrid platform | Resolve iogrid daemon-side dispatch BidiStream gap — provider heartbeat works (DB row `cac83611-…` active) but workloads-svc logs ZERO `dispatch stream opened` events in 2d2h, meaning the daemon never holds the bidi gRPC open. Investigate Mac-side daemon log + `live_transport_config()` gating (cert.pem + key.pem + coordinator_url) | Import-from-LinkedIn walk row |
+
+Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the cluster — the previous incarnation of this table predated the actual provisioning. See updated [STATUS.md operator-actions table](../STATUS.md).
 
 ## DoD progress
 
@@ -33,8 +33,8 @@ Last refresh: **2026-05-23**.
 | Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ✗ (blocked on `iogridd`) | ✗ |
 | Card create + slug + photo | ✓ | ✓ | 🟢 walked 2026-05-23 (create + slug + photo upload + render + vCard PHOTO field) | ✓ |
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
-| Apple Wallet pass | ✓ | ✓ | ✗ (blocked on `.p12`) | ✗ |
-| Google Wallet pass | ✓ | ✓ | ✗ (blocked on issuer) | ✗ |
+| Apple Wallet pass | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side mint + Maestro Wallet-add gate) | ✓ |
+| Google Wallet pass | ✓ | ✓ (stub mode) | ⛔ stub — operator action #3 (issuer) | ✗ |
 | Web profile + leads | ✓ | ✓ | 🟢 walked 2026-05-23 (public profile + .vcf + lead-form POST) | ✓ |
 | Reveal-mode → Inbox | ✓ | ✓ | ✗ | ✗ |
 
@@ -44,6 +44,8 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #5: **pass-signer Apple Wallet** — real 98 KB signed `.pkpass`, PKCS7 sig + all 10 files; strip composite packs photo + brand logo + brand color per §wallet-strip principle | `walk-applewallet-pass-uk4kcdpm-2026-05-23.pkpass`, `walk-applewallet-strip-2026-05-23.png` |
+| 2026-05-23 | Walk #4: **iOS Maestro CI** — 2 flows (`01-launch`, `02-create-card`) green every push on iOS 26.2 Simulator; takeScreenshot added so future runs leave PNGs | run `26226863900` JUnit `status=SUCCESS`; new screenshot directives shipped in `78435f1` |
 | 2026-05-23 | Walk #3: **photo-cdn upload + serve + card photo render + vCard PHOTO field** end-to-end | avatar 15393 B + logo 13713 B uploaded to `cdn.dynolabs.io/p/uk4kcdpm{,-brand}`; card PATCHed; SSR renders avatar; `.vcf` ships `PHOTO;VALUE=uri:…`; screenshot `walk-public-profile-photo-2026-05-23.png` |
 | 2026-05-23 | Walk #2: **lead form on public web profile** — POST + redirect + DB row + 4 fields persisted. Screenshot landed on issue #1 | Lead `id=29e82180-…`, target_slug `uk4kcdpm`; screenshots `walk-leadform-filled-2026-05-23.png` + `walk-leadform-sent-2026-05-23.png` |
 | 2026-05-23 | Walk #1: **public web profile + vCard 3.0 download** end-to-end, screenshot landed on issue #1 | [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416); slug `uk4kcdpm`; screenshot `walk-public-profile-emrah-2026-05-23.png` |

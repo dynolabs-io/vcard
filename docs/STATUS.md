@@ -22,15 +22,15 @@
 
 ## Open blockers — operator actions
 
-These three external credentials are NOT in the cluster yet and gate the corresponding surfaces:
+Live state per 2026-05-23 in-cluster smoke (autonomous walk session):
 
-| # | Credential | Where to mint | Mount as | Unblocks |
-|---|---|---|---|---|
-| 1 | **Apple Pass Type ID** `.p12` | developer.apple.com → Identifiers → Pass Type IDs | K8s secret in ns `dynolabs` | Real `.pkpass` issuance (today returns stub or 503) |
-| 2 | **LinkedIn OAuth app** client id + secret | developer.linkedin.com → Create app. Redirect URI: `https://api.dynolabs.io/oauth/linkedin/callback` | K8s secret consumed by `linkedin-oauth` Deployment env | LinkedIn sign-in works in prod (in stub mode today: `clientID=="" → 503`) |
-| 3 | **Google Wallet API issuer** + service-account JSON | console.cloud.google.com/google/wallet | K8s secret in ns `dynolabs` | `/pass/google` JWT issuance |
+| # | Credential | State | Evidence |
+|---|---|---|---|
+| ~~1~~ | ~~Apple Pass Type ID `.p12`~~ | ✅ **Already provisioned** | `pass-signer` Deployment mounts Secret `dynolabs-apple-pass` as volume `apple-pass-creds`. Pod log: `pass-signer loaded subject="Pass Type ID: pass.io.dynolabs.vcard" wwdr="Apple Worldwide Developer Relations Certification Authority"`, `stub=false`. Live `/pass/apple?slug=uk4kcdpm` returns HTTP 200 + 98 KB signed `.pkpass` with all 10 components + valid PKCS7 `signature` file. |
+| ~~2~~ | ~~LinkedIn OAuth app client id + secret~~ | ✅ **Already provisioned** | `linkedin-oauth` Deployment pod log: `linkedin-oauth listening ... stub=false callback="https://api.dynolabs.io/oauth/linkedin/callback"`. Credentials injected via secretKeyRef at runtime (not shown in jsonpath but the `stub=false` proves the loader resolved them). |
+| 3 | **Google Wallet API issuer** + service-account JSON | ❌ **Still pending** | `POST pass-signer:/pass/google` returns HTTP 503 with body `{"error":"stub-mode: Google Wallet issuer not yet provisioned"}`. Where to mint: console.cloud.google.com/google/wallet. Mount as K8s Secret in ns `dynolabs`. |
 
-Operator actions also tracked in `lessons-learned/`, but this table is the live truth.
+The Apple Pass + LinkedIn rows were stale in this file before 2026-05-23 (the doc predated the actual provisioning). Operator-action follow-up: only Google Wallet remains.
 
 ## Open blockers — iogrid substrate
 
