@@ -6,6 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Handlers struct {
@@ -40,6 +42,54 @@ func (h *Handlers) Mount(mux *http.ServeMux) {
 	// scan_events. See TBD-V05 (#9). NO PII: callers send the low-cardinality
 	// bucket (city/country/uaFamily) NOT the raw IP / User-Agent.
 	mux.HandleFunc("POST /v1/internal/scan-events", h.recordScanEvent)
+	// Inbox reach analytics — card-owner-only aggregation over scan_events.
+	// See TBD-V08 (#15). Returns totals + per-day + UA-family breakdown.
+	mux.HandleFunc("GET /v1/inbox/reach", h.inboxReach)
+}
+
+// inboxReach aggregates scan_events for the authed user's own card.
+// Returns 401 if unauthenticated, 400 if slug missing, 403 if the slug
+// belongs to a different user, 200 + ReachStats JSON otherwise.
+//
+// Owner-scope is the privacy boundary — without it, any signed-in user
+// could enumerate reach numbers for arbitrary public slugs.
+func (h *Handlers) inboxReach(w http.ResponseWriter, r *http.Request) {
+	uid := h.userID(r)
+	if uid == "" {
+		writeErr(w, http.StatusUnauthorized, "auth required")
+		return
+	}
+	slug := strings.TrimSpace(r.URL.Query().Get("slug"))
+	if slug == "" {
+		writeErr(w, http.StatusBadRequest, "slug required")
+		return
+	}
+	// Optional ?days= window (default 30, clamped 1..90 in repo)
+	days := 0
+	if d := r.URL.Query().Get("days"); d != "" {
+		days, _ = strconv.Atoi(d)
+	}
+	// Owner-scope: look up the card and confirm ownership.
+	card, err := h.Repo.GetBySlug(r.Context(), slug)
+	if err != nil {
+		respondNotFoundOr500(w, err)
+		return
+	}
+	if card.UserID == "" || card.UserID != uid {
+		writeErr(w, http.StatusForbidden, "card not owned by caller")
+		return
+	}
+	stats, err := h.Repo.ReachStatsBySlug(r.Context(), slug, days)
+	if err != nil {
+		writeErr(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"slug":     slug,
+		"totals":   stats.Totals,
+		"byDay":    stats.ByDay,
+		"uaFamily": stats.UAFamily,
+	})
 }
 
 // scanEventReq is the body of POST /v1/internal/scan-events. All bucketed
