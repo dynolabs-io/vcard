@@ -13,7 +13,11 @@ Last refresh: **2026-05-23**.
 |---|---|---|
 | [#1](https://github.com/dynolabs-io/vcard/issues/1) | v1: Dynolabs vCard — end-to-end build & deploy | `status/in-progress`, `area/mobile` |
 | [#2](https://github.com/dynolabs-io/vcard/issues/2) | chore(repo): consider folding `dynolabs-io/api` into this repo as `./api/` | Delivered 2026-05-21 (commits `29b944d` + `e5a6fd5`) — awaiting founder close |
-| [#4](https://github.com/dynolabs-io/vcard/issues/4) | TBD-V01: scaffold canonical docs/ tree (user-global §11 shape) | In-progress (this PR) |
+| [#4](https://github.com/dynolabs-io/vcard/issues/4) | TBD-V01: scaffold canonical docs/ tree (user-global §11 shape) | PR [#5](https://github.com/dynolabs-io/vcard/pull/5) open + CI green; awaiting founder review |
+| [#6](https://github.com/dynolabs-io/vcard/issues/6) | TBD-V02: walk iOS Maestro CI with PNG screenshots | iOS CI run `26326818765` in flight on `2891338` — will land 3 PNGs |
+| [#7](https://github.com/dynolabs-io/vcard/issues/7) | TBD-V03: walk Wallet-barcode → /v/&lt;slug&gt; → vCard chain | ✅ Walked 2026-05-23 (comment 4524565522). Awaiting founder close |
+| [#8](https://github.com/dynolabs-io/vcard/issues/8) | TBD-V04: walk Account-tab sign-in CTAs via Maestro | In `2891338`; iOS CI run `26326818765` will walk it |
+| [#9](https://github.com/dynolabs-io/vcard/issues/9) | TBD-V05: scan_events emission not wired | Discovered during walk #1 + #3; backend handler missing |
 
 ## Outstanding operator actions (blocking DoD per [STATUS.md](STATUS.md))
 
