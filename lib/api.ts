@@ -98,6 +98,18 @@ export type InboxSummary = {
   uniqueUsers: number;
 };
 
+// ReachStats is the per-card analytics aggregation from vcard-api's
+// /v1/inbox/reach endpoint (TBD-V08). Three intent levels stay separate:
+//   profile = page view (low intent)
+//   vcf     = recipient saved your contact (medium intent)
+//   pkpass  = recipient added the pass to Apple Wallet (highest intent)
+export type ReachStats = {
+  slug: string;
+  totals: { profile: number; vcf: number; pkpass: number };
+  byDay: { date: string; profile: number; vcf: number; pkpass: number }[];
+  uaFamily: Record<string, number>;
+};
+
 export type Lead = {
   id: string;
   targetSlug: string;
@@ -185,6 +197,15 @@ export const api = {
   scansDelete: (id: string) =>
     request<null>(`/v1/scans/${encodeURIComponent(id)}`, { method: 'DELETE' }),
   scansInbox: () => request<InboxSummary>('/v1/scans/inbox'),
+
+  // Per-card reach analytics — TBD-V08 (#15). Returns totals + byDay
+  // + uaFamily aggregations over scan_events for the named slug.
+  // Owner-scoped: server returns 403 if the slug doesn't belong to
+  // the authed user. days defaults to 30, clamped 1..90.
+  inboxReach: (slug: string, days?: number) => {
+    const q = days ? `?slug=${encodeURIComponent(slug)}&days=${days}` : `?slug=${encodeURIComponent(slug)}`;
+    return request<ReachStats>(`/v1/inbox/reach${q}`);
+  },
 
   // Leads — visitors who used the "request callback" form on a card
   // owner's public web profile (dynolabs.io/c/<slug>).

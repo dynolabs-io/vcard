@@ -17,14 +17,16 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
-import { api, type InboxSummary, type Lead, type RevealedScanner } from '@/lib/api';
+import { api, type InboxSummary, type Lead, type RevealedScanner, type ReachStats } from '@/lib/api';
 import { getAuthSnapshot } from '@/lib/auth';
+import { listLocal } from '@/lib/storage';
 
 export default function InboxScreen() {
   const router = useRouter();
   const [summary, setSummary] = useState<InboxSummary | null>(null);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [connections, setConnections] = useState<RevealedScanner[]>([]);
+  const [reach, setReach] = useState<ReachStats | null>(null);
   const [signedIn, setSignedIn] = useState(getAuthSnapshot().signedIn);
 
   useFocusEffect(useCallback(() => {
@@ -34,6 +36,7 @@ export default function InboxScreen() {
       setSummary(null);
       setLeads([]);
       setConnections([]);
+      setReach(null);
       return () => {};
     }
     (async () => {
@@ -47,6 +50,18 @@ export default function InboxScreen() {
         setSummary(s);
         setLeads(l);
         setConnections(c);
+        // TBD-V09: fetch per-card reach for the user's first slugged
+        // card. The new /v1/inbox/reach endpoint (TBD-V08) returns
+        // profile/vcf/pkpass intent-level breakdown that the scansInbox
+        // summary alone can't express.
+        const cards = await listLocal();
+        const primary = cards.find(c => c.slug);
+        if (primary?.slug) {
+          try {
+            const r = await api.inboxReach(primary.slug);
+            if (!cancelled) setReach(r);
+          } catch { /* reach is optional — not signed-in / not owner / etc. */ }
+        }
       } catch { /* offline ok */ }
     })();
     return () => { cancelled = true; };
@@ -104,6 +119,16 @@ export default function InboxScreen() {
                   <Stat label="Last 30 days" value={summary.last30Days} />
                   <Stat label="Unique users" value={summary.uniqueUsers} />
                 </View>
+                {reach && (
+                  <>
+                    <Text style={[styles.sectionTitle, { marginTop: 16 }]}>BY INTENT (last 30 days)</Text>
+                    <View style={styles.reachGrid}>
+                      <Stat label="Profile views" value={reach.totals.profile} />
+                      <Stat label="Contact saves" value={reach.totals.vcf} />
+                      <Stat label="Wallet adopts" value={reach.totals.pkpass} />
+                    </View>
+                  </>
+                )}
                 {connections.length > 0 && (
                   <>
                     <Text style={[styles.sectionTitle, { marginTop: 16 }]}>CONNECTIONS</Text>
