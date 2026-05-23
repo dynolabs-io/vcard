@@ -140,17 +140,27 @@ func (h *Handlers) publicBySlug(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handlers) update(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
-	var c Card
-	if err := json.NewDecoder(r.Body).Decode(&c); err != nil {
+	// PATCH is partial-update — ONLY fields present in the request body
+	// are updated. Fields omitted from the JSON body keep their existing
+	// DB value. Pre-2026-05-23 this decoded into a Card{} zero-value
+	// struct and the repo wrote every column, so a partial PATCH like
+	// {"photoUrl":"…"} silently zeroed name/title/company/emails/phones/
+	// socials. See TBD-V06 (#10) for the bug + walk #3 evidence.
+	var patch map[string]json.RawMessage
+	if err := json.NewDecoder(r.Body).Decode(&patch); err != nil {
 		writeErr(w, http.StatusBadRequest, "invalid json")
 		return
 	}
-	c.ID = id
-	if err := h.Repo.Update(r.Context(), &c); err != nil {
+	if len(patch) == 0 {
+		writeErr(w, http.StatusBadRequest, "empty patch body")
+		return
+	}
+	updated, err := h.Repo.Patch(r.Context(), id, patch)
+	if err != nil {
 		respondNotFoundOr500(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, c)
+	writeJSON(w, http.StatusOK, updated)
 }
 
 func (h *Handlers) delete(w http.ResponseWriter, r *http.Request) {
