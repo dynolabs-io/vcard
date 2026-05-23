@@ -48,6 +48,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #10 (TBD-V06/#10): **PATCH /v1/cards/{id} partial-merge fix** — pre-fix, partial PATCH silently zeroed name/title/company. Verified end-to-end on `a248af9`: PATCH `{"photoUrl":"X"}` preserves name/title/company while updating photoUrl. | PR [#11](https://github.com/dynolabs-io/vcard/pull/11) merged (`a248af9`); openova-private `ddfc23db` bumps vcard-api; ghcr-pull Secret in ns `dynolabs` refreshed (was 403 against ghcr.io/token); slug `jxbkk74x` walk evidence |
 | 2026-05-23 | **PR #5 merged to `main`** — canonical docs/ tree (4/4 binary success criteria PASS) lands on main | commit `8af6976` |
 | 2026-05-23 | Walk #9 (TBD-V04/#8): **Account-tab CTAs** walked via Maestro CI — "Sign in with Apple" + "Continue with LinkedIn" render on iOS 26.2 Simulator | `walk-maestro-10-account-signin-2026-05-23.png`; run [`26327123137`](https://github.com/dynolabs-io/vcard/actions/runs/26327123137); 3-flow suite green in 45.0s |
 | 2026-05-23 | Walks #4+#5 (TBD-V02/#6): **iOS Maestro CI PNGs** — `01-launch-empty-state` + `02-create-card-saved` PNGs land in artifact bundle | `walk-maestro-01-launch-2026-05-23.png`, `walk-maestro-02-create-card-2026-05-23.png`; CI plumbing fix in `c354ae6` |
