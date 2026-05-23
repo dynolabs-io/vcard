@@ -34,7 +34,7 @@ Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the clust
 |---|---|---|---|---|
 | Apple Sign-In | ✓ | ✓ | ✗ | ✗ |
 | LinkedIn Sign-In | ✓ | ✓ | 🟢 server-side wiring walked 2026-05-23; founder full-flow 2026-05-21 | ✓ |
-| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ✗ (blocked on `iogridd`) | ✗ |
+| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ⛔ blocked on iogrid platform — workloads-svc Traefik route HTTP 404, iogrid PR [#458](https://github.com/iogrid/iogrid/pull/458) opened mergeable/green | ✗ |
 | Card create + slug + photo | ✓ | ✓ | 🟢 walked 2026-05-23 (create + slug + photo upload + render + vCard PHOTO field) | ✓ |
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
 | Apple Wallet pass | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side mint + Maestro Wallet-add gate) | ✓ |
@@ -48,6 +48,9 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | **PR #5 merged to `main`** — canonical docs/ tree (4/4 binary success criteria PASS) lands on main | commit `8af6976` |
+| 2026-05-23 | Walk #9 (TBD-V04/#8): **Account-tab CTAs** walked via Maestro CI — "Sign in with Apple" + "Continue with LinkedIn" render on iOS 26.2 Simulator | `walk-maestro-10-account-signin-2026-05-23.png`; run [`26327123137`](https://github.com/dynolabs-io/vcard/actions/runs/26327123137); 3-flow suite green in 45.0s |
+| 2026-05-23 | Walks #4+#5 (TBD-V02/#6): **iOS Maestro CI PNGs** — `01-launch-empty-state` + `02-create-card-saved` PNGs land in artifact bundle | `walk-maestro-01-launch-2026-05-23.png`, `walk-maestro-02-create-card-2026-05-23.png`; CI plumbing fix in `c354ae6` |
 | 2026-05-23 | Walk #8 (TBD-V03/#7): **Wallet-barcode → `/v/<slug>` → rich vCard with embedded photo** end-to-end (owner-named filename, base64 inline JPEG, structured `N:` field, typed URLs) | `walk-wallet-qr-target-2026-05-23.vcf` |
 | 2026-05-23 | Walk #7: **Import-from-LinkedIn** ⛔ VERIFIED-FAIL with 8-mechanism diagnosis; iogrid issue [#456](https://github.com/iogrid/iogrid/issues/456) filed with concrete fix order + iogrid PR [#458](https://github.com/iogrid/iogrid/pull/458) opened with the workloads-svc imagePullSecrets fix | workloads-svc Traefik route HTTP 404 + stuck rollout proven |
 | 2026-05-23 | Walk #6: **LinkedIn OAuth wiring** end-to-end to LinkedIn's gate — valid client_id, LinkedIn app_id `230775252` accepts the auth request, sign-in page renders | screenshot `walk-linkedin-oauth-app-id-230775252-2026-05-23.png` |
