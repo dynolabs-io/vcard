@@ -44,7 +44,8 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
-| 2026-05-23 | Walk #7: **Import-from-LinkedIn** ⛔ VERIFIED-FAIL with 8-mechanism diagnosis; iogrid issue [#456](https://github.com/iogrid/iogrid/issues/456) filed with concrete fix order | workloads-svc Traefik route HTTP 404 + stuck rollout proven |
+| 2026-05-23 | Walk #8 (TBD-V03/#7): **Wallet-barcode → `/v/<slug>` → rich vCard with embedded photo** end-to-end (owner-named filename, base64 inline JPEG, structured `N:` field, typed URLs) | `walk-wallet-qr-target-2026-05-23.vcf` |
+| 2026-05-23 | Walk #7: **Import-from-LinkedIn** ⛔ VERIFIED-FAIL with 8-mechanism diagnosis; iogrid issue [#456](https://github.com/iogrid/iogrid/issues/456) filed with concrete fix order + iogrid PR [#458](https://github.com/iogrid/iogrid/pull/458) opened with the workloads-svc imagePullSecrets fix | workloads-svc Traefik route HTTP 404 + stuck rollout proven |
 | 2026-05-23 | Walk #6: **LinkedIn OAuth wiring** end-to-end to LinkedIn's gate — valid client_id, LinkedIn app_id `230775252` accepts the auth request, sign-in page renders | screenshot `walk-linkedin-oauth-app-id-230775252-2026-05-23.png` |
 | 2026-05-23 | Walk #5: **pass-signer Apple Wallet** — real 98 KB signed `.pkpass`, PKCS7 sig + all 10 files; strip composite packs photo + brand logo + brand color per §wallet-strip principle | `walk-applewallet-pass-uk4kcdpm-2026-05-23.pkpass`, `walk-applewallet-strip-2026-05-23.png` |
 | 2026-05-23 | Walk #4: **iOS Maestro CI** — 2 flows (`01-launch`, `02-create-card`) green every push on iOS 26.2 Simulator; takeScreenshot added so future runs leave PNGs | run `26226863900` JUnit `status=SUCCESS`; new screenshot directives shipped in `78435f1` |
