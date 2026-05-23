@@ -50,3 +50,6 @@ app-example
 /api/services/*/pass-signer
 /api/services/*/photo-cdn
 /api/services/*/web-profile
+
+# Walk-evidence screenshots committed to feature branches for issue-comment image refs.
+# NOT committed to main; tracked only on the branch that posted the comment.

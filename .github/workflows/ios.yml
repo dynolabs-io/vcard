@@ -492,11 +492,25 @@ jobs:
             > $RUNNER_TEMP/sim.log 2>&1 &
           LOG_PID=$!
           set +e
+          # Maestro's `- takeScreenshot:` directives drop PNGs into the
+          # CURRENT WORKING DIRECTORY by default (NOT into ~/.maestro/
+          # tests/<run>/), so any artifact-upload that only mirrors
+          # ~/.maestro/tests misses them. Fix: cd into a dedicated dir
+          # we control AND know gets uploaded.
+          MAESTRO_SCREEN_DIR=$RUNNER_TEMP/maestro-screenshots
+          mkdir -p "$MAESTRO_SCREEN_DIR"
           # Run via the master flow (00-all.yaml) so flows execute in the
           # documented order. `maestro test .maestro/` parallelizes flows
           # which breaks chained scenarios (edit/share/delete depend on
-          # the card created by 02-create-card).
-          maestro --device "$SIM_UDID" test --format=junit --output=$RUNNER_TEMP/maestro-junit.xml .maestro/00-all.yaml
+          # the card created by 02-create-card). Pass absolute paths so
+          # the cd into MAESTRO_SCREEN_DIR doesn't break flow discovery.
+          (
+            cd "$MAESTRO_SCREEN_DIR" && \
+            maestro --device "$SIM_UDID" test \
+              --format=junit \
+              --output="$RUNNER_TEMP/maestro-junit.xml" \
+              "$GITHUB_WORKSPACE/.maestro/00-all.yaml"
+          )
           MAESTRO_EXIT=$?
           set -e
           kill $LOG_PID 2>/dev/null || true
@@ -505,6 +519,10 @@ jobs:
             mkdir -p $RUNNER_TEMP/maestro-debug
             cp -R ~/.maestro/tests $RUNNER_TEMP/maestro-debug/
           fi
+          # Log what landed in the screenshots dir (helps debug missing
+          # PNGs the next time we wonder where they went).
+          echo "=== Maestro screenshots captured ==="
+          ls -la "$MAESTRO_SCREEN_DIR" || true
           # NATIVE-CRASH DETECTION — Maestro will report flows as passed
           # if it didn't actively detect a failed assertion. But the JS
           # ErrorBoundary doesn't catch native bridge crashes (e.g. a
@@ -526,6 +544,7 @@ jobs:
           path: |
             ${{ runner.temp }}/maestro-junit.xml
             ${{ runner.temp }}/maestro-debug/**
+            ${{ runner.temp }}/maestro-screenshots/**
             ${{ runner.temp }}/sim.log
           if-no-files-found: warn
       # ───────────────────────────────────────────────────────────

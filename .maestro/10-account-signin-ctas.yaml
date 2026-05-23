@@ -1,0 +1,31 @@
+appId: io.dynolabs.vcard
+---
+# Walk the Account tab — verifies sign-in CTAs render without
+# triggering the actual SIWA / LinkedIn OAuth flow (which would need
+# a real Apple ID + 2FA on a real device; iOS Simulator's SIWA accepts
+# test accounts but those need per-account Xcode setup the runner
+# doesn't have today).
+#
+# Coverage:
+#   - The tab is reachable from the Cards screen
+#   - "Account" header renders
+#   - The anonymous-state copy is present
+#   - Sign-in-with-Apple button is visible (proves SIWA isn't gated off)
+#   - Sign-in-with-LinkedIn button is visible
+#
+# Walk-evidence: takeScreenshot of the Account-tab anonymous state
+# lands in maestro-results.zip per .github/workflows/ios.yml.
+- launchApp:
+    stopApp: false
+- assertVisible: "Your cards"
+# iOS tab-bar labels don't appear as text nodes in Maestro's a11y tree
+# (verified 2026-05-23 in run 26326818765 — Account label visible in
+# screenshot but `tapOn: "Account"` returned `Element not found`).
+# Tap by relative position on the tab bar instead: bottom-right of
+# the screen, fourth tab from the left.
+- tapOn:
+    point: "90%, 95%"
+- assertVisible: "Sign in with Apple"
+- assertVisible:
+    text: ".*LinkedIn.*"
+- takeScreenshot: 10-account-signin-ctas

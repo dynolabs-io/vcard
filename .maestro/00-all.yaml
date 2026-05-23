@@ -6,3 +6,4 @@ appId: io.dynolabs.vcard
 # + iOS Contacts integration is in place (those touch new screens).
 - runFlow: 01-launch.yaml
 - runFlow: 02-create-card.yaml
+- runFlow: 10-account-signin-ctas.yaml
