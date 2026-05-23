@@ -14,14 +14,14 @@ Last refresh: **2026-05-23**.
 | [#1](https://github.com/dynolabs-io/vcard/issues/1) | v1: Dynolabs vCard — end-to-end build & deploy | `status/in-progress`, `area/mobile` |
 | [#2](https://github.com/dynolabs-io/vcard/issues/2) | chore(repo): fold `dynolabs-io/api` into this repo as `./api/` | ✅ Delivered 2026-05-21 (`29b944d` + `e5a6fd5`); awaiting founder close |
 | [#4](https://github.com/dynolabs-io/vcard/issues/4) | TBD-V01: scaffold canonical docs/ tree (user-global §11 shape) | ✅ PR [#5](https://github.com/dynolabs-io/vcard/pull/5) merged (`8af6976`); awaiting founder close |
-| [#6](https://github.com/dynolabs-io/vcard/issues/6) | TBD-V02: walk iOS Maestro CI with PNG screenshots | ✅ Walks #4 + #5 + #16 landed PNGs; iOS run `26332124528` archive in flight |
+| [#6](https://github.com/dynolabs-io/vcard/issues/6) | TBD-V02: walk iOS Maestro CI with PNG screenshots | ✅ 4 Maestro flows green (`01-launch`, `02-create-card`, `10-account-signin-ctas`, `11-inbox-signed-out`); PNGs land every push; awaiting founder close |
 | [#7](https://github.com/dynolabs-io/vcard/issues/7) | TBD-V03: walk Wallet-barcode → /v/&lt;slug&gt; → vCard chain | ✅ Walked 2026-05-23 (comment 4524565522); awaiting founder close |
 | [#8](https://github.com/dynolabs-io/vcard/issues/8) | TBD-V04: walk Account-tab sign-in CTAs via Maestro | ✅ Walked 2026-05-23 (Maestro flow `10-account-signin-ctas` green); awaiting founder close |
 | [#9](https://github.com/dynolabs-io/vcard/issues/9) | TBD-V05: scan_events emission not wired | ✅ Wired via PR [#12](https://github.com/dynolabs-io/vcard/pull/12), walk #11 evidence; awaiting founder close |
 | [#10](https://github.com/dynolabs-io/vcard/issues/10) | TBD-V06: PATCH silently zeroes fields not in request body | ✅ Fixed via PR [#11](https://github.com/dynolabs-io/vcard/pull/11), walk #10 evidence; awaiting founder close |
 | [#13](https://github.com/dynolabs-io/vcard/issues/13) | TBD-V07: emit kind='pkpass' scan_events from pass-signer | ✅ Wired via PR [#14](https://github.com/dynolabs-io/vcard/pull/14), walk #12 evidence; awaiting founder close |
 | [#15](https://github.com/dynolabs-io/vcard/issues/15) | TBD-V08: Inbox-reach SQL endpoint + mobile UI | ✅ Endpoint shipped via PR [#16](https://github.com/dynolabs-io/vcard/pull/16), walk #13 evidence; awaiting founder close |
-| [#17](https://github.com/dynolabs-io/vcard/issues/17) | TBD-V09: mobile Inbox UI consumes /v1/inbox/reach | ✅ TestFlight build `#29` uploaded + assigned to "Founders" group on `2026-05-23` (iOS run `26332124528`); awaiting founder install + walk |
+| [#17](https://github.com/dynolabs-io/vcard/issues/17) | TBD-V09: mobile Inbox UI consumes /v1/inbox/reach | ✅ TestFlight builds CFBundleVersion `29` + `183` live in Founders group (iOS runs `26332124528` + `26333146597` both green); awaiting founder install + walk |
 | [#21](https://github.com/dynolabs-io/vcard/issues/21) | TBD-V12: PATCH null-clear for explicit field zeroing | ✅ Fixed via PR [#22](https://github.com/dynolabs-io/vcard/pull/22), walk #15 evidence; awaiting founder close |
 | [#23](https://github.com/dynolabs-io/vcard/issues/23) | TBD-V13: anonymous /v1/cards?device_id leaks claimed cards (privacy) | ✅ Fixed via PR [#24](https://github.com/dynolabs-io/vcard/pull/24) merged (`30bcec5`); walks #19 + #21 (post-rollout) verified live; awaiting founder close |
 
