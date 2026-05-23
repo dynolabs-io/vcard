@@ -48,6 +48,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #11 (TBD-V05/#9): **scan_events emission wired** on `/c/<slug>` + `/c/<slug>/save.vcf` + `/v/<slug>`. Verified end-to-end: slug `fd6zqekt` → 3 rows in `scan_events` (kind=profile/vcf/vcf, ua_family=iPhone). | PR [#12](https://github.com/dynolabs-io/vcard/pull/12) merged (`9396714`); openova-private `f808f8fc` bumps all 3 services |
 | 2026-05-23 | Walk #10 (TBD-V06/#10): **PATCH /v1/cards/{id} partial-merge fix** — pre-fix, partial PATCH silently zeroed name/title/company. Verified end-to-end on `a248af9`: PATCH `{"photoUrl":"X"}` preserves name/title/company while updating photoUrl. | PR [#11](https://github.com/dynolabs-io/vcard/pull/11) merged (`a248af9`); openova-private `ddfc23db` bumps vcard-api; ghcr-pull Secret in ns `dynolabs` refreshed (was 403 against ghcr.io/token); slug `jxbkk74x` walk evidence |
 | 2026-05-23 | **PR #5 merged to `main`** — canonical docs/ tree (4/4 binary success criteria PASS) lands on main | commit `8af6976` |
 | 2026-05-23 | Walk #9 (TBD-V04/#8): **Account-tab CTAs** walked via Maestro CI — "Sign in with Apple" + "Continue with LinkedIn" render on iOS 26.2 Simulator | `walk-maestro-10-account-signin-2026-05-23.png`; run [`26327123137`](https://github.com/dynolabs-io/vcard/actions/runs/26327123137); 3-flow suite green in 45.0s |
