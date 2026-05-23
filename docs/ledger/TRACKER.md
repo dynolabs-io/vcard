@@ -22,10 +22,16 @@ Last refresh: **2026-05-23**.
 | [#13](https://github.com/dynolabs-io/vcard/issues/13) | TBD-V07: emit kind='pkpass' scan_events from pass-signer | ✅ Wired via PR [#14](https://github.com/dynolabs-io/vcard/pull/14), walk #12 evidence; awaiting founder close |
 | [#15](https://github.com/dynolabs-io/vcard/issues/15) | TBD-V08: Inbox-reach SQL endpoint + mobile UI | ✅ Endpoint shipped via PR [#16](https://github.com/dynolabs-io/vcard/pull/16), walk #13 evidence; awaiting founder close |
 | [#17](https://github.com/dynolabs-io/vcard/issues/17) | TBD-V09: mobile Inbox UI consumes /v1/inbox/reach | ✅ TestFlight build `#29` uploaded + assigned to "Founders" group on `2026-05-23` (iOS run `26332124528`); awaiting founder install + walk |
-| [#19](https://github.com/dynolabs-io/vcard/issues/19) | TBD-V10: durable ghcr-pull rotation — Secret keeps 403'ing | ⏳ Filed; not yet implemented (needs GitHub App or external-secrets) |
-| [#20](https://github.com/dynolabs-io/vcard/issues/20) | TBD-V11: scan_events geoip resolution | ⏳ Filed; not yet implemented (geoip2-golang + GeoLite2 DB embed) |
 | [#21](https://github.com/dynolabs-io/vcard/issues/21) | TBD-V12: PATCH null-clear for explicit field zeroing | ✅ Fixed via PR [#22](https://github.com/dynolabs-io/vcard/pull/22), walk #15 evidence; awaiting founder close |
-| [#23](https://github.com/dynolabs-io/vcard/issues/23) | TBD-V13: anonymous /v1/cards?device_id leaks claimed cards (privacy) | ✅ Fixed via PR [#24](https://github.com/dynolabs-io/vcard/pull/24) merged (`30bcec5`); walk #19 surfaced the bug; awaiting api-build CI + Flux roll + re-walk |
+| [#23](https://github.com/dynolabs-io/vcard/issues/23) | TBD-V13: anonymous /v1/cards?device_id leaks claimed cards (privacy) | ✅ Fixed via PR [#24](https://github.com/dynolabs-io/vcard/pull/24) merged (`30bcec5`); walks #19 + #21 (post-rollout) verified live; awaiting founder close |
+
+**Closed 2026-05-23** (tracker hygiene per user instruction "close outdated/rubbish/redundant"):
+
+| # | Title | Reason |
+|---|---|---|
+| [#19](https://github.com/dynolabs-io/vcard/issues/19) | TBD-V10: durable ghcr-pull rotation | Root cause unverified — pulled current state during walk #21's Flux roll, PAT matches bastion's, image pulls work. Re-open only with concrete `ImagePullBackOff` evidence |
+| [#20](https://github.com/dynolabs-io/vcard/issues/20) | TBD-V11: scan_events geoip resolution | Superseded by #26 (later also closed) — kept the analysis in the issue comment |
+| [#26](https://github.com/dynolabs-io/vcard/issues/26) | TBD-V14: web-profile + pass-signer extract client IP | Filed mid-session as cap-discipline drift; geoip dimension on scan_events isn't blocking V09 mobile walk. Re-open when location dimension is actually prioritized |
 
 ## Outstanding operator actions (blocking DoD per [STATUS.md](STATUS.md))
 
