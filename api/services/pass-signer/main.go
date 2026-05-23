@@ -240,6 +240,14 @@ func main() {
 			http.Error(w, `{"error":"cardId or slug required"}`, http.StatusBadRequest)
 			return
 		}
+		// Reach-analytics emission for Wallet pass downloads. Fires
+		// fire-and-forget BEFORE the (expensive) pass build so even
+		// if the build later fails, the intent-to-add is counted.
+		// Per TBD-V07 (#13). Emission keyed by slug — when only
+		// cardID is provided the row is skipped (no slug to bucket by).
+		if slug != "" {
+			go emitScanEventPS(apiBase, slug, "pkpass", r.Header.Get("User-Agent"))
+		}
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		c, err := fetchCard(ctx, apiBase, cardID, slug)
