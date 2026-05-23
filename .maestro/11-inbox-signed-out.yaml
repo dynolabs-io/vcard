@@ -16,8 +16,12 @@ appId: io.dynolabs.vcard
 # need an iOS Simulator with a SIWA test account (deferred wave).
 #
 # Walk-evidence: takeScreenshot lands in maestro-results.zip.
+#
+# Restart fresh — previous flow (10-account-signin-ctas) leaves the
+# app on the Account tab, and Maestro doesn't auto-navigate. We need
+# to land on the Cards screen before tapping the Inbox tab.
 - launchApp:
-    stopApp: false
+    stopApp: true
 - assertVisible: "Your cards"
 # iOS tab-bar labels aren't in Maestro's a11y tree (see 10-account flow).
 # Inbox is 3rd of 4 tabs → ~62.5% horizontal.
