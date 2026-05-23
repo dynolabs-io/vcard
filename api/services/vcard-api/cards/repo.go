@@ -72,11 +72,17 @@ func (r *Repo) GetBySlug(ctx context.Context, slug string) (*Card, error) {
 	return r.scanOne(ctx, q, slug)
 }
 
-func (r *Repo) ListByDevice(ctx context.Context, deviceID string) ([]Card, error) {
-	const q = baseSelect + ` WHERE device_id = $1 ORDER BY created_at DESC`
+// ListByDeviceUnclaimed returns cards on the given device that have NOT
+// yet been claimed by a user (user_id IS NULL). The anonymous list path
+// uses this so that holding a leaked device_id cannot enumerate cards
+// that have been attached to a user account. The signed-in union path
+// also uses it to overlay device-local unclaimed cards on top of the
+// user's claimed set without double-counting. See TBD-V13 (#23).
+func (r *Repo) ListByDeviceUnclaimed(ctx context.Context, deviceID string) ([]Card, error) {
+	const q = baseSelect + ` WHERE device_id = $1 AND user_id IS NULL ORDER BY created_at DESC`
 	rows, err := r.db.QueryContext(ctx, q, deviceID)
 	if err != nil {
-		return nil, fmt.Errorf("list by device: %w", err)
+		return nil, fmt.Errorf("list by device unclaimed: %w", err)
 	}
 	defer rows.Close()
 	var out []Card
