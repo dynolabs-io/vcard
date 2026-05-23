@@ -18,8 +18,13 @@ appId: io.dynolabs.vcard
 - launchApp:
     stopApp: false
 - assertVisible: "Your cards"
-- tapOn: "Account"
-- assertVisible: "Account"
+# iOS tab-bar labels don't appear as text nodes in Maestro's a11y tree
+# (verified 2026-05-23 in run 26326818765 — Account label visible in
+# screenshot but `tapOn: "Account"` returned `Element not found`).
+# Tap by relative position on the tab bar instead: bottom-right of
+# the screen, fourth tab from the left.
+- tapOn:
+    point: "90%, 95%"
 - assertVisible: "Sign in with Apple"
 - assertVisible:
     text: ".*LinkedIn.*"
