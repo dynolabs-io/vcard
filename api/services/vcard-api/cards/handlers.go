@@ -35,6 +35,44 @@ func (h *Handlers) Mount(mux *http.ServeMux) {
 	mux.HandleFunc("GET /v1/c/{slug}", h.publicBySlug)
 	// Mobile crash log sink — writes to slog so we can read in `kubectl logs`.
 	mux.HandleFunc("POST /v1/crash", h.crash)
+	// Anonymous reach analytics — web-profile + pass-signer fire-and-forget
+	// POST here when a recipient hits a public surface. Inserts a row in
+	// scan_events. See TBD-V05 (#9). NO PII: callers send the low-cardinality
+	// bucket (city/country/uaFamily) NOT the raw IP / User-Agent.
+	mux.HandleFunc("POST /v1/internal/scan-events", h.recordScanEvent)
+}
+
+// scanEventReq is the body of POST /v1/internal/scan-events. All bucketed
+// fields are optional; only targetSlug + kind are required.
+type scanEventReq struct {
+	TargetSlug string `json:"targetSlug"`
+	Kind       string `json:"kind"`
+	City       string `json:"city,omitempty"`
+	Country    string `json:"country,omitempty"`
+	UAFamily   string `json:"uaFamily,omitempty"`
+}
+
+// validKind enumerates the canonical kinds. Migration comment in this
+// package lists "vcf"/"profile"/"pkpass" — keep aligned.
+var validKind = map[string]bool{"profile": true, "vcf": true, "pkpass": true}
+
+func (h *Handlers) recordScanEvent(w http.ResponseWriter, r *http.Request) {
+	var req scanEventReq
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeErr(w, http.StatusBadRequest, "invalid json")
+		return
+	}
+	if req.TargetSlug == "" || !validKind[req.Kind] {
+		writeErr(w, http.StatusBadRequest, "targetSlug + kind ∈ {profile,vcf,pkpass} required")
+		return
+	}
+	// Fire-and-forget at the caller; this handler does the work synchronously
+	// but always returns 204. Failure is logged, never surfaced — analytics
+	// can't bite the public-profile experience.
+	if err := h.Repo.RecordScanEvent(r.Context(), req.TargetSlug, req.Kind, req.City, req.Country, req.UAFamily); err != nil {
+		slog.Warn("scan_events insert failed", "slug", req.TargetSlug, "kind", req.Kind, "err", err)
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func (h *Handlers) crash(w http.ResponseWriter, r *http.Request) {

@@ -349,6 +349,10 @@ func main() {
 			http.Error(w, "slug required", http.StatusBadRequest)
 			return
 		}
+		// Fire-and-forget reach-analytics emission. /v/<slug> is the
+		// Wallet-pass QR target — a hit here means the recipient scanned.
+		// Bucket = "vcf" (response is a downloadable .vcf attachment).
+		go emitScanEventPS(apiBase, slug, "vcf", r.Header.Get("User-Agent"))
 		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		c, err := fetchCard(ctx, apiBase, "", slug)
@@ -407,6 +411,57 @@ func main() {
 
 // fitToCanvas resizes/crops src image bytes to fit exactly w×h pixels,
 // preserving aspect with a center-cover crop. Returns PNG bytes.
+// emitScanEventPS — fire-and-forget POST to vcard-api's internal
+// scan-events sink. Per TBD-V05 / §-3 reach-analytics. No PII over the
+// wire: User-Agent is bucketed via uaFamilyPS before leaving this
+// process. City/country resolution deferred. Failure is logged, never
+// surfaced to the caller's response.
+func emitScanEventPS(apiBase, slug, kind, userAgent string) {
+	body := fmt.Sprintf(`{"targetSlug":%q,"kind":%q,"uaFamily":%q}`,
+		slug, kind, uaFamilyPS(userAgent))
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "POST", apiBase+"/v1/internal/scan-events", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Warn("scan_events emit failed", "slug", slug, "kind", kind, "err", err)
+		return
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 300 {
+		slog.Warn("scan_events emit non-2xx", "slug", slug, "kind", kind, "status", res.StatusCode)
+	}
+}
+
+// uaFamilyPS collapses User-Agent to a low-cardinality bucket. Mirrors
+// web-profile/uaFamily — kept duplicated rather than shared because the
+// two services don't import a common helper package today.
+func uaFamilyPS(ua string) string {
+	if ua == "" {
+		return ""
+	}
+	l := strings.ToLower(ua)
+	switch {
+	case strings.Contains(l, "iphone"):
+		return "iPhone"
+	case strings.Contains(l, "ipad"):
+		return "iPad"
+	case strings.Contains(l, "android"):
+		return "Android"
+	case strings.Contains(l, "mac os x"), strings.Contains(l, "macintosh"):
+		return "Mac"
+	case strings.Contains(l, "windows"):
+		return "Windows"
+	case strings.Contains(l, "linux"):
+		return "Linux"
+	case strings.Contains(l, "bot"), strings.Contains(l, "spider"), strings.Contains(l, "crawl"):
+		return "Bot"
+	default:
+		return "Other"
+	}
+}
+
 func fitToCanvas(src []byte, w, h int) ([]byte, error) {
 	srcImg, _, err := image.Decode(bytes.NewReader(src))
 	if err != nil {

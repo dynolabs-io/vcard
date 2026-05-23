@@ -288,6 +288,29 @@ func (r *Repo) Patch(ctx context.Context, id string, patch map[string]json.RawMe
 	return r.GetByID(ctx, id)
 }
 
+// RecordScanEvent appends a row to scan_events (anonymous fact table —
+// see the migration in this package). Fire-and-forget from the calling
+// handler: the row is "best effort" telemetry for Inbox reach analytics,
+// never blocks the user-visible response. Fields:
+//
+//   - targetSlug: card whose surface was hit (REQUIRED, validated upstream)
+//   - kind:       one of "profile" / "vcf" / "pkpass" (REQUIRED)
+//   - city/country/uaFamily: optional resolved bucket — caller passes ""
+//     when unknown. Schema columns are nullable; empty strings map to NULL.
+//
+// Per the migration's "No PII" promise, this method does NOT take a raw
+// IP or User-Agent string — callers MUST pre-resolve to the low-cardinality
+// bucket before calling here.
+func (r *Repo) RecordScanEvent(ctx context.Context, targetSlug, kind, city, country, uaFamily string) error {
+	const q = `INSERT INTO scan_events (target_slug, kind, city, country, ua_family)
+	           VALUES ($1, $2, NULLIF($3, ''), NULLIF($4, ''), NULLIF($5, ''))`
+	_, err := r.db.ExecContext(ctx, q, targetSlug, kind, city, country, uaFamily)
+	if err != nil {
+		return fmt.Errorf("scan_events insert: %w", err)
+	}
+	return nil
+}
+
 func (r *Repo) Delete(ctx context.Context, id string) error {
 	res, err := r.db.ExecContext(ctx, `DELETE FROM cards WHERE id = $1`, id)
 	if err != nil {

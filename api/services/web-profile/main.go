@@ -71,6 +71,9 @@ func main() {
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_ = tmpl.Execute(w, card)
+		// Fire-and-forget reach-analytics emission. Detached context so a
+		// slow vcard-api call doesn't extend the user-visible response.
+		go emitScanEvent(apiBase, slug, "profile", r.Header.Get("User-Agent"))
 	})
 
 	// Lead capture form submission — proxies to vcard-api /v1/leads.
@@ -122,6 +125,8 @@ func main() {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
+		// Fire-and-forget reach-analytics emission for .vcf downloads.
+		go emitScanEvent(apiBase, slug, "vcf", r.Header.Get("User-Agent"))
 		w.Header().Set("Content-Type", "text/vcard; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="`+slug+`.vcf"`)
 		_, _ = w.Write([]byte(buildVCard(card)))
@@ -144,6 +149,63 @@ func main() {
 	shutCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	_ = srv.Shutdown(shutCtx)
+}
+
+// emitScanEvent fires a fire-and-forget POST to vcard-api's internal
+// scan-events endpoint. Called from a goroutine so the user-visible
+// response isn't blocked by analytics latency. Failure is logged but
+// never surfaced — analytics can't bite the public-profile experience.
+// Per the migration's "No PII" promise, we resolve User-Agent → ua_family
+// bucket (low cardinality) BEFORE leaving this process; raw UA never
+// crosses the wire. City/country resolution deferred (TBD-V## follow-up).
+func emitScanEvent(apiBase, slug, kind, userAgent string) {
+	body := fmt.Sprintf(
+		`{"targetSlug":%q,"kind":%q,"uaFamily":%q}`,
+		slug, kind, uaFamily(userAgent),
+	)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(ctx, "POST", apiBase+"/v1/internal/scan-events", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		slog.Warn("scan_events emit failed", "slug", slug, "kind", kind, "err", err)
+		return
+	}
+	defer res.Body.Close()
+	if res.StatusCode >= 300 {
+		slog.Warn("scan_events emit non-2xx", "slug", slug, "kind", kind, "status", res.StatusCode)
+	}
+}
+
+// uaFamily collapses an arbitrary User-Agent string into a small set of
+// canonical buckets. Returns "" when the input is empty/unrecognised so
+// the DB row carries NULL rather than a stale "Other" bucket. Order
+// matters — match most-specific first (e.g., iPad before Mac, since
+// iPadOS spoofs Mac UA on iOS 13+).
+func uaFamily(ua string) string {
+	if ua == "" {
+		return ""
+	}
+	l := strings.ToLower(ua)
+	switch {
+	case strings.Contains(l, "iphone"):
+		return "iPhone"
+	case strings.Contains(l, "ipad"):
+		return "iPad"
+	case strings.Contains(l, "android"):
+		return "Android"
+	case strings.Contains(l, "mac os x"), strings.Contains(l, "macintosh"):
+		return "Mac"
+	case strings.Contains(l, "windows"):
+		return "Windows"
+	case strings.Contains(l, "linux"):
+		return "Linux"
+	case strings.Contains(l, "bot"), strings.Contains(l, "spider"), strings.Contains(l, "crawl"):
+		return "Bot"
+	default:
+		return "Other"
+	}
 }
 
 func fetchCard(ctx context.Context, apiBase, slug string) (*Card, error) {
