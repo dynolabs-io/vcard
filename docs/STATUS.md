@@ -1,6 +1,6 @@
 # Status
 
-> 📐 PERMANENT-refreshable. Snapshot of what's built today vs design. Update on every CODE-COMPLETE PR. Last refresh: **2026-05-21**.
+> 📐 PERMANENT-refreshable. Snapshot of what's built today vs design. Update on every CODE-COMPLETE PR. Last refresh: **2026-05-23**.
 
 ## Built and running
 
@@ -17,6 +17,8 @@
 | Inbox (scans + reveal + blocks) | `vcard-api /v1/scans*`, `/v1/leads*` | Shipped |
 | Wallet web-service for push-updates | `vcard-api /v1/wallet/*` | Shipped (relies on pass-signer .p12) |
 | End-to-end iOS CI | `.github/workflows/ios.yml` — ASC API auto-signing + Maestro gate + TestFlight + Founders-group assign | Shipped at run `26226863900` (2026-05-21) |
+| Operator smoke probe — `make smoke-proxy` proves iogrid proxy is in the egress path | `api/services/vcard-api/cmd/smoke-proxy/main.go` + `api/Makefile` | Shipped at `a38edd6` (PR #3, 2026-05-22). See [`RUNBOOKS.md`](RUNBOOKS.md) "Verify the iogrid proxy is actually in the egress path" |
+| iogrid Secret skeleton (shape contract, empty values) | `api/deploy/iogrid-proxy-creds.example.yaml` | Shipped at `a38edd6` (PR #3) |
 
 ## Open blockers — operator actions
 
@@ -34,9 +36,11 @@ Operator actions also tracked in `lessons-learned/`, but this table is the live 
 
 | # | Blocker | Where it lives | Symptom |
 |---|---|---|---|
-| 1 | **`iogridd` daemon offline** on a Mac with `social-intel` opt-in | Founder's Mac. Install via `curl -fsSL https://raw.githubusercontent.com/iogrid/iogrid/main/installer/macos/install-iogridd.sh \| bash` | `POST /v1/enrich/linkedin` → empty Result; proxy-gateway logs `dispatch_failed: no eligible provider`. Auth path is verified working. |
-| 2 | `proxy-gateway` `ValidateApiKey` Connect RPC not wired | iogrid (separate ticket on `iogrid/iogrid`) | Production uses `DEV_API_KEYS` env static fallback — vcard-prod key set on the running Deployment 2026-05-21 |
-| 3 | `dynolabs-bump-sha.yml` workflow missing on `openova-private:main` | `openova-private` | CI in vcard tries `gh workflow run dynolabs-bump-sha.yml --repo openova-io/openova-private` and 404s; image SHA bumps are silently manual |
+| 1 | **Traefik intercepts TLS on `proxy.iogrid.org:443`** before SOCKS5 can negotiate | iogrid gateway-side ([iogrid/iogrid#414](https://github.com/iogrid/iogrid/issues/414), [#350](https://github.com/iogrid/iogrid/issues/350) — Traefik vs IngressRouteTCP TLS-passthrough still flapping per PR #3 status note 2026-05-22) | `make smoke-proxy` will fail until this lands. Enrichment stays in graceful-skip path (200 with empty fields) — zero production impact today |
+| 2 | **`iogridd` daemon registered but no live dispatch stream** to `workloads-svc` | iogrid Phase 0 daemon scope (separate from #1 — even after gateway is fixed, the daemon needs to hold an open BidiStream to `https://api.iogrid.org/iogrid.workloads.v1.Dispatch`) | Provider row in iogrid `providers` DB shows `status=active`, `last_seen_at` recent, BUT `workloads-svc` logs `dispatcher: no eligible provider` because no daemon BidiStream is open against this replica. Evidence captured 2026-05-22 in the in-cluster Go smoke. |
+| 3 | `proxy-gateway` `ValidateApiKey` Connect RPC not wired | iogrid (separate ticket on `iogrid/iogrid`) | Production uses `DEV_API_KEYS` env static fallback — vcard-prod key set on the running Deployment 2026-05-21 |
+| 4 | `dynolabs-bump-sha.yml` workflow missing on `openova-private:main` | `openova-private` | CI in vcard tries `gh workflow run dynolabs-bump-sha.yml --repo openova-io/openova-private` and 404s; image SHA bumps are silently manual |
+| 5 | `iogrid-proxy-creds` Secret unpopulated on contabo-mkt (`dynolabs` ns) | Operator action — mint workspace + API key in iogrid `billing-svc`, then `kubectl create secret generic ...` per `api/deploy/iogrid-proxy-creds.example.yaml`. The Deployment already wires the three env keys with `optional: true` so the pod boots before this lands | `enrich.LinkedInClient.Enabled() == false` → enrich endpoint 200s with empty fields. Same UX symptom as blockers 1+2, different root cause |
 
 ## Open issues — board
 
@@ -49,6 +53,7 @@ Operator actions also tracked in `lessons-learned/`, but this table is the live 
 ## Recent commits (last 14d)
 
 ```
+a38edd6 feat(api,infra): route outbound HTTP via iogrid SOCKS5 proxy (first-customer integration) (#3)
 c28c023 docs(claude): builds run on GitHub Actions, not locally
 9eaf9a2 feat(enrich): drop Apollo, route LinkedIn enrichment via iogrid only
 81b8da7 feat(mobile): pass LinkedIn vanity through to vcard-api at sign-in
@@ -58,7 +63,6 @@ a92b3de feat(enrich): self-only LinkedIn-via-iogrid fallback in /v1/enrich/email
 e5a6fd5 chore(api): relocate CI to vcard/.github/workflows/api-build.yml
 29b944d Add 'api/' from commit 'e80cfcfc9fdcbd248e03309bbcc3337941cb832f'
 e80cfcf feat(enrich): LinkedIn vanity enrichment via iogrid SOCKS5+TLS proxy
-55ac71f chore: remove one-shot cinova secret bootstrap (job complete)
 ```
 
 ADRs for the three major decisions in the last 7 days: [`adr/0001-subtree-merge-api.md`](adr/0001-subtree-merge-api.md), [`adr/0002-drop-apollo-iogrid-only.md`](adr/0002-drop-apollo-iogrid-only.md), [`adr/0003-linkedin-vanity-via-url-prompt.md`](adr/0003-linkedin-vanity-via-url-prompt.md).

@@ -5,7 +5,7 @@
 > - **Open issues**: see board below
 > - **TestFlight builds awaiting walk**: rows in [`TRUST.md`](TRUST.md) marked 🔴 UNVERIFIED
 
-Last refresh: **2026-05-21**.
+Last refresh: **2026-05-23**.
 
 ## Open issues — board
 
@@ -44,6 +44,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-22 | `make smoke-proxy` operator probe + `api/Makefile` + `api/deploy/iogrid-proxy-creds.example.yaml` skeleton | vcard `a38edd6` (PR #3) |
 | 2026-05-21 | Apollo path deleted; iogrid-only enrichment | vcard `9eaf9a2`, openova-private `b2be7bdb` |
 | 2026-05-21 | iogrid SOCKS5+TLS LinkedIn-vanity fetch wired | vcard `e80cfcf` (pre-merge); now under `api/services/vcard-api/enrich/linkedin.go` |
 | 2026-05-21 | Subtree merge `dynolabs-io/api` → `vcard/api/` | vcard `29b944d`, `e5a6fd5`; openova-private `207b0199`; `dynolabs-io/api` archived |

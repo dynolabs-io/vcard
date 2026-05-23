@@ -86,6 +86,14 @@ Four corrections to remember before editing any iogrid integration:
 
 Don't commit Go build binaries — `.gitignore` excludes `/api/services/*/<svcname>` for each of the 5 services (commit `85d932b` after one accidental 9.5 MB import).
 
+## Graceful-skip needs a loud smoke probe
+
+> Source: `api/services/vcard-api/cmd/smoke-proxy/main.go` doc-comment (PR #3, merged 2026-05-22 as `a38edd6`). Promoted to a principle on 2026-05-23.
+
+Best-effort endpoints return 200-with-empty-fields on transport failure — that's the right UX contract (mobile callers don't have to branch on errors). The trap: it ALSO hides a misconfigured proxy / rotated key / gateway outage in production. The user-visible symptom of "API key rotated and we forgot" is identical to "everything is working but LinkedIn rate-limited us".
+
+**Rule**: every graceful-skip surface needs a paired operator probe that fails LOUDLY on the same transport path. For the iogrid LinkedIn-vanity client, that's `make smoke-proxy` (see [`RUNBOOKS.md`](RUNBOOKS.md) "Verify the iogrid proxy is actually in the egress path"). For any future graceful-skip surface you ship, ship the smoke probe in the same PR.
+
 ## Don't mix concerns in `openova-private` PRs
 
 The Flux source-of-truth repo (`openova-io/openova-private`) gets one kind of change at a time per PR:

@@ -17,7 +17,8 @@
 |---|---|---|---|
 | Apple Sign-In end-to-end (button → SIWA sheet → server session → card list loads) | 🔴 UNVERIFIED | — | — |
 | LinkedIn Sign-In end-to-end (button → OAuth sheet → server session → card list loads) | 🟡 VERIFIED-PARTIAL (2026-05-21 12:38, founder) | 2026-05-21 | OAuth + sign-in succeed; vanity capture path empirically returns `hasVanity=false` on the current LinkedIn app's `openid profile email` scope — see [ADR 0003](../adr/0003-linkedin-vanity-via-url-prompt.md) |
-| Import from LinkedIn — fill title + company in card editor | 🔴 UNVERIFIED | — | Requires TestFlight install of build ≥ `9eaf9a2` (URL-prompt flow) AND `iogridd` online (see [STATUS.md](../STATUS.md) blocker #1) |
+| Import from LinkedIn — fill title + company in card editor | 🔴 UNVERIFIED | — | Requires TestFlight install of build ≥ `9eaf9a2` (URL-prompt flow) AND iogrid gateway-side blockers cleared (see [STATUS.md](../STATUS.md) blockers #1, #2, #5). 2026-05-23 in-cluster Go smoke confirmed end-to-end transport: TLS+SOCKS5+USERPASS auth all succeed, dispatch fails with `dispatcher: no eligible provider` per iogrid `workloads-svc` |
+| iogrid proxy egress (operator probe) — `make smoke-proxy` returns PASS | 🔴 UNVERIFIED | — | Deferred until iogrid/iogrid#414 (Traefik vs IngressRouteTCP TLS-passthrough) lands AND the `iogrid-proxy-creds` Secret is populated. Source-of-truth: `api/services/vcard-api/cmd/smoke-proxy/main.go` |
 | Create new card + slug allocation + photo upload | 🔴 UNVERIFIED | — | — |
 | QR scan → import scanned card | 🔴 UNVERIFIED | — | — |
 | Apple Wallet pass — open pass in Wallet app | 🔴 UNVERIFIED | — | Blocked on Apple Pass Type ID `.p12` ([STATUS.md](../STATUS.md) operator action #1) |

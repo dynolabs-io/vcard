@@ -48,8 +48,9 @@
 
 ## Pending follow-ups not addressed in this session
 
-- Founder action: `curl -fsSL https://raw.githubusercontent.com/iogrid/iogrid/main/installer/macos/install-iogridd.sh | bash` on Mac with `social-intel` opt-in to unblock dispatch.
 - Founder action: provision Apple Pass Type ID `.p12`, LinkedIn OAuth app credentials, Google Wallet issuer.
+- iogrid-side: resolve [iogrid/iogrid#414](https://github.com/iogrid/iogrid/issues/414) + [#350](https://github.com/iogrid/iogrid/issues/350) (Traefik vs IngressRouteTCP TLS-passthrough on `proxy.iogrid.org:443`).
+- iogrid-side: daemon BidiStream to `workloads-svc.Dispatch` — provider rows heartbeat fine but no dispatch stream is open per 2026-05-22 in-cluster Go smoke evidence.
 - iogrid-side: wire `ValidateApiKey` Connect RPC so `proxy-gateway` stops using `DEV_API_KEYS`.
 - openova-private: file the missing `dynolabs-bump-sha.yml` workflow so image SHA bumps stop being silently manual.
 

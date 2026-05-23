@@ -56,6 +56,14 @@ All under `api/services/`, aggregated via `api/go.work`, built as distroless sta
 | `web-profile` | SSR public profile pages | `GET https://dynolabs.io/c/<slug>` |
 | (shared) | Shared Go code | `api/shared/` |
 
+Backend operator tooling (not a service — invoked by humans, lives under `api/`):
+
+| Path | Role |
+|---|---|
+| `api/Makefile` | Local-loop convenience targets — `make build / test / vet / tidy / test-enrich / smoke-proxy / help`. CI still owns shipped artifacts; this is for the edit-test-smoke loop. |
+| `api/services/vcard-api/cmd/smoke-proxy/main.go` | Operator probe that GETs `https://api.ipify.org` through the iogrid client and fails LOUDLY if the proxied IP equals the local egress IP. Invoked as `make smoke-proxy`. Source-of-truth for [`RUNBOOKS.md`](RUNBOOKS.md) "Verify the iogrid proxy is actually in the egress path". |
+| `api/deploy/iogrid-proxy-creds.example.yaml` | Skeleton K8s `Secret` for `iogrid-proxy-creds` — empty values, instructional comments. Real values land out-of-band per [`SECURITY.md`](SECURITY.md). |
+
 Data plane: **CNPG Postgres** `vcard-postgres-rw` (DATABASE_URL via `vcard-postgres-app` secret); migrations are idempotent `IF NOT EXISTS` statements in `api/services/vcard-api/cards/migrations.go`. **MinIO** for avatar object storage (bucket `vcard-photos` per `api/services/photo-cdn/main.go:38`).
 
 ## Deploy

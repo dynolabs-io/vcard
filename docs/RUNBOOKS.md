@@ -136,6 +136,48 @@ kubectl -n iogrid set env deploy/proxy-gateway \
 
 The full wire-format gotchas (key prefix, hash, workspaces-table shape, outer-TLS-before-SOCKS5) are in [`PRINCIPLES.md`](PRINCIPLES.md) §iogrid.
 
+The canonical Secret skeleton lives in-tree at `api/deploy/iogrid-proxy-creds.example.yaml` (PR #3) — empty values, instructional comments. Treat as the shape contract; never commit a real `iog_` key.
+
+## Verify the iogrid proxy is actually in the egress path (`make smoke-proxy`)
+
+> Source: previously `README.md` "Proxy mode (iogrid residential SOCKS5+TLS) → Smoke test" + `api/services/vcard-api/cmd/smoke-proxy/main.go` (PR #3, merged 2026-05-22 as `a38edd6`). Folded here on 2026-05-23.
+
+The LinkedIn enrichment client always returns 200 with empty fields on transport failure (graceful-skip is the contract per [`PRINCIPLES.md`](PRINCIPLES.md)) — that hides a misconfigured proxy in production. The `make smoke-proxy` probe fails LOUDLY so operators catch `IOGRID_API_KEY` rotations, gateway outages, and Traefik mis-wiring before a real LinkedIn lookup silently degrades.
+
+### What it does
+
+`api/services/vcard-api/cmd/smoke-proxy/main.go` reuses the exact `enrich.LinkedInFromEnv()` client (same `Transport.DialContext` that vcard-api itself uses), GETs `https://api.ipify.org?format=json`, and asserts the returned IP is NOT the local egress IP. Non-zero exit on any failure; logs `smoke-proxy PASS` + the proxied IP + latency on success.
+
+### How to run
+
+```bash
+cd api
+IOGRID_WORKSPACE=vcard \
+IOGRID_API_KEY=iog_… \
+IOGRID_PROXY_URL=proxy.iogrid.org:443 \
+  make smoke-proxy
+```
+
+Exit codes:
+
+- `0` → proxy is in the path; egress IP ≠ local IP.
+- `1` → transport failure (proxy unreachable, TLS handshake failed, SOCKS5 auth rejected, CONNECT rejected, etc.) OR `proxy egress IP == local egress IP` (proxy bypass — fail loudly).
+- `2` → env not set (the Makefile target's preflight refuses to invoke without `IOGRID_API_KEY` + `IOGRID_WORKSPACE`).
+
+### Other Makefile targets
+
+`api/Makefile` (PR #3) ships these convenience targets for local loops. CI still owns shipped artifacts (`.github/workflows/api-build.yml`); this is only for the local edit-test-smoke loop:
+
+```
+make build         # go build ./... across the workspace
+make test          # go test ./... across the workspace
+make test-enrich   # go test -v ./services/vcard-api/enrich/... (offline)
+make vet           # go vet ./...
+make tidy          # go mod tidy per service module
+make smoke-proxy   # the probe above
+make help          # auto-generated from ## comments
+```
+
 ## Install `iogridd` on the founder's Mac
 
 Required for `POST /v1/enrich/linkedin` to actually fetch LinkedIn pages (see [`STATUS.md`](STATUS.md) iogrid blocker #1):

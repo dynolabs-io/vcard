@@ -21,7 +21,7 @@ All under ns `dynolabs` on the contabo-mkt cluster. Source-of-truth for refs is 
 |---|---|---|---|
 | `vcard-hmac` | `vcard-api` env `VCARD_HMAC_SECRET` | HS256 session-token signing | Yes |
 | `vcard-postgres-app` (CNPG-issued) | `vcard-api` env `DATABASE_URL` | PG connection string | Yes (CNPG-managed) |
-| `iogrid-proxy-creds` | `vcard-api` env `IOGRID_API_KEY` / `IOGRID_WORKSPACE` / `IOGRID_PROXY_URL` | iogrid customer auth for LinkedIn-vanity enrichment | Yes (minted 2026-05-21) |
+| `iogrid-proxy-creds` | `vcard-api` env `IOGRID_API_KEY` / `IOGRID_WORKSPACE` / `IOGRID_PROXY_URL` | iogrid customer auth for LinkedIn-vanity enrichment | Yes (minted 2026-05-21). Canonical empty-shape lives in-tree at `api/deploy/iogrid-proxy-creds.example.yaml` (PR #3, 2026-05-22) — committed with empty values so the shape is discoverable without leaking real keys |
 | `minio-root-credentials` | `photo-cdn` env `S3_*` | MinIO root creds for the `vcard-photos` bucket | Yes (MinIO StatefulSet) |
 | `ghcr-pull` | every `Deployment` `imagePullSecrets` | Pull `ghcr.io/dynolabs-io/vcard/api/*` images | Yes |
 | **`pass-signer-cert`** (or equivalent) | `pass-signer` | Apple Pass Type ID `.p12` + key + WWDR cert | **NO — operator action** (see [`STATUS.md`](STATUS.md)) |
