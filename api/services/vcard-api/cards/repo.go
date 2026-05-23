@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -286,6 +287,137 @@ func (r *Repo) Patch(ctx context.Context, id string, patch map[string]json.RawMe
 		return nil, ErrNotFound
 	}
 	return r.GetByID(ctx, id)
+}
+
+// ReachStats is the per-card analytics aggregation surface backing
+// the mobile Inbox tab. Returns totals + per-day breakdown + UA-family
+// distribution over the trailing `days` window (capped 1..90).
+//
+// All three result sets are bucketed by `kind` so the caller can render
+// "profile views vs vCard downloads vs Wallet adopts" separately —
+// these are different intent levels and conflating them in one number
+// would understate Wallet adoption.
+type ReachStats struct {
+	Totals   map[string]int    `json:"totals"`   // kind → count
+	ByDay    []ReachDayBucket  `json:"byDay"`    // newest first
+	UAFamily map[string]int    `json:"uaFamily"` // family → count
+}
+
+// ReachDayBucket is one row of byDay.
+type ReachDayBucket struct {
+	Date    string `json:"date"`    // YYYY-MM-DD
+	Profile int    `json:"profile"`
+	VCF     int    `json:"vcf"`
+	PKPass  int    `json:"pkpass"`
+}
+
+// ReachStatsBySlug returns the analytics aggregation. Three SELECTs —
+// kept separate (instead of a CTE chain) so explain plans stay obvious
+// and a slow group-by-date doesn't block the totals path. days clamped
+// inside; pass 0 to use the default 30.
+func (r *Repo) ReachStatsBySlug(ctx context.Context, slug string, days int) (*ReachStats, error) {
+	if days <= 0 {
+		days = 30
+	}
+	if days > 90 {
+		days = 90
+	}
+	out := &ReachStats{
+		Totals:   map[string]int{"profile": 0, "vcf": 0, "pkpass": 0},
+		ByDay:    []ReachDayBucket{},
+		UAFamily: map[string]int{},
+	}
+
+	// 1. Totals by kind
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT kind, count(*)
+		   FROM scan_events
+		  WHERE target_slug = $1
+		    AND occurred_at > now() - make_interval(days => $2::int)
+		  GROUP BY kind`,
+		slug, days)
+	if err != nil {
+		return nil, fmt.Errorf("reach totals: %w", err)
+	}
+	for rows.Next() {
+		var k string
+		var n int
+		if err := rows.Scan(&k, &n); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		out.Totals[k] = n
+	}
+	rows.Close()
+
+	// 2. By-day breakdown — one row per (date, kind), then pivot to wide.
+	rows, err = r.db.QueryContext(ctx,
+		`SELECT to_char(date_trunc('day', occurred_at), 'YYYY-MM-DD') AS day,
+		        kind, count(*)
+		   FROM scan_events
+		  WHERE target_slug = $1
+		    AND occurred_at > now() - make_interval(days => $2::int)
+		  GROUP BY day, kind
+		  ORDER BY day DESC`,
+		slug, days)
+	if err != nil {
+		return nil, fmt.Errorf("reach by-day: %w", err)
+	}
+	byDay := map[string]*ReachDayBucket{}
+	for rows.Next() {
+		var day, kind string
+		var n int
+		if err := rows.Scan(&day, &kind, &n); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		b, ok := byDay[day]
+		if !ok {
+			b = &ReachDayBucket{Date: day}
+			byDay[day] = b
+		}
+		switch kind {
+		case "profile":
+			b.Profile = n
+		case "vcf":
+			b.VCF = n
+		case "pkpass":
+			b.PKPass = n
+		}
+	}
+	rows.Close()
+	// Convert to slice in DESC date order. Sorting via the days input
+	// (sorted DESC by the SQL); since maps are unordered, re-emit in
+	// insertion order is unsafe — sort by Date DESC instead.
+	for _, b := range byDay {
+		out.ByDay = append(out.ByDay, *b)
+	}
+	// Reverse-lex sort by date (YYYY-MM-DD is lex-orderable).
+	sort.Slice(out.ByDay, func(i, j int) bool { return out.ByDay[i].Date > out.ByDay[j].Date })
+
+	// 3. UA family distribution (NULLs treated as "" — drop those)
+	rows, err = r.db.QueryContext(ctx,
+		`SELECT ua_family, count(*)
+		   FROM scan_events
+		  WHERE target_slug = $1
+		    AND occurred_at > now() - make_interval(days => $2::int)
+		    AND ua_family IS NOT NULL
+		  GROUP BY ua_family`,
+		slug, days)
+	if err != nil {
+		return nil, fmt.Errorf("reach ua-family: %w", err)
+	}
+	for rows.Next() {
+		var f string
+		var n int
+		if err := rows.Scan(&f, &n); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		out.UAFamily[f] = n
+	}
+	rows.Close()
+	return out, nil
 }
 
 // RecordScanEvent appends a row to scan_events (anonymous fact table —
