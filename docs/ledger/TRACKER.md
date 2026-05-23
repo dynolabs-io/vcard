@@ -31,7 +31,7 @@ Last refresh: **2026-05-23**.
 | Apple Sign-In | ✓ | ✓ | ✗ | ✗ |
 | LinkedIn Sign-In | ✓ | ✓ | 🟡 partial | ✗ |
 | Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ✗ (blocked on `iogridd`) | ✗ |
-| Card create + slug + photo | ✓ | ✓ | ✗ | ✗ |
+| Card create + slug + photo | ✓ | ✓ | 🟢 walked 2026-05-23 (create + slug + photo upload + render + vCard PHOTO field) | ✓ |
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
 | Apple Wallet pass | ✓ | ✓ | ✗ (blocked on `.p12`) | ✗ |
 | Google Wallet pass | ✓ | ✓ | ✗ (blocked on issuer) | ✗ |
@@ -44,6 +44,7 @@ Per [`DOD.md`](../DOD.md), `Code ✓ + Deploy ✓` is necessary but not sufficie
 
 | Date | Delivery | Receipt |
 |---|---|---|
+| 2026-05-23 | Walk #3: **photo-cdn upload + serve + card photo render + vCard PHOTO field** end-to-end | avatar 15393 B + logo 13713 B uploaded to `cdn.dynolabs.io/p/uk4kcdpm{,-brand}`; card PATCHed; SSR renders avatar; `.vcf` ships `PHOTO;VALUE=uri:…`; screenshot `walk-public-profile-photo-2026-05-23.png` |
 | 2026-05-23 | Walk #2: **lead form on public web profile** — POST + redirect + DB row + 4 fields persisted. Screenshot landed on issue #1 | Lead `id=29e82180-…`, target_slug `uk4kcdpm`; screenshots `walk-leadform-filled-2026-05-23.png` + `walk-leadform-sent-2026-05-23.png` |
 | 2026-05-23 | Walk #1: **public web profile + vCard 3.0 download** end-to-end, screenshot landed on issue #1 | [issue #1 comment](https://github.com/dynolabs-io/vcard/issues/1#issuecomment-4524432416); slug `uk4kcdpm`; screenshot `walk-public-profile-emrah-2026-05-23.png` |
 | 2026-05-22 | `make smoke-proxy` operator probe + `api/Makefile` + `api/deploy/iogrid-proxy-creds.example.yaml` skeleton | vcard `a38edd6` (PR #3) |
