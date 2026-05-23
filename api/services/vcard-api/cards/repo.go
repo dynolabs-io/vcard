@@ -262,7 +262,16 @@ func (r *Repo) Patch(ctx context.Context, id string, patch map[string]json.RawMe
 			i++
 			continue
 		}
-		// Scalar text: decode then NULLIF empty.
+		// Scalar text: a raw `null` is explicit-clear intent (TBD-V12).
+		// We MUST handle it BEFORE the json.Unmarshal-into-string call
+		// below — Go's json package returns an error when trying to
+		// unmarshal null into a non-pointer string, which would otherwise
+		// be misreported as "not a string" and return a 400 to the client
+		// even though the caller's intent was clear.
+		if string(raw) == "null" {
+			setClauses = append(setClauses, fmt.Sprintf("%s = NULL", col))
+			continue
+		}
 		var s string
 		if err := json.Unmarshal(raw, &s); err != nil {
 			return nil, fmt.Errorf("patch field %q: not a string: %w", key, err)
