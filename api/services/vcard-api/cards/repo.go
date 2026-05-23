@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var ErrNotFound = errors.New("card not found")
@@ -186,6 +187,9 @@ func (r *Repo) ResolveConflict(ctx context.Context, userID, slug, winner string,
 	}
 }
 
+// Update is RETAINED for callers that legitimately want a full
+// replace (claim/merge flows that have already loaded the full record).
+// Mobile / external clients SHOULD use Patch instead — see TBD-V06.
 func (r *Repo) Update(ctx context.Context, c *Card) error {
 	emails, _ := json.Marshal(orEmpty(c.Emails))
 	phones, _ := json.Marshal(orEmpty(c.Phones))
@@ -206,6 +210,82 @@ func (r *Repo) Update(ctx context.Context, c *Card) error {
 		return fmt.Errorf("update card: %w", err)
 	}
 	return nil
+}
+
+// patchColumnMap maps the JSON field name in the patch body to the DB
+// column name. Only listed fields are patchable — IDs, slugs, timestamps,
+// device_id, and user_id are server-managed and rejected at the boundary.
+var patchColumnMap = map[string]string{
+	"label":        "label",
+	"name":         "name",
+	"title":        "title",
+	"company":      "company",
+	"emails":       "emails",
+	"phones":       "phones",
+	"socials":      "socials",
+	"photoUrl":     "photo_url",
+	"brandLogoUrl": "brand_logo_url",
+	"template":     "template",
+	"customColor":  "custom_color",
+	"walletStyle":  "wallet_style",
+}
+
+// Patch applies a partial update — ONLY fields present in `patch` are
+// written. The map's keys must match patchColumnMap; unknown keys are
+// silently ignored (server-managed fields like id/slug/createdAt are
+// rejected this way). JSONB columns (emails/phones/socials) are passed
+// through verbatim; scalar text columns use NULLIF so an empty string
+// stored as NULL matches the schema's nullable semantics.
+//
+// Fix for TBD-V06: pre-2026-05-23 PATCH decoded into a Card{} zero-value
+// and the repo wrote every column unconditionally, silently zeroing
+// fields the caller didn't send. The mobile app's optimistic partial
+// patches were a data-loss vector.
+func (r *Repo) Patch(ctx context.Context, id string, patch map[string]json.RawMessage) (*Card, error) {
+	if len(patch) == 0 {
+		// Caller still gets a 200 — same row, no change.
+		return r.GetByID(ctx, id)
+	}
+	setClauses := make([]string, 0, len(patch))
+	args := make([]any, 0, len(patch)+1)
+	i := 1
+	for key, raw := range patch {
+		col, ok := patchColumnMap[key]
+		if !ok {
+			continue // unknown / server-managed field — ignore
+		}
+		// JSONB arrays: pass through the raw bytes.
+		if col == "emails" || col == "phones" || col == "socials" {
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", col, i))
+			args = append(args, []byte(raw))
+			i++
+			continue
+		}
+		// Scalar text: decode then NULLIF empty.
+		var s string
+		if err := json.Unmarshal(raw, &s); err != nil {
+			return nil, fmt.Errorf("patch field %q: not a string: %w", key, err)
+		}
+		setClauses = append(setClauses, fmt.Sprintf("%s = NULLIF($%d, '')", col, i))
+		args = append(args, s)
+		i++
+	}
+	if len(setClauses) == 0 {
+		// All keys were unknown — return the row unchanged.
+		return r.GetByID(ctx, id)
+	}
+	setClauses = append(setClauses, "updated_at = now()")
+	args = append(args, id)
+	q := fmt.Sprintf("UPDATE cards SET %s WHERE id = $%d", strings.Join(setClauses, ", "), i)
+	res, err := r.db.ExecContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("patch card: %w", err)
+	}
+	n, _ := res.RowsAffected()
+	if n == 0 {
+		return nil, ErrNotFound
+	}
+	return r.GetByID(ctx, id)
 }
 
 func (r *Repo) Delete(ctx context.Context, id string) error {
