@@ -38,7 +38,7 @@ Last refresh: **2026-05-23**.
 | Owner | Action | Blocks |
 |---|---|---|
 | Founder | Request Google Wallet API issuer at console.cloud.google.com/google/wallet → mount issuer + service-account JSON | Google Wallet pass walk row |
-| iogrid platform | **2026-05-24 update**: iogrid#456 (Traefik route HTTP 404) RESOLVED — `POST https://api.iogrid.org/iogrid.workloads.v1.WorkloadDispatchService/Dispatch` now returns HTTP 200, workloads-svc handler alive (curl probe verified `dispatch stream opened` log). **New blocker** one layer downstream: Hatice's iogridd 0.1.0 spawns `live dispatch bridge` task but silently blocks before `run_dispatch_stream` — zero `DaemonHello` lines arriving at workloads-svc since pod start at `2026-05-24T01:12:59Z`. Peer (iogrid) choosing between (1) workloads-svc bypass admitting provider DB rows without active dispatch stream OR (2) iogridd 0.1.1 rebuild with verbose dispatch-bridge tracing. Founder's call. | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
+| ~~iogrid platform~~ | 🟢 **RESOLVED 2026-05-24T22:56Z** — iogrid daemon 0.1.1 (tracing) → 0.1.2 (bridge-spawn `cancel_tx` fix) → 0.1.3 (TunnelManager wired). All three blockers landed across the session: Traefik route (iogrid#456 closed yesterday), bridge spawn (`spawn_live_dispatch` cancel-loop), and data-plane (`TunnelOpen`/`TunnelData`/`TunnelClose` byte-forwarding). vcard smoke + linkedin-fetch both PASS end-to-end through Hatice's Mac (`188.66.253.46` Ooredoo OM). Evidence: [vcard#27 comment](https://github.com/dynolabs-io/vcard/issues/27#issuecomment-4530431432). | — (cleared) |
 
 Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the cluster — the previous incarnation of this table predated the actual provisioning. See updated [STATUS.md operator-actions table](../STATUS.md).
 
@@ -48,7 +48,7 @@ Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the clust
 |---|---|---|---|---|
 | Apple Sign-In | ✓ | ✓ | ✗ | ✗ |
 | LinkedIn Sign-In | ✓ | ✓ | 🟢 server-side wiring walked 2026-05-23; founder full-flow 2026-05-21 | ✓ |
-| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ⛔ blocked on iogrid daemon-side — Traefik route now resolved (iogrid#456 closed); blocker moved to iogridd 0.1.0 dispatch-bridge silent failure on Hatice's Mac. Peer (iogrid) picking bypass-vs-rebuild path. | ✗ |
+| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | 🟢 walked 2026-05-24T22:56Z — smoke-proxy + linkedin-fetch via Hatice's Mac (`188.66.253.46` Ooredoo OM) PASS, screenshot landed on [vcard#27](https://github.com/dynolabs-io/vcard/issues/27#issuecomment-4530431432) | ✓ |
 | Card create + slug + photo | ✓ | ✓ | 🟢 walked 2026-05-23 (create + slug + photo upload + render + vCard PHOTO field) | ✓ |
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
 | Apple Wallet pass | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side mint + Maestro Wallet-add gate) | ✓ |
