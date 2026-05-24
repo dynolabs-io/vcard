@@ -38,7 +38,7 @@ Last refresh: **2026-05-23**.
 | Owner | Action | Blocks |
 |---|---|---|
 | Founder | Request Google Wallet API issuer at console.cloud.google.com/google/wallet → mount issuer + service-account JSON | Google Wallet pass walk row |
-| iogrid platform | Resolve workloads-svc Traefik route — `/iogrid.workloads.v1.*` returns HTTP 404 even with proper Connect-RPC content-type. workloads-svc Deployment stuck mid-rollout (`replicas=2/1`, ImagePullBackOff). Filed [iogrid/iogrid#456](https://github.com/iogrid/iogrid/issues/456) with 8-mechanism diagnosis. PR [iogrid/iogrid#458](https://github.com/iogrid/iogrid/pull/458) opened with the workloads-svc `imagePullSecrets` fix — **mergeable, CI green, awaiting iogrid maintainer review** | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
+| iogrid platform | **2026-05-24 update**: iogrid#456 (Traefik route HTTP 404) RESOLVED — `POST https://api.iogrid.org/iogrid.workloads.v1.WorkloadDispatchService/Dispatch` now returns HTTP 200, workloads-svc handler alive (curl probe verified `dispatch stream opened` log). **New blocker** one layer downstream: Hatice's iogridd 0.1.0 spawns `live dispatch bridge` task but silently blocks before `run_dispatch_stream` — zero `DaemonHello` lines arriving at workloads-svc since pod start at `2026-05-24T01:12:59Z`. Peer (iogrid) choosing between (1) workloads-svc bypass admitting provider DB rows without active dispatch stream OR (2) iogridd 0.1.1 rebuild with verbose dispatch-bridge tracing. Founder's call. | Import-from-LinkedIn walk row + iogrid smoke-proxy walk row |
 
 Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the cluster — the previous incarnation of this table predated the actual provisioning. See updated [STATUS.md operator-actions table](../STATUS.md).
 
@@ -48,7 +48,7 @@ Apple Pass Type ID + LinkedIn OAuth app are **already provisioned** in the clust
 |---|---|---|---|---|
 | Apple Sign-In | ✓ | ✓ | ✗ | ✗ |
 | LinkedIn Sign-In | ✓ | ✓ | 🟢 server-side wiring walked 2026-05-23; founder full-flow 2026-05-21 | ✓ |
-| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ⛔ blocked on iogrid platform — workloads-svc Traefik route HTTP 404, iogrid PR [#458](https://github.com/iogrid/iogrid/pull/458) opened mergeable/green | ✗ |
+| Import from LinkedIn (with iogrid) | ✓ (`9eaf9a2`) | ✓ (`b2be7bdb`) | ⛔ blocked on iogrid daemon-side — Traefik route now resolved (iogrid#456 closed); blocker moved to iogridd 0.1.0 dispatch-bridge silent failure on Hatice's Mac. Peer (iogrid) picking bypass-vs-rebuild path. | ✗ |
 | Card create + slug + photo | ✓ | ✓ | 🟢 walked 2026-05-23 (create + slug + photo upload + render + vCard PHOTO field) | ✓ |
 | QR scan + import | ✓ | ✓ | ✗ | ✗ |
 | Apple Wallet pass | ✓ | ✓ | 🟢 walked 2026-05-23 (server-side mint + Maestro Wallet-add gate) | ✓ |
