@@ -1,0 +1,97 @@
+name: ASC Invite Tester to Founders (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      email:
+        description: 'Tester email (the Apple ID that will receive the invite)'
+        required: true
+      first_name:
+        description: 'First name (shown in the Apple invite email)'
+        required: true
+        default: 'Tester'
+      last_name:
+        description: 'Last name'
+        required: true
+        default: 'Founder'
+
+jobs:
+  invite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install pyjwt cryptography requests
+      - env:
+          KEY_ID:    ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          PRIVATE_KEY_B64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          TESTER_EMAIL: ${{ inputs.email }}
+          TESTER_FIRST: ${{ inputs.first_name }}
+          TESTER_LAST:  ${{ inputs.last_name }}
+        run: |
+          python3 - <<'PY'
+          import os, base64, time, jwt, requests, json, sys
+          key = base64.b64decode(os.environ['PRIVATE_KEY_B64'])
+          token = jwt.encode(
+              { 'iss': os.environ['ISSUER_ID'], 'iat': int(time.time()),
+                'exp': int(time.time())+1200, 'aud': 'appstoreconnect-v1' },
+              key, algorithm='ES256', headers={ 'kid': os.environ['KEY_ID'] })
+          h = { 'Authorization': f'Bearer {token}' }
+          base = 'https://api.appstoreconnect.apple.com'
+
+          # 1. Locate app + Founders group.
+          apps = requests.get(f'{base}/v1/apps?filter[bundleId]=io.dynolabs.vcard', headers=h).json()
+          app_id = apps['data'][0]['id']
+          groups = requests.get(f'{base}/v1/betaGroups?filter[app]={app_id}', headers=h).json()
+          group = next(g for g in groups['data'] if g['attributes']['name'] == 'Founders')
+          group_id = group['id']
+          print(f'app_id={app_id} founders_group_id={group_id}')
+
+          email = os.environ['TESTER_EMAIL']
+
+          # 2. Is the tester already in ASC for this app?
+          existing = requests.get(
+              f'{base}/v1/betaTesters?filter[apps]={app_id}&filter[email]={email}&limit=1',
+              headers=h).json()
+          tester_id = existing.get('data', [{}])[0].get('id') if existing.get('data') else None
+          print(f'existing_tester_id={tester_id}')
+
+          if tester_id is None:
+              # 3a. Create the tester + attach to Founders group in one POST.
+              body = {
+                  'data': {
+                      'type': 'betaTesters',
+                      'attributes': {
+                          'email': email,
+                          'firstName': os.environ['TESTER_FIRST'],
+                          'lastName':  os.environ['TESTER_LAST'],
+                      },
+                      'relationships': {
+                          'betaGroups': {
+                              'data': [{ 'type': 'betaGroups', 'id': group_id }],
+                          },
+                      },
+                  }
+              }
+              r = requests.post(f'{base}/v1/betaTesters',
+                  headers={**h, 'Content-Type':'application/json'},
+                  data=json.dumps(body))
+              print(f'create_tester status={r.status_code} body={r.text}')
+              if r.status_code not in (200, 201):
+                  sys.exit(1)
+              print('NEW invite sent — check the inbox of', email)
+          else:
+              # 3b. Tester already exists — make sure they're in Founders.
+              body = { 'data': [ { 'type': 'betaTesters', 'id': tester_id } ] }
+              r = requests.post(
+                  f'{base}/v1/betaGroups/{group_id}/relationships/betaTesters',
+                  headers={**h, 'Content-Type':'application/json'},
+                  data=json.dumps(body))
+              print(f'add_to_group status={r.status_code} body={r.text}')
+              # 422 = already in group. 204 = added.
+              if r.status_code not in (200, 204, 422):
+                  sys.exit(1)
+              print('Tester already in ASC. Ensured Founders membership. They should see vCard in TestFlight on next refresh.')
+          PY
