@@ -1,0 +1,872 @@
+- generic [active] [ref=e1]:
+  - link "Skip to main content" [ref=e2] [cursor=pointer]:
+    - /url: "#main-content"
+  - banner [ref=e3]:
+    - navigation "Primary" [ref=e4]:
+      - link "LinkedIn" [ref=e5] [cursor=pointer]:
+        - /url: /?trk=public_profile_nav-header-logo
+        - generic [ref=e6]: LinkedIn
+      - list [ref=e8]:
+        - listitem [ref=e9]:
+          - link "Top Content" [ref=e10] [cursor=pointer]:
+            - /url: https://www.linkedin.com/top-content?trk=public_profile_guest_nav_menu_topContent
+            - generic [ref=e12]: Top Content
+        - listitem [ref=e13]:
+          - link "People" [ref=e14] [cursor=pointer]:
+            - /url: https://www.linkedin.com/pub/dir/+/+?trk=public_profile_guest_nav_menu_people
+            - generic [ref=e16]: People
+        - listitem [ref=e17]:
+          - link "Learning" [ref=e18] [cursor=pointer]:
+            - /url: https://www.linkedin.com/learning/search?trk=public_profile_guest_nav_menu_learning
+            - generic [ref=e20]: Learning
+        - listitem [ref=e21]:
+          - link "Jobs" [ref=e22] [cursor=pointer]:
+            - /url: https://www.linkedin.com/jobs?trk=public_profile_guest_nav_menu_jobs
+            - generic [ref=e24]: Jobs
+        - listitem [ref=e25]:
+          - link "Games" [ref=e26] [cursor=pointer]:
+            - /url: https://www.linkedin.com/games?trk=public_profile_guest_nav_menu_games
+            - generic [ref=e28]: Games
+      - generic [ref=e29]:
+        - link "Join now" [ref=e30] [cursor=pointer]:
+          - /url: https://www.linkedin.com/signup/public-profile-join?vieweeVanityName=satyanadella&session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fsatyanadella&trk=public_profile_nav-header-join
+        - link "Sign in" [ref=e31] [cursor=pointer]:
+          - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fin%2Fsatyanadella&fromSignIn=true&trk=public_profile_nav-header-signin
+  - main [ref=e32]:
+    - generic [ref=e35]:
+      - generic [ref=e36]:
+        - figure [ref=e37]:
+          - img [ref=e40]
+        - generic [ref=e41]:
+          - img "Satya Nadella" [ref=e43]
+          - generic [ref=e44]:
+            - generic [ref=e45]:
+              - heading "Satya Nadella Satya Nadella is an influencer" [level=1] [ref=e46]:
+                - text: Satya Nadella
+                - img "Satya Nadella is an influencer"
+              - heading "Chairman and CEO at Microsoft" [level=2] [ref=e47]
+              - heading "Redmond, Washington, United States 12M followers · 500+ connections" [level=3] [ref=e48]:
+                - generic [ref=e49]:
+                  - text: Redmond, Washington, United States
+                  - generic [ref=e50]: 12M followers · 500+ connections
+              - heading "See your mutual connections with Satya" [level=4] [ref=e51]:
+                - generic [ref=e53]:
+                  - generic [ref=e54]:
+                    - img [ref=e55]
+                    - img [ref=e56]
+                    - img [ref=e57]
+                  - button "See your mutual connections with Satya" [ref=e58] [cursor=pointer]: See your mutual connections
+              - link "Join to follow" [ref=e60] [cursor=pointer]:
+                - /url: https://www.linkedin.com/signup/public-profile-join?vieweeVanityName=satyanadella&trk=public_profile_top-card-primary-button-join-to-follow
+            - generic [ref=e62]:
+              - link "Microsoft" [ref=e64] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/microsoft?trk=public_profile_topcard-current-company
+                - img [ref=e65]
+                - generic [ref=e66]: Microsoft
+              - link "The University of Chicago Booth School of Business" [ref=e68] [cursor=pointer]:
+                - /url: https://www.linkedin.com/school/universityofchicagoboothschoolofbusiness/?trk=public_profile_topcard-school
+                - img [ref=e69]
+                - generic [ref=e70]: The University of Chicago Booth School of Business
+              - link "Company Website" [ref=e72] [cursor=pointer]:
+                - /url: https://www.linkedin.com/redir/redirect?url=https%3A%2F%2Fsnscratchpad%2Ecom%2F&urlhash=k7--&trk=public_profile_topcard-website
+                - img
+                - generic [ref=e73]:
+                  - text: Company Website
+                  - img [ref=e74]
+          - button "Open menu" [ref=e77] [cursor=pointer]
+      - generic [ref=e78]:
+        - heading "About" [level=2] [ref=e79]
+        - paragraph [ref=e81]: As chairman and CEO of Microsoft, I define my mission and that of my company as empowering every person and every organization on the planet to achieve more.
+      - generic [ref=e82]:
+        - heading "Courses by Satya" [level=2] [ref=e83]
+        - list [ref=e85]:
+          - listitem [ref=e86]:
+            - generic [ref=e87]:
+              - link "Satya Nadella and Rishi Sunak on What Comes Next for AI" [ref=e88] [cursor=pointer]:
+                - /url: https://www.linkedin.com/learning/satya-nadella-and-rishi-sunak-on-what-comes-next-for-ai
+                - generic [ref=e89]: Satya Nadella and Rishi Sunak on What Comes Next for AI
+              - generic [ref=e90]:
+                - img "Satya Nadella and Rishi Sunak on What Comes Next for AI" [ref=e91]
+                - generic [ref=e92]: 32m
+              - generic [ref=e93]:
+                - heading "Satya Nadella and Rishi Sunak on What Comes Next for AI" [level=3] [ref=e94]
+                - 'heading "By: Satya Nadella" [level=4] [ref=e95]'
+                - generic [ref=e96]: 4,104 viewers
+      - generic [ref=e97]:
+        - heading "Articles by Satya" [level=2] [ref=e98]
+        - generic [ref=e100]:
+          - list [ref=e101]:
+            - listitem [ref=e102]:
+              - generic [ref=e103]:
+                - link "A Positive-Sum Future" [ref=e104] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/positive-sum-future-satya-nadella-bjs7c
+                  - generic [ref=e105]: A Positive-Sum Future
+                - generic [ref=e107]:
+                  - generic [ref=e108]: Nov 15, 2025
+                  - heading "A Positive-Sum Future" [level=3] [ref=e109]
+                  - paragraph [ref=e110]: I’ve been thinking a lot about what the net benefit of the AI platform wave is. The real question is how to empower…
+                  - generic [ref=e111]:
+                    - generic "7,319 Reactions" [ref=e112]:
+                      - generic [ref=e113]: 7,319
+                    - generic [ref=e114]: · 524 Comments
+            - listitem [ref=e115]:
+              - generic [ref=e116]:
+                - 'link "My annual letter: Thinking in decades, executing in quarters" [ref=e117] [cursor=pointer]':
+                  - /url: https://www.linkedin.com/pulse/my-annual-letter-thinking-decades-executing-quarters-satya-nadella-7orpc
+                  - generic [ref=e118]: "My annual letter: Thinking in decades, executing in quarters"
+                - generic [ref=e120]:
+                  - generic [ref=e121]: Oct 21, 2025
+                  - 'heading "My annual letter: Thinking in decades, executing in quarters" [level=3] [ref=e122]'
+                  - paragraph [ref=e123]: "Below is my annual letter, published today in our Annual Report 2025: Dear shareholders, colleagues, customers, and…"
+                  - generic [ref=e124]:
+                    - generic "6,313 Reactions" [ref=e125]:
+                      - generic [ref=e126]: 6,313
+                    - generic [ref=e127]: · 297 Comments
+            - listitem [ref=e128]:
+              - generic [ref=e129]:
+                - link "Meet 5 Copilot agents from our partners changing how work gets done" [ref=e130] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/meet-5-copilot-agents-from-our-partners-changing-how-work-nadella-mzrsc
+                  - generic [ref=e131]: Meet 5 Copilot agents from our partners changing how work gets done
+                - generic [ref=e133]:
+                  - generic [ref=e134]: Oct 12, 2025
+                  - heading "Meet 5 Copilot agents from our partners changing how work gets done" [level=3] [ref=e135]
+                  - paragraph [ref=e136]: We've been hard at work advancing M365 Copilot, and so have our many partners who are building agents that integrate…
+                  - generic [ref=e137]:
+                    - generic "5,662 Reactions" [ref=e138]:
+                      - generic [ref=e139]: 5,662
+                    - generic [ref=e140]: · 236 Comments
+            - listitem [ref=e141]:
+              - generic [ref=e142]:
+                - link "All my favorite M365 Copilot agents (right now)" [ref=e143] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/all-my-favorite-m365-copilot-agents-right-now-satya-nadella-jb9nc
+                  - generic [ref=e144]: All my favorite M365 Copilot agents (right now)
+                - generic [ref=e146]:
+                  - generic [ref=e147]: Oct 4, 2025
+                  - heading "All my favorite M365 Copilot agents (right now)" [level=3] [ref=e148]
+                  - paragraph [ref=e149]: Supercharged past few weeks as we push the bounds of model-forward innovation across Microsoft 365. A few highlights:…
+                  - generic [ref=e150]:
+                    - generic "1,480 Reactions" [ref=e151]:
+                      - generic [ref=e152]: 1,480
+                    - generic [ref=e153]: · 81 Comments
+            - listitem [ref=e154]:
+              - generic [ref=e155]:
+                - link "5 prompts to supercharge your everyday workflow" [ref=e156] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/5-prompts-supercharge-your-everyday-workflow-satya-nadella-ryv5c
+                  - generic [ref=e157]: 5 prompts to supercharge your everyday workflow
+                - generic [ref=e159]:
+                  - generic [ref=e160]: Aug 27, 2025
+                  - heading "5 prompts to supercharge your everyday workflow" [level=3] [ref=e161]
+                  - paragraph [ref=e162]: It’s been a few weeks since we brought GPT-5 to Microsoft 365 Copilot, and it’s quickly become part of my everyday…
+                  - generic [ref=e163]:
+                    - generic "11,071 Reactions" [ref=e164]:
+                      - generic [ref=e165]: 11,071
+                    - generic [ref=e166]: · 484 Comments
+            - listitem [ref=e167]:
+              - generic [ref=e168]:
+                - link "Delivering 3 trusted platforms for the AI age" [ref=e169] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/delivering-3-trusted-platforms-ai-age-satya-nadella-uijzc
+                  - generic [ref=e170]: Delivering 3 trusted platforms for the AI age
+                - generic [ref=e172]:
+                  - generic [ref=e173]: Nov 20, 2024
+                  - heading "Delivering 3 trusted platforms for the AI age" [level=3] [ref=e174]
+                  - paragraph [ref=e175]: The following is adapted from my remarks at Microsoft Ignite this morning. With every platform shift, it is good to…
+                  - generic [ref=e176]:
+                    - generic "6,633 Reactions" [ref=e177]:
+                      - generic [ref=e178]: 6,633
+                    - generic [ref=e179]: · 176 Comments
+            - listitem [ref=e180]:
+              - generic [ref=e181]:
+                - 'link "My annual letter: Relevance and reinvention" [ref=e182] [cursor=pointer]':
+                  - /url: https://www.linkedin.com/pulse/my-annual-letter-relevance-reinvention-satya-nadella-v91xc
+                  - generic [ref=e183]: "My annual letter: Relevance and reinvention"
+                - generic [ref=e185]:
+                  - generic [ref=e186]: Oct 24, 2024
+                  - 'heading "My annual letter: Relevance and reinvention" [level=3] [ref=e187]'
+                  - paragraph [ref=e188]: Below is my annual letter, published today in our Annual Report 2024. Dear shareholders, colleagues, customers, and…
+                  - generic [ref=e189]:
+                    - generic "4,787 Reactions" [ref=e190]:
+                      - generic [ref=e191]: 4,787
+                    - generic [ref=e192]: · 204 Comments
+            - listitem [ref=e193]:
+              - generic [ref=e194]:
+                - link "The age of AI transformation" [ref=e195] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/age-ai-transformation-satya-nadella-soocc
+                  - generic [ref=e196]: The age of AI transformation
+                - generic [ref=e198]:
+                  - generic [ref=e199]: May 21, 2024
+                  - heading "The age of AI transformation" [level=3] [ref=e200]
+                  - paragraph [ref=e201]: The following is adapted from my remarks at Microsoft Build this morning. We’ve always been a platform company, and our…
+                  - generic [ref=e202]:
+                    - generic "10,038 Reactions" [ref=e203]:
+                      - generic [ref=e204]: 10,038
+                    - generic [ref=e205]: · 170 Comments
+            - listitem [ref=e206]:
+              - generic [ref=e207]:
+                - link "The age of copilots" [ref=e208] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/pulse/age-copilots-satya-nadella-2hllc
+                  - generic [ref=e209]: The age of copilots
+                - generic [ref=e211]:
+                  - generic [ref=e212]: Nov 16, 2023
+                  - heading "The age of copilots" [level=3] [ref=e213]
+                  - paragraph [ref=e214]: The following is an excerpt from my keynote today at Microsoft Ignite. It’s hard to believe that it’s just been a year…
+                  - generic [ref=e215]:
+                    - generic "7,400 Reactions" [ref=e216]:
+                      - generic [ref=e217]: 7,400
+                    - generic [ref=e218]: · 107 Comments
+            - listitem [ref=e219]:
+              - generic [ref=e220]:
+                - 'link "My annual letter: Leading in a new era" [ref=e221] [cursor=pointer]':
+                  - /url: https://www.linkedin.com/pulse/my-annual-letter-leading-new-era-satya-nadella
+                  - generic [ref=e222]: "My annual letter: Leading in a new era"
+                - generic [ref=e224]:
+                  - generic [ref=e225]: Oct 19, 2023
+                  - 'heading "My annual letter: Leading in a new era" [level=3] [ref=e226]'
+                  - paragraph [ref=e227]: Below is my annual letter, published today in our Annual Report 2023. Dear shareholders, colleagues, customers, and…
+                  - generic [ref=e228]:
+                    - generic "14,993 Reactions" [ref=e229]:
+                      - generic [ref=e230]: 14,993
+                    - generic [ref=e231]: · 245 Comments
+          - button "Show more articles" [ref=e232] [cursor=pointer]: Show more
+      - generic [ref=e235]:
+        - heading "Activity" [level=2] [ref=e237]
+        - generic [ref=e238]:
+          - list [ref=e239]:
+            - listitem [ref=e240]:
+              - generic [ref=e241]:
+                - 'link "When you ask an AI tool for a picture of “someone at work,” you often get a familiar scene: a person at a desk in front of a computer, sometimes…" [ref=e242] [cursor=pointer]':
+                  - /url: https://www.linkedin.com/posts/microsoft_when-you-ask-an-ai-tool-for-a-picture-of-activity-7462585383269359616-rMCY
+                  - generic [ref=e243]: "When you ask an AI tool for a picture of “someone at work,” you often get a familiar scene: a person at a desk in front of a computer, sometimes…"
+                - generic [ref=e245]:
+                  - 'heading "When you ask an AI tool for a picture of “someone at work,” you often get a familiar scene: a person at a desk in front of a computer, sometimes…" [level=3] [ref=e246]'
+                  - heading "Liked by Satya Nadella" [level=4] [ref=e247]:
+                    - text: Liked by
+                    - link "Satya Nadella" [ref=e248] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+            - listitem [ref=e249]:
+              - generic [ref=e250]:
+                - link "Two students almost scrolled past a startup competition post, convinced they weren’t qualified to compete. Months later, they were standing onstage…" [ref=e251] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/posts/microsoft_two-students-almost-scrolled-past-a-startup-activity-7460367692022259712-4Kqb
+                  - generic [ref=e252]: Two students almost scrolled past a startup competition post, convinced they weren’t qualified to compete. Months later, they were standing onstage…
+                - generic [ref=e254]:
+                  - heading "Two students almost scrolled past a startup competition post, convinced they weren’t qualified to compete. Months later, they were standing onstage…" [level=3] [ref=e255]
+                  - heading "Liked by Satya Nadella" [level=4] [ref=e256]:
+                    - text: Liked by
+                    - link "Satya Nadella" [ref=e257] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+            - listitem [ref=e258]:
+              - generic [ref=e259]:
+                - link "Our new multi-model agentic security system brings together more than 100 specialized agents across frontier and custom models to find exploitable…" [ref=e260] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/posts/satyanadella_defense-at-ai-speed-microsofts-new-multi-model-activity-7460117180521639937-1JwS
+                  - generic [ref=e261]: Our new multi-model agentic security system brings together more than 100 specialized agents across frontier and custom models to find exploitable…
+                - generic [ref=e263]:
+                  - heading "Our new multi-model agentic security system brings together more than 100 specialized agents across frontier and custom models to find exploitable…" [level=3] [ref=e264]
+                  - heading "Shared by Satya Nadella" [level=4] [ref=e265]:
+                    - text: Shared by
+                    - link "Satya Nadella" [ref=e266] [cursor=pointer]:
+                      - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - link "Join now to see all activity" [ref=e267] [cursor=pointer]:
+            - /url: https://www.linkedin.com/signup/cold-join?session_redirect=https%3A%2F%2Fwww%2Elinkedin%2Ecom%2Fin%2Fsatyanadella%2Frecent-activity%2F&trk=public_profile_see-all-posts
+      - generic [ref=e268]:
+        - heading "Experience" [level=2] [ref=e269]
+        - list [ref=e271]:
+          - listitem [ref=e272]:
+            - link "Microsoft Graphic" [ref=e273] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/microsoft?trk=public_profile_experience-item_profile-section-card_image-click
+              - img "Microsoft Graphic" [ref=e274]
+            - generic [ref=e275]:
+              - heading "Chairman and CEO" [level=3] [ref=e276]
+              - heading "Microsoft" [level=4] [ref=e277]:
+                - link "Microsoft" [ref=e278] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/microsoft?trk=public_profile_experience-item_profile-section-card_subtitle-click
+              - generic [ref=e279]:
+                - paragraph [ref=e280]:
+                  - generic [ref=e281]:
+                    - time [ref=e282]: Feb 2014
+                    - text: "- Present ·12 years 4 months"
+                - paragraph [ref=e283]: Greater Seattle Area
+          - listitem [ref=e284]:
+            - link "University of Chicago Graphic" [ref=e285] [cursor=pointer]:
+              - /url: https://www.linkedin.com/school/uchicago/?trk=public_profile_experience-item_profile-section-card_image-click
+              - img "University of Chicago Graphic" [ref=e286]
+            - generic [ref=e287]:
+              - heading "Member Board Of Trustees" [level=3] [ref=e288]
+              - heading "University of Chicago" [level=4] [ref=e289]:
+                - link "University of Chicago" [ref=e290] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/school/uchicago/?trk=public_profile_experience-item_profile-section-card_subtitle-click
+              - paragraph [ref=e292]:
+                - generic [ref=e293]:
+                  - time [ref=e294]: "2018"
+                  - text: "- Present ·8 years"
+          - listitem [ref=e295]:
+            - link "Starbucks Graphic" [ref=e296] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/starbucks?trk=public_profile_experience-item_profile-section-card_image-click
+              - img "Starbucks Graphic" [ref=e297]
+            - generic [ref=e298]:
+              - heading "Board Member" [level=3] [ref=e299]
+              - heading "Starbucks" [level=4] [ref=e300]:
+                - link "Starbucks" [ref=e301] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/starbucks?trk=public_profile_experience-item_profile-section-card_subtitle-click
+              - paragraph [ref=e303]:
+                - generic [ref=e304]:
+                  - time [ref=e305]: "2017"
+                  - text: "-"
+                  - time [ref=e306]: "2024"
+                  - text: ·7 years
+          - listitem [ref=e307]:
+            - link "The Business Council U.S. Graphic" [ref=e308] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/the-business-council-us?trk=public_profile_experience-item_profile-section-card_image-click
+              - img "The Business Council U.S. Graphic" [ref=e309]
+            - generic [ref=e310]:
+              - heading "Chairman" [level=3] [ref=e311]
+              - heading "The Business Council U.S." [level=4] [ref=e312]:
+                - link "The Business Council U.S." [ref=e313] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/the-business-council-us?trk=public_profile_experience-item_profile-section-card_subtitle-click
+              - paragraph [ref=e315]:
+                - generic [ref=e316]:
+                  - time [ref=e317]: "2021"
+                  - text: "-"
+                  - time [ref=e318]: "2023"
+                  - text: ·2 years
+          - listitem [ref=e319]:
+            - link "Fred Hutch Graphic" [ref=e320] [cursor=pointer]:
+              - /url: https://www.linkedin.com/company/fredhutch?trk=public_profile_experience-item_profile-section-card_image-click
+              - img "Fred Hutch Graphic" [ref=e321]
+            - generic [ref=e322]:
+              - heading "Board Member" [level=3] [ref=e323]
+              - heading "Fred Hutch" [level=4] [ref=e324]:
+                - link "Fred Hutch" [ref=e325] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/company/fredhutch?trk=public_profile_experience-item_profile-section-card_subtitle-click
+              - paragraph [ref=e327]:
+                - generic [ref=e328]:
+                  - time [ref=e329]: "2016"
+                  - text: "-"
+                  - time [ref=e330]: "2022"
+                  - text: ·6 years
+      - generic [ref=e331]:
+        - heading "Education" [level=2] [ref=e332]
+        - list [ref=e334]:
+          - listitem [ref=e335]:
+            - link "The University of Chicago Booth School of Business Graphic" [ref=e336] [cursor=pointer]:
+              - /url: https://www.linkedin.com/school/universityofchicagoboothschoolofbusiness/?trk=public_profile_school_profile-section-card_image-click
+              - img "The University of Chicago Booth School of Business Graphic" [ref=e337]
+            - generic [ref=e338]:
+              - heading "The University of Chicago Booth School of Business" [level=3] [ref=e339]:
+                - link "The University of Chicago Booth School of Business" [ref=e340] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/school/universityofchicagoboothschoolofbusiness/?trk=public_profile_school
+              - heading "-" [level=4] [ref=e341]
+              - paragraph [ref=e343]:
+                - generic [ref=e344]:
+                  - time [ref=e345]: "1994"
+                  - text: "-"
+                  - time [ref=e346]: "1996"
+          - listitem [ref=e347]:
+            - link "Manipal Institute of Technology Graphic" [ref=e348] [cursor=pointer]:
+              - /url: https://in.linkedin.com/school/manipal-institute-of-technology/?trk=public_profile_school_profile-section-card_image-click
+              - img "Manipal Institute of Technology Graphic" [ref=e349]
+            - generic [ref=e350]:
+              - heading "Manipal Institute of Technology, Manipal" [level=3] [ref=e351]:
+                - link "Manipal Institute of Technology, Manipal" [ref=e352] [cursor=pointer]:
+                  - /url: https://in.linkedin.com/school/manipal-institute-of-technology/?trk=public_profile_school
+              - heading "Bachelor’s Degree ·Electrical Engineering" [level=4] [ref=e353]
+              - generic [ref=e354]:
+                - paragraph
+          - listitem [ref=e355]:
+            - link "University of Wisconsin-Milwaukee Graphic" [ref=e356] [cursor=pointer]:
+              - /url: https://www.linkedin.com/school/uwmilwaukee/?trk=public_profile_school_profile-section-card_image-click
+              - img "University of Wisconsin-Milwaukee Graphic" [ref=e357]
+            - generic [ref=e358]:
+              - heading "University of Wisconsin-Milwaukee" [level=3] [ref=e359]:
+                - link "University of Wisconsin-Milwaukee" [ref=e360] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/school/uwmilwaukee/?trk=public_profile_school
+              - heading "Master’s Degree ·Computer Science" [level=4] [ref=e361]
+              - generic [ref=e362]:
+                - paragraph
+      - generic [ref=e363]:
+        - heading "More activity by Satya" [level=2] [ref=e365]
+        - list [ref=e367]:
+          - listitem [ref=e368]:
+            - generic [ref=e369]:
+              - link "Great to bring GPT 5.5 Instant to M365 Copilot today. With quicker, clearer, and more accurate responses, you can get to useful answers with less…" [ref=e370] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_great-to-bring-gpt-55-instant-to-m365-copilot-activity-7458231798502899712-VRN5
+                - generic [ref=e371]: Great to bring GPT 5.5 Instant to M365 Copilot today. With quicker, clearer, and more accurate responses, you can get to useful answers with less…
+              - generic [ref=e374]:
+                - heading "Great to bring GPT 5.5 Instant to M365 Copilot today. With quicker, clearer, and more accurate responses, you can get to useful answers with less…" [level=3] [ref=e375]
+                - heading "Shared by Satya Nadella" [level=4] [ref=e376]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e377] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e378]:
+            - generic [ref=e379]:
+              - link "Every firm will need to reconceptualize work as they build agentic systems. As AI and agents take on more of the execution, the opportunity is to…" [ref=e380] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_agents-human-agency-and-the-opportunity-activity-7457557806024499201-Dtt5
+                - generic [ref=e381]: Every firm will need to reconceptualize work as they build agentic systems. As AI and agents take on more of the execution, the opportunity is to…
+              - generic [ref=e383]:
+                - heading "Every firm will need to reconceptualize work as they build agentic systems. As AI and agents take on more of the execution, the opportunity is to…" [level=3] [ref=e384]
+                - heading "Shared by Satya Nadella" [level=4] [ref=e385]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e386] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e387]:
+            - generic [ref=e388]:
+              - link "Last month, we brought Copilot Cowork to the Frontier program, and it’s been great to see what people are building. From automating inbox workflows…" [ref=e389] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/charleslamanna_last-month-we-brought-copilot-cowork-to-activity-7457390551957417984-3Lgh
+                - generic [ref=e390]: Last month, we brought Copilot Cowork to the Frontier program, and it’s been great to see what people are building. From automating inbox workflows…
+              - generic [ref=e393]:
+                - heading "Last month, we brought Copilot Cowork to the Frontier program, and it’s been great to see what people are building. From automating inbox workflows…" [level=3] [ref=e394]
+                - heading "Liked by Satya Nadella" [level=4] [ref=e395]:
+                  - text: Liked by
+                  - link "Satya Nadella" [ref=e396] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e397]:
+            - generic [ref=e398]:
+              - 'link "New in Copilot Cowork: mobile, skills, and plugins. Now available on iOS and Android, so you can delegate work from your phone, pick it back up on…" [ref=e399] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/satyanadella_new-in-copilot-cowork-mobile-skills-and-activity-7457477604124565504-A1fH
+                - generic [ref=e400]: "New in Copilot Cowork: mobile, skills, and plugins. Now available on iOS and Android, so you can delegate work from your phone, pick it back up on…"
+              - generic [ref=e403]:
+                - 'heading "New in Copilot Cowork: mobile, skills, and plugins. Now available on iOS and Android, so you can delegate work from your phone, pick it back up on…" [level=3] [ref=e404]'
+                - heading "Shared by Satya Nadella" [level=4] [ref=e405]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e406] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e407]:
+            - generic [ref=e408]:
+              - link "Seeing firsthand how people are using our tools to have impact in their daily lives is one of the most rewarding parts of my job. While in Sydney, I…" [ref=e409] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_seeing-firsthand-how-people-are-using-our-activity-7456767032450228224-UZvX
+                - generic [ref=e410]: Seeing firsthand how people are using our tools to have impact in their daily lives is one of the most rewarding parts of my job. While in Sydney, I…
+              - generic [ref=e413]:
+                - heading "Seeing firsthand how people are using our tools to have impact in their daily lives is one of the most rewarding parts of my job. While in Sydney, I…" [level=3] [ref=e414]
+                - heading "Shared by Satya Nadella" [level=4] [ref=e415]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e416] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e417]:
+            - generic [ref=e418]:
+              - link "Agent 365 is now generally available! We’re extending the systems customers already use for identity, security, governance, and management to every…" [ref=e419] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_microsoft-agent-365-now-generally-available-activity-7456016232933126144-SLcw
+                - generic [ref=e420]: Agent 365 is now generally available! We’re extending the systems customers already use for identity, security, governance, and management to every…
+              - generic [ref=e422]:
+                - heading "Agent 365 is now generally available! We’re extending the systems customers already use for identity, security, governance, and management to every…" [level=3] [ref=e423]
+                - heading "Shared by Satya Nadella" [level=4] [ref=e424]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e425] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e426]:
+            - generic [ref=e427]:
+              - link "Today we’re introducing a new Legal Agent in Microsoft Word, built to support the precision and rigor legal work demands. Every clause matters. Every…" [ref=e428] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/bradsmi_today-were-introducing-a-new-legal-agent-activity-7455758084725116928-MLyY
+                - generic [ref=e429]: Today we’re introducing a new Legal Agent in Microsoft Word, built to support the precision and rigor legal work demands. Every clause matters. Every…
+              - generic [ref=e432]:
+                - heading "Today we’re introducing a new Legal Agent in Microsoft Word, built to support the precision and rigor legal work demands. Every clause matters. Every…" [level=3] [ref=e433]
+                - heading "Liked by Satya Nadella" [level=4] [ref=e434]:
+                  - text: Liked by
+                  - link "Satya Nadella" [ref=e435] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e436]:
+            - generic [ref=e437]:
+              - link "Just wrapped our quarterly earnings call. We are focused on delivering AI infrastructure and solutions that empower every business to eval-max…" [ref=e438] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_just-wrapped-our-quarterly-earnings-call-activity-7455387581535637504-TbEx
+                - generic [ref=e439]: Just wrapped our quarterly earnings call. We are focused on delivering AI infrastructure and solutions that empower every business to eval-max…
+              - generic [ref=e441]:
+                - heading "Just wrapped our quarterly earnings call. We are focused on delivering AI infrastructure and solutions that empower every business to eval-max…" [level=3] [ref=e442]
+                - heading "Posted by Satya Nadella" [level=4] [ref=e443]:
+                  - text: Posted by
+                  - link "Satya Nadella" [ref=e444] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e445]:
+            - generic [ref=e446]:
+              - 'link "Great example of what Foundry enables: durable, stateful agents that run across time boundaries, orchestrate tools and models, and close the loop…" [ref=e447] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/satyanadella_great-example-of-what-foundry-enables-durable-activity-7454731346523893760-R6xm
+                - generic [ref=e448]: "Great example of what Foundry enables: durable, stateful agents that run across time boundaries, orchestrate tools and models, and close the loop…"
+              - generic [ref=e451]:
+                - 'heading "Great example of what Foundry enables: durable, stateful agents that run across time boundaries, orchestrate tools and models, and close the loop…" [level=3] [ref=e452]'
+                - heading "Shared by Satya Nadella" [level=4] [ref=e453]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e454] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+          - listitem [ref=e455]:
+            - generic [ref=e456]:
+              - link "Agent Mode is here in Outlook! Copilot can now help run your inbox and calendar, triaging emails, rescheduling meetings, and helping you stay on top…" [ref=e457] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/satyanadella_agent-mode-is-here-in-outlook-copilot-can-activity-7454646422165012480-Q1Be
+                - generic [ref=e458]: Agent Mode is here in Outlook! Copilot can now help run your inbox and calendar, triaging emails, rescheduling meetings, and helping you stay on top…
+              - generic [ref=e461]:
+                - heading "Agent Mode is here in Outlook! Copilot can now help run your inbox and calendar, triaging emails, rescheduling meetings, and helping you stay on top…" [level=3] [ref=e462]
+                - heading "Shared by Satya Nadella" [level=4] [ref=e463]:
+                  - text: Shared by
+                  - link "Satya Nadella" [ref=e464] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/in/satyanadella?trk=public_profile_actor-name
+      - generic [ref=e467]:
+        - heading "View Satya’s full profile" [level=2] [ref=e468]
+        - list [ref=e469]:
+          - listitem [ref=e470]:
+            - generic [ref=e473]: See who you know in common
+          - listitem [ref=e474]:
+            - generic [ref=e477]: Get introduced
+          - listitem [ref=e478]:
+            - generic [ref=e481]: Contact Satya directly
+        - link "Join to view full profile" [ref=e482] [cursor=pointer]:
+          - /url: https://www.linkedin.com/signup/public-profile-join?vieweeVanityName=satyanadella&trk=public_profile_bottom-cta-banner
+    - generic [ref=e483]:
+      - generic [ref=e484]:
+        - heading "Other similar profiles" [level=2] [ref=e485]
+        - generic [ref=e487]:
+          - list [ref=e488]:
+            - listitem [ref=e489]:
+              - generic [ref=e490]:
+                - link "Tony Bates" [ref=e491] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/tony-bates-679227a5
+                  - generic [ref=e492]: Tony Bates
+                - generic [ref=e494]:
+                  - heading "Tony Bates" [level=3] [ref=e495]
+                  - generic [ref=e496]: San Francisco Bay Area
+                  - link "Connect with Tony Bates" [ref=e498] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Ftony-bates-679227a5&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e500]:
+              - generic [ref=e501]:
+                - link "Charles Phillips" [ref=e502] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/charlesphillips1
+                  - generic [ref=e503]: Charles Phillips
+                - generic [ref=e505]:
+                  - heading "Charles Phillips" [level=3] [ref=e506]
+                  - generic [ref=e507]: New York, NY
+                  - link "Connect with Charles Phillips" [ref=e509] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fcharlesphillips1&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e511]:
+              - generic [ref=e512]:
+                - link "Neil Barua" [ref=e513] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/neilbarua
+                  - generic [ref=e514]: Neil Barua
+                - generic [ref=e516]:
+                  - heading "Neil Barua" [level=3] [ref=e517]
+                  - generic [ref=e518]: United States
+                  - link "Connect with Neil Barua" [ref=e520] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fneilbarua&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e522]:
+              - generic [ref=e523]:
+                - link "Jack Mulloy" [ref=e524] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/jackmulloy
+                  - generic [ref=e525]: Jack Mulloy
+                - generic [ref=e527]:
+                  - heading "Jack Mulloy" [level=3] [ref=e528]
+                  - generic [ref=e529]: Greater Cleveland
+                  - link "Connect with Jack Mulloy" [ref=e531] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fjackmulloy&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e533]:
+              - generic [ref=e534]:
+                - link "Rick Faulk" [ref=e535] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/rickfaulk
+                  - generic [ref=e536]: Rick Faulk
+                - generic [ref=e538]:
+                  - heading "Rick Faulk" [level=3] [ref=e539]
+                  - generic [ref=e540]: Greater Boston
+                  - link "Connect with Rick Faulk" [ref=e542] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Frickfaulk&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e544]:
+              - generic [ref=e545]:
+                - link "Toufi Saliba" [ref=e546] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/toufisaliba
+                  - generic [ref=e547]: Toufi Saliba
+                - generic [ref=e549]:
+                  - heading "Toufi Saliba" [level=3] [ref=e550]
+                  - generic [ref=e551]: San Francisco, CA
+                  - link "Connect with Toufi Saliba" [ref=e553] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Ftoufisaliba&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e555]:
+              - generic [ref=e556]:
+                - link "Dheeraj Pandey" [ref=e557] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/dpandey
+                  - generic [ref=e558]: Dheeraj Pandey
+                - generic [ref=e560]:
+                  - heading "Dheeraj Pandey" [level=3] [ref=e561]
+                  - generic [ref=e562]: Los Gatos, CA
+                  - link "Connect with Dheeraj Pandey" [ref=e564] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fdpandey&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e566]:
+              - generic [ref=e567]:
+                - link "Ralph Dangelmaier" [ref=e568] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/ralphdangelmaier
+                  - generic [ref=e569]: Ralph Dangelmaier
+                - generic [ref=e571]:
+                  - heading "Ralph Dangelmaier" [level=3] [ref=e572]
+                  - generic [ref=e573]: Waltham, MA
+                  - link "Connect with Ralph Dangelmaier" [ref=e575] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fralphdangelmaier&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e577]:
+              - generic [ref=e578]:
+                - link "Linda Findley" [ref=e579] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/linda-findley
+                  - generic [ref=e580]: Linda Findley
+                - generic [ref=e582]:
+                  - heading "Linda Findley" [level=3] [ref=e583]
+                  - generic [ref=e584]: Minneapolis, MN
+                  - link "Connect with Linda Findley" [ref=e586] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Flinda-findley&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+            - listitem [ref=e588]:
+              - generic [ref=e589]:
+                - link "Michael Jones" [ref=e590] [cursor=pointer]:
+                  - /url: https://www.linkedin.com/in/mjones
+                  - generic [ref=e591]: Michael Jones
+                - generic [ref=e593]:
+                  - heading "Michael Jones" [level=3] [ref=e594]
+                  - generic [ref=e595]: Aspen, CO
+                  - link "Connect with Michael Jones" [ref=e597] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/login?session_redirect=https%3A%2F%2Fwww.linkedin.com%2Fin%2Fmjones&fromSignIn=true&trk=public_profile_browsemap_browse-map_connect-button
+                    - text: Connect
+          - button "Show more profiles" [ref=e599] [cursor=pointer]: Show more profiles
+      - generic [ref=e601]:
+        - heading "Explore more posts" [level=2] [ref=e602]
+        - list [ref=e604]:
+          - listitem [ref=e605]:
+            - generic [ref=e606]:
+              - link "Joko Inc. 93 followers" [ref=e607] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/jokoinc?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e609]:
+                  - paragraph [ref=e610]: Joko Inc.
+                  - paragraph [ref=e611]: 93 followers
+              - 'link "Thanks to a strong University of Washington Information School team made up of Justin Dong, Harman Zhang, Sara Duan, Noa Avitan and David Pham, for a successful collaboration on building low-friction and low-cost cross-border subscription payments infrastructure. This means that through Joko, recording artists in emerging economies that are excluded from traditional payment rails can receive subscriptions directly from their global fans with instant settlement. Read more here: https://lnkd.in/eEHpwaU3 11 Reactions" [ref=e612] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/jokoinc_thanks-to-a-strong-university-of-washington-activity-7334299246340272128-mtJQ?trk=public_profile_relatedPosts
+                - generic [ref=e613]:
+                  - heading [level=3]
+                  - paragraph [ref=e614]: "Thanks to a strong University of Washington Information School team made up of Justin Dong, Harman Zhang, Sara Duan, Noa Avitan and David Pham, for a successful collaboration on building low-friction and low-cost cross-border subscription payments infrastructure. This means that through Joko, recording artists in emerging economies that are excluded from traditional payment rails can receive subscriptions directly from their global fans with instant settlement. Read more here: https://lnkd.in/eEHpwaU3"
+                  - generic "11 Reactions" [ref=e617]:
+                    - generic [ref=e618]: "11"
+                - img [ref=e620]
+          - listitem [ref=e621]:
+            - generic [ref=e622]:
+              - link "Alinea Labs 96 followers" [ref=e623] [cursor=pointer]:
+                - /url: https://au.linkedin.com/company/alinea-labs?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e625]:
+                  - paragraph [ref=e626]: Alinea Labs
+                  - paragraph [ref=e627]: 96 followers
+              - link [ref=e628] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/alinea-labs_aistartups-innovation-sanjose-activity-7367354007343800321-XMOW?trk=public_profile_relatedPosts
+                - generic [ref=e629]:
+                  - heading [level=3]
+                  - paragraph [ref=e630]: "🔥 Transforming innovation in San Jose: How AI startups are getting game-changing support through local grants! 🚀 💡 The city of San Jose is at the forefront of technological innovation, offering substantial grants to emerging AI startups. These initiatives are designed to catalyze groundbreaking solutions and empower local entrepreneurs with the resources they need to succeed. 💡 One key program highlighted in the post is the \"Innovate San Jose Grant,\" which provides up to $50,000 in funding to startups demonstrating unique AI applications to solve pressing societal issues, ranging from healthcare to urban development. 💡 These grants not only support financial needs but also offer startups access to mentoring and networking opportunities, which are crucial for early-stage companies aiming to scale their innovations. 🔗 Read more: https://lnkd.in/g94vHq6N #AIStartups #Innovation #SanJose #TechGrants #Entrepreneurship"
+                  - generic "1 Reaction" [ref=e633]:
+                    - generic [ref=e634]: "1"
+                - img [ref=e636]
+          - listitem [ref=e637]:
+            - generic [ref=e638]:
+              - link "San Francisco Bay University 18K followers" [ref=e639] [cursor=pointer]:
+                - /url: https://www.linkedin.com/school/san-francisco-bay-university/?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e641]:
+                  - paragraph [ref=e642]: San Francisco Bay University
+                  - paragraph [ref=e643]: 18K followers
+              - 'link "San Francisco Bay University is proud to announce a transformative collaboration with IBM that provides Capstone students majoring in business and computer science with direct access to IBM’s cutting-edge LinuxONE Community Cloud. \"SFBU is integrating the power of Silicon Valley into the student experience,” said Provost Brad Fuster, DMA. “Our goal is to produce graduates who are not only job-ready, but career-ready… tenacious leaders and tech trendsetters who can adapt, innovate, and drive progress across industries.\" 🔗 Read the full story: https://lnkd.in/gRdK76XS 72 Reactions · 5 Comments" [ref=e644] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/san-francisco-bay-university_san-francisco-bay-university-is-proud-to-activity-7330989525130792960-hzPI?trk=public_profile_relatedPosts
+                - generic [ref=e645]:
+                  - heading [level=3]
+                  - paragraph [ref=e646]: "San Francisco Bay University is proud to announce a transformative collaboration with IBM that provides Capstone students majoring in business and computer science with direct access to IBM’s cutting-edge LinuxONE Community Cloud. \"SFBU is integrating the power of Silicon Valley into the student experience,” said Provost Brad Fuster, DMA. “Our goal is to produce graduates who are not only job-ready, but career-ready… tenacious leaders and tech trendsetters who can adapt, innovate, and drive progress across industries.\" 🔗 Read the full story: https://lnkd.in/gRdK76XS"
+                  - generic [ref=e648]:
+                    - generic "72 Reactions" [ref=e649]:
+                      - generic [ref=e650]: "72"
+                    - generic [ref=e651]: · 5 Comments
+                - img [ref=e653]
+          - listitem [ref=e654]:
+            - generic [ref=e655]:
+              - link "University of Washington, Department of Electrical & Computer Engineering 5K followers" [ref=e656] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/uwece?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e658]:
+                  - paragraph [ref=e659]: University of Washington, Department of Electrical & Computer Engineering
+                  - paragraph [ref=e660]: 5K followers
+              - 'link "UW ECE Affiliate Assistant Professor Saman Naderiparizi is co-founder of the new Seattle startup ElastixAI, which is developing an AI inference platform designed to optimize how large language models are run. Naderiparizi and his co-founders recently raised $16M to further ElastixAI''s growth. Learn more in GeekWire: https://lnkd.in/gcZmmihF 229 Reactions · 4 Comments" [ref=e661] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/uwece_uw-ece-affiliate-assistant-professor-saman-activity-7334347747543719936-Cgyu?trk=public_profile_relatedPosts
+                - generic [ref=e662]:
+                  - heading [level=3]
+                  - paragraph [ref=e663]: "UW ECE Affiliate Assistant Professor Saman Naderiparizi is co-founder of the new Seattle startup ElastixAI, which is developing an AI inference platform designed to optimize how large language models are run. Naderiparizi and his co-founders recently raised $16M to further ElastixAI's growth. Learn more in GeekWire: https://lnkd.in/gcZmmihF"
+                  - generic [ref=e665]:
+                    - generic "229 Reactions" [ref=e666]:
+                      - generic [ref=e667]: "229"
+                    - generic [ref=e668]: · 4 Comments
+                - img [ref=e670]
+          - listitem [ref=e671]:
+            - generic [ref=e672]:
+              - link "RunLLM 2K followers" [ref=e673] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/runllm?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e675]:
+                  - paragraph [ref=e676]: RunLLM
+                  - paragraph [ref=e677]: 2K followers
+              - 'link "🎬 AI Hot Take: Joseph Gonzalez Gonzalez, UC Berkeley Professor & Director of the Sky Computing Lab “Serving technology is the engine in AI, but its not the product. In the next five years, we’re going to see a lot of centralization.” Joey says the real value won’t come from every company trying to build its own model infrastructure, but from what’s built on top of it. 👀 Full mini-documentary here: https://lnkd.in/gvGmNU9m #AI #LLM #EnterpriseAI #AIInfrastructure #JoeyGonzalez #SkyComputing #RunLLM #AIProductDesign #TrustworthyAI #MachineLearning 2 Reactions" [ref=e678] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/runllm_ai-llm-enterpriseai-activity-7369475950654185473-DEKu?trk=public_profile_relatedPosts
+                - generic [ref=e679]:
+                  - heading [level=3]
+                  - paragraph [ref=e680]: "🎬 AI Hot Take: Joseph Gonzalez Gonzalez, UC Berkeley Professor & Director of the Sky Computing Lab “Serving technology is the engine in AI, but its not the product. In the next five years, we’re going to see a lot of centralization.” Joey says the real value won’t come from every company trying to build its own model infrastructure, but from what’s built on top of it. 👀 Full mini-documentary here: https://lnkd.in/gvGmNU9m #AI #LLM #EnterpriseAI #AIInfrastructure #JoeyGonzalez #SkyComputing #RunLLM #AIProductDesign #TrustworthyAI #MachineLearning"
+                  - generic "2 Reactions" [ref=e683]:
+                    - generic [ref=e684]: "2"
+                - img [ref=e686]
+          - listitem [ref=e687]:
+            - generic [ref=e688]:
+              - link "UC Berkeley College of Engineering 38K followers" [ref=e689] [cursor=pointer]:
+                - /url: https://www.linkedin.com/school/berkeleyengineering/?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e691]:
+                  - paragraph [ref=e692]: UC Berkeley College of Engineering
+                  - paragraph [ref=e693]: 38K followers
+              - link [ref=e694] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/berkeleyengineering_five-uc-berkeley-students-all-from-the-activity-7375211649206726656-2HWX?trk=public_profile_relatedPosts
+                - generic [ref=e695]:
+                  - heading [level=3]
+                  - paragraph [ref=e696]: "Five UC Berkeley students — all from the graduate program in computer science — were honored as Siebel Scholars Foundation's class of 2026! \"This scholarship will allow them to pursue new research directions to advance knowledge and innovation in their fields,\" said Mark Asta, interim dean and Roy W. Carlson Professor of Engineering at Berkeley. Meet the 2026 class of Siebel Scholars at Berkeley: * Shai Dickman is exploring Al-driven approaches to generate amino acid sequences that produce proteins with desirable structures and properties. * Leon Kornfeld is working on innovative research in computer vision and robotics. * Kanav Mittal is studying Al risk and alignment in educational settings. * Ronit Nagarapu is researching methods to optimize performance on hardware accelerators for machine learning applications. * Alp Eren Ozdarendeli is examining the security vulnerabilities of sophisticated Al systems and developing defense architectures to guard against adversarial attacks. Read our story: bit.ly/4n9yvCl"
+                  - generic [ref=e698]:
+                    - generic "220 Reactions" [ref=e699]:
+                      - generic [ref=e700]: "220"
+                    - generic [ref=e701]: · 25 Comments
+                - img [ref=e703]
+          - listitem [ref=e704]:
+            - generic [ref=e705]:
+              - link "UC San Diego School of Computing, Information and Data Sciences 799 followers" [ref=e706] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/uc-san-diego-school-of-computing-information-and-data-sciences?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e708]:
+                  - paragraph [ref=e709]: UC San Diego School of Computing, Information and Data Sciences
+                  - paragraph [ref=e710]: 799 followers
+              - link [ref=e711] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/uc-san-diego-school-of-computing-information-and-data-sciences_rajesh-gupta-a-distinguished-computer-scientist-activity-7349224373087522819-zNh7?trk=public_profile_relatedPosts
+                - generic [ref=e712]:
+                  - heading [level=3]
+                  - paragraph [ref=e713]: "Rajesh Gupta, a distinguished computer scientist and seasoned academic leader, has been named founding dean of the UC San Diego School of Computing, Information and Data Sciences, effective July 1, 2025. Gupta brings a wealth of academic and administrative talent to leading SCIDS. Gupta’s continued leadership will be instrumental in shaping the future of SCIDS, which leverages the existing strengths of HDSI and the San Diego Supercomputer Center (SDSC) — a national center that has, for four decades, led and enabled data and computationally intensive scientific breakthroughs. Trained as a circuit designer, Gupta led the Computer Science and Engineering department, several center-scale efforts sponsored by the NSF and the Defense Advanced Research Projects Agency (DARPA). A distinguished alumnus of IIT Kanpur, Gupta received a Master’s Degree in electrical engineering and computer sciences from UC Berkeley, and a PhD in electrical engineering from Stanford University. Gupta held the INRIA International Chair at the French international research institute in Rennes, Bretagne Atlantique. He is a fellow of the Institute of Electrical and Electronics Engineers (IEEE), the Association for Computing Machinery (ACM), and the American Association for the Advancement of Science (AAAS). “As founding director of the Halıcıoğlu Data Science Institute (HDSI), Rajesh has played a pivotal role in shaping our university's interdisciplinary, data-driven research landscape. Under his guidance, SCIDS will contribute to UC San Diego's reputation as a leading university, building on our legacy of strength and innovation in high-performance computing, data science and artificial intelligence.” - Chancellor Pradeep K. Khosla. Read more here: https://ow.ly/E5CI50Wo5Lk"
+                  - generic [ref=e715]:
+                    - generic "24 Reactions" [ref=e716]:
+                      - generic [ref=e717]: "24"
+                    - generic [ref=e718]: · 1 Comment
+                - img [ref=e720]
+          - listitem [ref=e721]:
+            - generic [ref=e722]:
+              - link "San Diego Supercomputer Center 7K followers" [ref=e723] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/san-diego-supercomputer-center?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e725]:
+                  - paragraph [ref=e726]: San Diego Supercomputer Center
+                  - paragraph [ref=e727]: 7K followers
+              - link [ref=e728] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/san-diego-supercomputer-center_rajesh-gupta-a-distinguished-computer-scientist-activity-7349224373087584257-9m3n?trk=public_profile_relatedPosts
+                - generic [ref=e729]:
+                  - heading [level=3]
+                  - paragraph [ref=e730]: "Rajesh Gupta, a distinguished computer scientist and seasoned academic leader, has been named founding dean of the UC San Diego School of Computing, Information and Data Sciences, effective July 1, 2025. Gupta brings a wealth of academic and administrative talent to leading SCIDS. Gupta’s continued leadership will be instrumental in shaping the future of SCIDS, which leverages the existing strengths of HDSI and the San Diego Supercomputer Center (SDSC) — a national center that has, for four decades, led and enabled data and computationally intensive scientific breakthroughs. Trained as a circuit designer, Gupta led the Computer Science and Engineering department, several center-scale efforts sponsored by the NSF and the Defense Advanced Research Projects Agency (DARPA). A distinguished alumnus of IIT Kanpur, Gupta received a Master’s Degree in electrical engineering and computer sciences from UC Berkeley, and a PhD in electrical engineering from Stanford University. Gupta held the INRIA International Chair at the French international research institute in Rennes, Bretagne Atlantique. He is a fellow of the Institute of Electrical and Electronics Engineers (IEEE), the Association for Computing Machinery (ACM), and the American Association for the Advancement of Science (AAAS). “As founding director of the Halıcıoğlu Data Science Institute (HDSI), Rajesh has played a pivotal role in shaping our university's interdisciplinary, data-driven research landscape. Under his guidance, SCIDS will contribute to UC San Diego's reputation as a leading university, building on our legacy of strength and innovation in high-performance computing, data science and artificial intelligence.” - Chancellor Pradeep K. Khosla. Read more here: https://ow.ly/E5CI50Wo5Lk"
+                  - generic "18 Reactions" [ref=e733]:
+                    - generic [ref=e734]: "18"
+                - img [ref=e736]
+          - listitem [ref=e737]:
+            - generic [ref=e738]:
+              - link "Connected Learning Lab 6K followers" [ref=e739] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/connected-learning-lab?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e741]:
+                  - paragraph [ref=e742]: Connected Learning Lab
+                  - paragraph [ref=e743]: 6K followers
+              - link "👀 Have you spotted a new ‘secret design’ Waymo on the streets? 🚗 To counteract Waymos’ intimidating vehicle design, 200 artist-wrapped cars were deployed to make the cars more human and approachable. Our director, Mizuko Ito, comments, ”It signals this sort of quirky humanity[.] It helps disrupt the narrative that these gigantic soulless companies are just scaling a standardized product [and] bulldozing over everything.” https://lnkd.in/g_Bm6Xcc 5 Reactions" [ref=e744] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/connected-learning-lab_how-art-is-driving-waymos-feel-good-branding-activity-7404632254813233153-qozE?trk=public_profile_relatedPosts
+                - generic [ref=e745]:
+                  - heading [level=3]
+                  - paragraph [ref=e746]: 👀 Have you spotted a new ‘secret design’ Waymo on the streets? 🚗 To counteract Waymos’ intimidating vehicle design, 200 artist-wrapped cars were deployed to make the cars more human and approachable. Our director, Mizuko Ito, comments, ”It signals this sort of quirky humanity[.] It helps disrupt the narrative that these gigantic soulless companies are just scaling a standardized product [and] bulldozing over everything.” https://lnkd.in/g_Bm6Xcc
+                  - generic "5 Reactions" [ref=e749]:
+                    - generic [ref=e750]: "5"
+          - listitem [ref=e751]:
+            - generic [ref=e752]:
+              - link "Halıcıoğlu Data Science Institute, UC San Diego 5K followers" [ref=e753] [cursor=pointer]:
+                - /url: https://www.linkedin.com/school/hdsiucsd/?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e755]:
+                  - paragraph [ref=e756]: Halıcıoğlu Data Science Institute, UC San Diego
+                  - paragraph [ref=e757]: 5K followers
+              - link [ref=e758] [cursor=pointer]:
+                - /url: https://www.linkedin.com/posts/hdsiucsd_rajesh-gupta-a-distinguished-computer-scientist-activity-7349224373041418240-l_oi?trk=public_profile_relatedPosts
+                - generic [ref=e759]:
+                  - heading [level=3]
+                  - paragraph [ref=e760]: "Rajesh Gupta, a distinguished computer scientist and seasoned academic leader, has been named founding dean of the UC San Diego School of Computing, Information and Data Sciences, effective July 1, 2025. Gupta brings a wealth of academic and administrative talent to leading SCIDS. Gupta’s continued leadership will be instrumental in shaping the future of SCIDS, which leverages the existing strengths of HDSI and the San Diego Supercomputer Center (SDSC) — a national center that has, for four decades, led and enabled data and computationally intensive scientific breakthroughs. Trained as a circuit designer, Gupta led the Computer Science and Engineering department, several center-scale efforts sponsored by the NSF and the Defense Advanced Research Projects Agency (DARPA). A distinguished alumnus of IIT Kanpur, Gupta received a Master’s Degree in electrical engineering and computer sciences from UC Berkeley, and a PhD in electrical engineering from Stanford University. Gupta held the INRIA International Chair at the French international research institute in Rennes, Bretagne Atlantique. He is a fellow of the Institute of Electrical and Electronics Engineers (IEEE), the Association for Computing Machinery (ACM), and the American Association for the Advancement of Science (AAAS). “As founding director of the Halıcıoğlu Data Science Institute (HDSI), Rajesh has played a pivotal role in shaping our university's interdisciplinary, data-driven research landscape. Under his guidance, SCIDS will contribute to UC San Diego's reputation as a leading university, building on our legacy of strength and innovation in high-performance computing, data science and artificial intelligence.” - Chancellor Pradeep K. Khosla. Read more here: https://ow.ly/E5CI50Wo5Lk"
+                  - generic [ref=e762]:
+                    - generic "849 Reactions" [ref=e763]:
+                      - generic [ref=e764]: "849"
+                    - generic [ref=e765]: · 245 Comments
+                - img [ref=e767]
+          - listitem [ref=e768]:
+            - generic [ref=e769]:
+              - link "Cloudforce 34K followers" [ref=e770] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/gocloudforce?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e772]:
+                  - paragraph [ref=e773]: Cloudforce
+                  - paragraph [ref=e774]: 34K followers
+              - 'link "Looking to build a secure, scalable #AI strategy for your institution? Cloudforce and Microsoft have produced a guide that shows how campuses like UCLA Anderson School of Management, London Business School, University of Maryland, and Cal State Fullerton are securely harnessing the power of AI to support staff, streamline student services, and drive innovation. 💡 Real examples 🔒 Secure solutions 🎓 Built for Higher Ed Don’t miss seeing how trailblazers are transforming their campuses today! 👉https://lnkd.in/eFDcDuEV 13 Reactions" [ref=e775] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/gocloudforce_ai-activity-7347991096855044096-67Oa?trk=public_profile_relatedPosts
+                - generic [ref=e776]:
+                  - heading [level=3]
+                  - paragraph [ref=e777]: "Looking to build a secure, scalable #AI strategy for your institution? Cloudforce and Microsoft have produced a guide that shows how campuses like UCLA Anderson School of Management, London Business School, University of Maryland, and Cal State Fullerton are securely harnessing the power of AI to support staff, streamline student services, and drive innovation. 💡 Real examples 🔒 Secure solutions 🎓 Built for Higher Ed Don’t miss seeing how trailblazers are transforming their campuses today! 👉https://lnkd.in/eFDcDuEV"
+                  - generic "13 Reactions" [ref=e780]:
+                    - generic [ref=e781]: "13"
+                - img [ref=e783]
+          - listitem [ref=e784]:
+            - generic [ref=e785]:
+              - link "Sanas 33K followers" [ref=e786] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/sanastech?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e788]:
+                  - paragraph [ref=e789]: Sanas
+                  - paragraph [ref=e790]: 33K followers
+              - 'link "When startups and students team up, innovation happens. Stanford students Rushank Goyal and Ryota Sato share their experience partnering with Sanas'' CTO Shawn Zhang to take on 8kHz audio watermarking, a critical challenge for securing phone conversations in the age of AI. The result? The prototype outperformed industry benchmarks, earned recognition as the top paper in their class, and contributed directly to Sanas R&D. Read their full story: https://lnkd.in/gAGkbjXv 61 Reactions · 3 Comments" [ref=e791] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/sanastech_when-startups-and-students-team-up-innovation-activity-7374474942605742080-J1rT?trk=public_profile_relatedPosts
+                - generic [ref=e792]:
+                  - heading [level=3]
+                  - paragraph [ref=e793]: "When startups and students team up, innovation happens. Stanford students Rushank Goyal and Ryota Sato share their experience partnering with Sanas' CTO Shawn Zhang to take on 8kHz audio watermarking, a critical challenge for securing phone conversations in the age of AI. The result? The prototype outperformed industry benchmarks, earned recognition as the top paper in their class, and contributed directly to Sanas R&D. Read their full story: https://lnkd.in/gAGkbjXv"
+                  - generic [ref=e795]:
+                    - generic "61 Reactions" [ref=e796]:
+                      - generic [ref=e797]: "61"
+                    - generic [ref=e798]: · 3 Comments
+                - img [ref=e800]
+          - listitem [ref=e801]:
+            - generic [ref=e802]:
+              - link "William Resh Georgia State University -… • 3K followers" [ref=e803] [cursor=pointer]:
+                - /url: https://www.linkedin.com/in/williamresh?trk=public_profile_relatedPosts_face-pile-cta
+                - generic [ref=e805]:
+                  - paragraph [ref=e806]: William Resh
+                  - paragraph [ref=e807]: Georgia State University -… • 3K followers
+              - 'link "I sat down with Michael J Keegan at IBM Center for The Business of Government on their Federal News Network radio show to discuss our recent work (Yi Ming Andy Xia Michael Overton, Ph.D Nisa Gurbuz Brandon De Bruhl, MPP, MA) on Generative AI and the federal labor market. A link to that interview is here: https://lnkd.in/gzWH6TzJ The report on which it''s based can be found in the comments below. 21 Reactions · 1 Comment" [ref=e808] [cursor=pointer]':
+                - /url: https://www.linkedin.com/posts/williamresh_i-sat-down-with-michael-j-keegan-at-ibm-center-activity-7378029321044729856-OVSV?trk=public_profile_relatedPosts
+                - generic [ref=e809]:
+                  - heading [level=3]
+                  - paragraph [ref=e810]: "I sat down with Michael J Keegan at IBM Center for The Business of Government on their Federal News Network radio show to discuss our recent work (Yi Ming Andy Xia Michael Overton, Ph.D Nisa Gurbuz Brandon De Bruhl, MPP, MA) on Generative AI and the federal labor market. A link to that interview is here: https://lnkd.in/gzWH6TzJ The report on which it's based can be found in the comments below."
+                  - generic [ref=e812]:
+                    - generic "21 Reactions" [ref=e813]:
+                      - generic [ref=e814]: "21"
+                    - generic [ref=e815]: · 1 Comment
+      - generic [ref=e818]:
+        - heading "Explore top content on LinkedIn" [level=2] [ref=e820]
+        - paragraph [ref=e821]: Find curated posts and insights for relevant topics all in one place.
+        - link "View top content" [ref=e822] [cursor=pointer]:
+          - /url: https://www.linkedin.com/top-content/
+  - contentinfo [ref=e823]:
+    - list [ref=e824]:
+      - listitem [ref=e825]:
+        - generic [ref=e826]: LinkedIn
+        - generic [ref=e828]: © 2026
+      - listitem [ref=e829]:
+        - link "About" [ref=e830] [cursor=pointer]:
+          - /url: https://about.linkedin.com?trk=public_profile_v3_desktop_footer-about
+      - listitem [ref=e831]:
+        - link "Accessibility" [ref=e832] [cursor=pointer]:
+          - /url: https://www.linkedin.com/accessibility?trk=public_profile_v3_desktop_footer-accessibility
+      - listitem [ref=e833]:
+        - link "User Agreement" [ref=e834] [cursor=pointer]:
+          - /url: https://www.linkedin.com/legal/user-agreement?trk=public_profile_v3_desktop_footer-user-agreement
+      - listitem [ref=e835]:
+        - link "Privacy Policy" [ref=e836] [cursor=pointer]:
+          - /url: https://www.linkedin.com/legal/privacy-policy?trk=public_profile_v3_desktop_footer-privacy-policy
+      - listitem [ref=e837]:
+        - link "Cookie Policy" [ref=e838] [cursor=pointer]:
+          - /url: https://www.linkedin.com/legal/cookie-policy?trk=public_profile_v3_desktop_footer-cookie-policy
+      - listitem [ref=e839]:
+        - link "Copyright Policy" [ref=e840] [cursor=pointer]:
+          - /url: https://www.linkedin.com/legal/copyright-policy?trk=public_profile_v3_desktop_footer-copyright-policy
+      - listitem [ref=e841]:
+        - link "Brand Policy" [ref=e842] [cursor=pointer]:
+          - /url: https://brand.linkedin.com/policies?trk=public_profile_v3_desktop_footer-brand-policy
+      - listitem [ref=e843]:
+        - link "Guest Controls" [ref=e844] [cursor=pointer]:
+          - /url: https://www.linkedin.com/psettings/guest-controls?trk=public_profile_v3_desktop_footer-guest-controls
+      - listitem [ref=e845]:
+        - link "Community Guidelines" [ref=e846] [cursor=pointer]:
+          - /url: https://www.linkedin.com/legal/professional-community-policies?trk=public_profile_v3_desktop_footer-community-guide
+      - listitem [ref=e847]:
+        - button "Language" [ref=e849]: Language

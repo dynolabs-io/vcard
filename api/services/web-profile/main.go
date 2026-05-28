@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"os"
 	"os/signal"
 	"strings"
@@ -73,7 +74,7 @@ func main() {
 		_ = tmpl.Execute(w, card)
 		// Fire-and-forget reach-analytics emission. Detached context so a
 		// slow vcard-api call doesn't extend the user-visible response.
-		go emitScanEvent(apiBase, slug, "profile", r.Header.Get("User-Agent"))
+		go emitScanEvent(apiBase, slug, "profile", r.Header.Get("User-Agent"), clientIP(r))
 	})
 
 	// Lead capture form submission — proxies to vcard-api /v1/leads.
@@ -126,7 +127,7 @@ func main() {
 			return
 		}
 		// Fire-and-forget reach-analytics emission for .vcf downloads.
-		go emitScanEvent(apiBase, slug, "vcf", r.Header.Get("User-Agent"))
+		go emitScanEvent(apiBase, slug, "vcf", r.Header.Get("User-Agent"), clientIP(r))
 		w.Header().Set("Content-Type", "text/vcard; charset=utf-8")
 		w.Header().Set("Content-Disposition", `attachment; filename="`+slug+`.vcf"`)
 		_, _ = w.Write([]byte(buildVCard(card)))
@@ -156,12 +157,15 @@ func main() {
 // response isn't blocked by analytics latency. Failure is logged but
 // never surfaced — analytics can't bite the public-profile experience.
 // Per the migration's "No PII" promise, we resolve User-Agent → ua_family
-// bucket (low cardinality) BEFORE leaving this process; raw UA never
-// crosses the wire. City/country resolution deferred (TBD-V## follow-up).
-func emitScanEvent(apiBase, slug, kind, userAgent string) {
+// bucket AND raw IP → city/country bucket BEFORE leaving this process;
+// neither the raw UA nor raw IP ever crosses the wire. See TBD-V14 (#26).
+// The geoIP helper is a stub for now; the data source (embedded MMDB vs
+// online API) lands in TBD-V15 — the wire shape stays stable in between.
+func emitScanEvent(apiBase, slug, kind, userAgent, ip string) {
+	city, country := geoIP(ip)
 	body := fmt.Sprintf(
-		`{"targetSlug":%q,"kind":%q,"uaFamily":%q}`,
-		slug, kind, uaFamily(userAgent),
+		`{"targetSlug":%q,"kind":%q,"uaFamily":%q,"city":%q,"country":%q}`,
+		slug, kind, uaFamily(userAgent), city, country,
 	)
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
@@ -176,6 +180,51 @@ func emitScanEvent(apiBase, slug, kind, userAgent string) {
 	if res.StatusCode >= 300 {
 		slog.Warn("scan_events emit non-2xx", "slug", slug, "kind", kind, "status", res.StatusCode)
 	}
+}
+
+// clientIP extracts the calling client's IP. Prefers the first hop of
+// X-Forwarded-For (Traefik injects it on the public ingress path) and
+// falls back to r.RemoteAddr. Returns "" when neither is a valid IP —
+// callers MUST treat "" as a signal to leave city/country empty rather
+// than guess. We never emit the raw IP downstream; this value is the
+// input to geoIP, nothing else. See TBD-V14 (#26).
+func clientIP(r *http.Request) string {
+	if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+		// First hop is the client; subsequent hops are intermediate proxies.
+		if comma := strings.IndexByte(xff, ','); comma >= 0 {
+			xff = xff[:comma]
+		}
+		xff = strings.TrimSpace(xff)
+		if ip, err := netip.ParseAddr(xff); err == nil && ip.IsValid() {
+			return ip.String()
+		}
+	}
+	if r.RemoteAddr != "" {
+		// RemoteAddr is "host:port"; strip the port.
+		host := r.RemoteAddr
+		if colon := strings.LastIndexByte(host, ':'); colon >= 0 {
+			host = host[:colon]
+		}
+		// Bracketed IPv6: [::1]:8080 → [::1]
+		host = strings.TrimPrefix(strings.TrimSuffix(host, "]"), "[")
+		if ip, err := netip.ParseAddr(host); err == nil && ip.IsValid() {
+			return ip.String()
+		}
+	}
+	return ""
+}
+
+// geoIP resolves an IP to a (city, country) bucket. STUB IMPLEMENTATION
+// returns ("","") so the wire shape is stable while the data-source
+// choice (embedded MMDB vs online API + cache) is made in TBD-V15.
+// Callers MUST tolerate empty strings — that's the contract, not a bug.
+// Per the NO-PII rule, raw IPs never leave this process.
+func geoIP(ip string) (city, country string) {
+	if ip == "" {
+		return "", ""
+	}
+	// TBD-V15 (#27) will replace this with a real resolver.
+	return "", ""
 }
 
 // uaFamily collapses an arbitrary User-Agent string into a small set of

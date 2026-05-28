@@ -1,0 +1,9 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading [level=1]
+    - paragraph
+    - link "Save to Contacts" [ref=e4] [cursor=pointer]:
+      - /url: /c/uk4kcdpm/save.vcf
+    - group [ref=e5]:
+      - generic "Want them to call you back?" [ref=e6]
+  - paragraph [ref=e7]: Powered by Dynolabs
