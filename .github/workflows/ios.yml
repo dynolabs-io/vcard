@@ -227,17 +227,40 @@ jobs:
               a = c.get('attributes', {})
               print(f"  - id={c['id']} type={a.get('certificateType')} name={a.get('name')} expires={a.get('expirationDate')}")
           if len(certs) >= 2:
-              # Revoke the oldest one (lowest expirationDate) — frees a slot.
+              # CROSS-PROJECT CONCURRENCY: iogrid / cinova / ping share
+              # the Dynolabs Apple Developer team. The "oldest by
+              # expirationDate" might still be a sibling's just-created
+              # cert if siblings created it later than our previous
+              # cert (so our previous one is "oldest" but a sibling's
+              # in-flight one is even fresher). Add an age guard:
+              # only revoke if oldest is >60min old. Otherwise let
+              # fastlane cert try to create + fail naturally if 2-cert
+              # cap hits; better than racing the siblings' archives.
+              # Cross-port from iogrid mobile-ios-ci d6f2eae (2026-06-02).
+              import datetime
+              now = datetime.datetime.now(datetime.timezone.utc)
+              threshold = now + datetime.timedelta(days=365) - datetime.timedelta(minutes=60)
               certs.sort(key=lambda c: c['attributes'].get('expirationDate') or '')
               victim = certs[0]
-              print(f"revoking oldest: {victim['id']} ({victim['attributes'].get('name')})")
-              dreq = urllib.request.Request(
-                  f"https://api.appstoreconnect.apple.com/v1/certificates/{victim['id']}",
-                  headers=hdrs, method='DELETE',
-              )
+              exp_str = victim['attributes'].get('expirationDate', '')
               try:
-                  urllib.request.urlopen(dreq).read()
-                  print('revoked OK')
+                  exp = datetime.datetime.fromisoformat(exp_str.replace('Z', '+00:00'))
+              except (ValueError, AttributeError):
+                  print(f"  SKIP {victim['id']} — unparseable expirationDate: {exp_str!r}")
+                  exp = None
+              if exp is None or exp >= threshold:
+                  age_min = round((now + datetime.timedelta(days=365) - exp).total_seconds() / 60, 1) if exp else 0
+                  print(f"  SKIP oldest {victim['id']} — {age_min}min old, sibling CI in-flight; relying on fastlane cert to handle 2-cert cap")
+              else:
+                  age_h = round((now + datetime.timedelta(days=365) - exp).total_seconds() / 3600, 1)
+                  print(f"revoking oldest: {victim['id']} ({victim['attributes'].get('name')}) — {age_h}h old")
+                  dreq = urllib.request.Request(
+                      f"https://api.appstoreconnect.apple.com/v1/certificates/{victim['id']}",
+                      headers=hdrs, method='DELETE',
+                  )
+                  try:
+                      urllib.request.urlopen(dreq).read()
+                      print('revoked OK')
               except urllib.error.HTTPError as e:
                   print(f'revoke HTTP {e.code}: {e.read().decode()[:200]}')
 
