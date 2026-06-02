@@ -125,7 +125,19 @@ jobs:
           security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH" || true
-          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | sed s/\"//g)
+          # Replace the user keychain search list with ONLY our new
+          # keychain — do NOT append the existing ones. macos-latest
+          # runners can carry stale "Apple Distribution: HATICE YILDIZ
+          # BAYSAL" certs in the login keychain from prior CI jobs on
+          # sibling Dynolabs team projects (iogrid / cinova / ping).
+          # If the search list includes them, xcodebuild manual signing
+          # picks the FIRST matching cert by generic name "Apple
+          # Distribution" — which may be a stale revoked cert rather
+          # than our freshly-fastlane-cert one, causing archive to fail
+          # with: "Signing certificate ... serial XXX is not valid for
+          # code signing. It may have been revoked or expired."
+          # Cross-port from iogrid mobile-ios-ci e912ac7 (2026-06-02).
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
           security default-keychain -s "$KEYCHAIN_PATH"
           # Persist for fastlane cert / sigh in the next step.
           echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> $GITHUB_ENV
